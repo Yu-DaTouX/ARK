@@ -146,8 +146,9 @@ object MapStyle {
         // 文字：低缩放（压在卫星图上）白字黑边，高缩放深字白边
         val dark = """["match",["get","kind"],"region","#7a6f60","#2b2b2b"]"""
         val light = """["match",["get","kind"],"region","#e8e0cc","#ffffff"]"""
-        val textColor = if (satellite) """["interpolate",["linear"],["zoom"],6,$light,8,$dark]""" else dark
-        val halo = if (satellite) """["interpolate",["linear"],["zoom"],6,"rgba(0,0,0,0.75)",8,"rgba(255,255,255,0.9)"]""" else "\"rgba(255,255,255,0.9)\""
+        // 用 step 一次切换：渐变到中间那几级时，字和描边会是同一种灰，糊成一团
+        val textColor = if (satellite) """["step",["zoom"],$light,7,$dark]""" else dark
+        val halo = if (satellite) """["step",["zoom"],"rgba(0,0,0,0.75)",7,"rgba(255,255,255,0.9)"]""" else "\"rgba(255,255,255,0.9)\""
         for (s in vec) {
             layers.put(
                 JSONObject(

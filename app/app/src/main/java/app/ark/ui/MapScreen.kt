@@ -105,6 +105,11 @@ fun MapScreen(vm: AppViewModel) {
             onCreate(null)
             getMapAsync { m ->
                 m.cameraPosition = CameraPosition.Builder().target(LatLng(-25.0, 134.0)).zoom(1.2).build()
+                // 调试：--es ark_goto "纬度,经度,缩放"（截图用），用一次就清掉
+                prefs.getString("debug_goto", null)?.split(',')?.mapNotNull { it.trim().toDoubleOrNull() }?.takeIf { it.size == 3 }?.let { (la, lo, z) ->
+                    m.cameraPosition = CameraPosition.Builder().target(LatLng(la, lo)).zoom(z).build()
+                    prefs.edit().remove("debug_goto").apply()
+                }
                 m.uiSettings.isAttributionEnabled = false
                 m.uiSettings.isLogoEnabled = false
                 m.uiSettings.setCompassMargins(0, 200, 32, 0)

@@ -193,9 +193,8 @@ object Heading {
                 diffDev = diffDev * 0.95f + dev * 0.05f
                 diffAvg = wrap(diffAvg + wrapSigned(d - diffAvg) * 0.05f)
                 if (diffDev > 8f) clean = false
-                if (clean && !celestial) {
-                    offset = if (offset.isNaN()) d else wrap(offset + wrapSigned(d - offset) * 0.02f)
-                }
+                if (offset.isNaN() && !celestial) offset = d // 第一次：磁场不干净也先用上（标注干扰），有方位总比没有强
+                else if (clean && !celestial) offset = wrap(offset + wrapSigned(d - offset) * 0.02f)
             }
             src = when {
                 celestial -> Source.CELESTIAL

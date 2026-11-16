@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
         i.removeExtra("ark_spec")
         i.getStringExtra("ark_act")?.let { getSharedPreferences("ark", MODE_PRIVATE).edit().putString("debug_act", it).commit() }
         i.removeExtra("ark_act")
+        i.getStringExtra("ark_goto")?.let { getSharedPreferences("ark", MODE_PRIVATE).edit().putString("debug_goto", it).commit() } // 地图跳到 "纬度,经度,缩放"
+        i.removeExtra("ark_goto")
         arg("ark_ask_b64")?.let { vm.ask(it) }
         arg("ark_search_b64")?.let { vm.searchLibrary(it) }
         i.getStringExtra("ark_batch")?.let { n ->

@@ -103,3 +103,30 @@ fun fmtDuration(ms: Long): String {
     return if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%02d:%02d".format(m, sec)
 }
 
+
+/** 位置缓存的时效，例如“3 天前”。 */
+fun locationAge(loc: Location): String {
+    val m = ((System.currentTimeMillis() - loc.time) / 60_000L).coerceAtLeast(0)
+    return when { m < 2 -> "刚刚"; m < 60 -> "$m 分钟前"; m < 48 * 60 -> "${m / 60} 小时前"; else -> "${m / 1440} 天前" }
+}
+
+/** 构建日期：手机时钟早于它说明时间设置不对（电池耗尽后重启、没有网络授时等）。 */
+private val BUILD_MS = java.time.Instant.parse("2026-11-01T00:00:00Z").toEpochMilli()
+
+fun clockSuspect(): Boolean = System.currentTimeMillis() < BUILD_MS
+
+/** 手机时间明显不对时的醒目警告，并显示完整日期时间；时间正常时什么都不画。 */
+@Composable
+fun ClockWarning() {
+    if (!clockSuspect()) return
+    val t = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+    Warn("手机时间可能不准（现在显示 $t），天体和日出日落数据会全部错误。请先在系统设置里校对日期和时间。")
+}
+
+/** 缓存位置过旧（超过 24 小时）时的提醒。 */
+@Composable
+fun LocationAgeNote(loc: Location?) {
+    if (loc == null) return
+    val old = System.currentTimeMillis() - loc.time > 24 * 3600_000L
+    if (old) Warn("这是 ${locationAge(loc)} 的位置缓存，如果你已经移动，请手动输入当前经纬度。") else Note("位置缓存：${locationAge(loc)}")
+}

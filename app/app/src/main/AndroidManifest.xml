@@ -10,6 +10,28 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 天体定向的相机对准模式：只做取景预览，不拍照不存储 -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- 航点回溯 / 轨迹记录：前台服务（带通知），只在用户打开轨迹开关时定位 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 轨迹导出 GPX 到 Download：Android 10+ 走 MediaStore 不需要权限，9 及以下才要 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <!-- 离线分享：本地 HTTP 服务（前台服务 + 通知），只在用户开启时运行 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- 蓝牙求救信标：BLE 广播 + 扫描。12+ 用新权限；扫描声明不用来推算位置（neverForLocation），旧版本需要定位权限 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- 通讯页：声音传信（麦克风监听，运行时申请）、警报声（前台媒体播放 + 关屏不停） -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
@@ -38,5 +60,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service android:name=".sensors.TrackService" android:exported="false" android:foregroundServiceType="location" />
+        <service android:name=".sensors.BeaconService" android:exported="false" android:foregroundServiceType="connectedDevice|location" />
+        <!-- 工具页：闪光灯 SOS / 摩尔斯在关屏后继续（通知栏可停止） -->
+        <service android:name=".ui.tools.TorchService" android:exported="false" android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="flashlight_morse_signal" />
+        </service>
+        <!-- 通讯页：蓝牙消息“保持在线”、警报声 -->
+        <service android:name=".comm.CommService" android:exported="false" android:foregroundServiceType="connectedDevice" />
+        <service android:name=".comm.AlarmService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+        <service android:name=".share.ShareService" android:exported="false" android:foregroundServiceType="dataSync" />
     </application>
 </manifest>

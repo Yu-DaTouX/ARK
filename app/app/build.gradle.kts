@@ -70,4 +70,6 @@ dependencies {
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.19.1")
     // 离线地图：地球仪投影版（BSD-2），读本地 PMTiles
     implementation("org.maplibre.gl:android-sdk:2026.11.2-globe")
+    // 二维码生成（只用 core，约 0.5 MB）：离线分享时显示下载网址
+    implementation("com.google.zxing:core:3.5.3")
 }

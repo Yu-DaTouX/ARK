@@ -199,6 +199,10 @@ fun LibraryScreen(vm: AppViewModel) {
             CatalogRow(c, downloads.firstOrNull { it.item.file == c.file }, vm)
         }
 
+        // ---------------- 离线分享 ----------------
+        item { Section("分享给附近的人") }
+        item { app.ark.share.ShareCard() }
+
         // ---------------- 导入 ----------------
         item {
             Spacer(Modifier.height(4.dp))
@@ -239,7 +243,8 @@ fun LibraryScreen(vm: AppViewModel) {
         item { Section("关于") }
         item {
             Text(
-                "方舟 0.1.0，开源软件（Apache-2.0）。\n" +
+                "方舟 ${androidx.compose.ui.platform.LocalContext.current.let { c -> runCatching { c.packageManager.getPackageInfo(c.packageName, 0).versionName }.getOrNull() ?: "" }}，开源软件（Apache-2.0）。\n" +
+                    "本软件仅为个人爱好项目，请勿相信其中内容，未经任何医疗、救援或航海机构审核。\n" +
                     "回答由手机上的 AI 根据离线资料生成，可能出错。用药和急救请以资料原文为准，有条件时尽快就医。\n" +
                     "资料版权归原作者，许可见各资料包说明；地图数据 © OpenStreetMap 贡献者。",
                 style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant,

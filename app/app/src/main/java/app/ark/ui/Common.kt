@@ -66,7 +66,7 @@ private val greek = mapOf("times" to "×", "cdot" to "·", "lambda" to "λ", "ap
 
 fun delatex(src: String): String {
     if ('\\' !in src && '$' !in src) return src
-    var s = src.replace(Regex("\\\\(begin|end)\\{(equation|align|displaymath)\\*?\\}"), " ").replace("\\[", " ").replace("\\]", " ")
+    var s = src.replace(Regex("\\\\(begin|end)\\{(equation|align|displaymath)\\*?\\}"), " ").replace("\\[", "\\(").replace("\\]", "\\)")
     fun math(m0: String): String {
         var m = m0.replace('~', ' ')
         repeat(6) {
@@ -81,13 +81,16 @@ fun delatex(src: String): String {
         m = Regex("\\\\([A-Za-z]+|[%,;])").replace(m) { r -> greek[r.groupValues[1]] ?: r.groupValues[1] }
         return m.replace("{", "").replace("}", "").replace(Regex("\\^\\\\?circ|\\^°"), "°").replace(Regex(" {2,}"), " ")
     }
-    // $$…$$ 和 $…$：内容像公式时才转换，避免误伤“$5 和 $10”这种金额
+    // \\(…\\)、\\[…\\]、$$…$$、$…$：只转换公式片段；正文里的 ~（如“1~2 片”）和花括号不动
+    s = Regex("\\\\\\((.+?)\\\\\\)", RegexOption.DOT_MATCHES_ALL).replace(s) { math(it.groupValues[1]) }
     s = Regex("\\$\\$([^$]+)\\$\\$").replace(s) { math(it.groupValues[1]) }
     s = Regex("\\$([^$\\n]{1,300}?)\\$").replace(s) { r ->
         val c = r.groupValues[1]
         if (Regex("[\\\\_^=/{}]").containsMatchIn(c) || (c.length <= 3 && ' ' !in c)) math(c) else r.value
     }
-    return if ('\\' in s) math(s) else s
+    // 剩下没包在定界符里的命令（\\frac{a}{b}、\\times 等）逐个替换，不碰其余文字
+    if ('\\' in s) s = Regex("\\\\[dt]?frac\\{[^{}]*\\}\\{[^{}]*\\}|\\\\(?:mathrm|text|mathbf|sqrt)\\{[^{}]*\\}|\\\\[A-Za-z]+").replace(s) { math(it.value) }
+    return s
 }
 
 /** 把模型输出里常见的 Markdown（标题、列表、粗体）和出处编号 [n] 渲染出来；点 [n] 打开对应原文。 */

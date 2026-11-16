@@ -105,9 +105,18 @@ object PressureLog {
 fun rememberCompass(lat: Double? = null, lon: Double? = null): Compass? {
     val ctx = LocalContext.current
     LaunchedEffect(lat?.let { Math.round(it) }, lon?.let { Math.round(it) }) { Heading.setLocation(lat, lon) }
-    DisposableEffect(Unit) {
-        Heading.start(ctx)
-        onDispose { Heading.stop() }
+    // 跟随生命周期：退到后台（ON_STOP）就停传感器，省电；Heading.stop 5 秒后才真正注销，短暂切换不丢校准
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        var on = false
+        fun up() { if (!on) { on = true; Heading.start(ctx) } }
+        fun down() { if (on) { on = false; Heading.stop() } }
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_START) up() else if (e == androidx.lifecycle.Lifecycle.Event.ON_STOP) down()
+        }
+        if (owner.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) up()
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs); down() }
     }
     val c by Heading.state.collectAsState()
     return c?.takeIf { !it.heading.isNaN() }
@@ -132,8 +141,14 @@ fun rememberBarometer(): Pressure? {
             }
             override fun onAccuracyChanged(s: Sensor, a: Int) {}
         }
+        val owner = (ctx as? androidx.lifecycle.LifecycleOwner)
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_STOP) sm.unregisterListener(l)
+            else if (e == androidx.lifecycle.Lifecycle.Event.ON_START) s?.let { sm.registerListener(l, it, SensorManager.SENSOR_DELAY_NORMAL) }
+        }
         s?.let { sm.registerListener(l, it, SensorManager.SENSOR_DELAY_NORMAL) }
-        onDispose { sm.unregisterListener(l) }
+        owner?.lifecycle?.addObserver(obs)
+        onDispose { owner?.lifecycle?.removeObserver(obs); sm.unregisterListener(l) }
     }
     return value
 }

@@ -50,7 +50,8 @@ fun AstroTool(onBack: () -> Unit) {
 
     val compass = rememberCompass(pos?.first, pos?.second) // 同时启动 / 停止 Heading 引擎
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { nowMs = System.currentTimeMillis(); delay(5000) } }
+    val saving = LocalPowerSave.current
+    LaunchedEffect(saving) { while (true) { nowMs = System.currentTimeMillis(); delay(if (saving) 20_000 else 5000) } }
     val pointing by produceState<Heading.Pointing?>(null) { while (true) { value = Heading.pointing.value; delay(150) } }
 
     var selected by rememberSaveable { mutableStateOf("") }
@@ -63,13 +64,15 @@ fun AstroTool(onBack: () -> Unit) {
     val sel = bodies.firstOrNull { it.id == selected }
 
     ToolPage("天体定向", onBack) {
+        ClockWarning()
+        if (!useManual) LocationAgeNote(gps)
         Note("用太阳、月亮、星星已知的方位校准手机方向，不受磁干扰（车辆、钢筋、磁吸壳）。需要手机有陀螺仪，且时间准确。")
         if (pos == null) {
             Warn("必须先有大概位置才能算出天体在哪：允许使用位置，或在下面手动输入经纬度。")
         } else {
             Note("位置 %.2f°, %.2f°（%s）· UTC %s。位置差 1° 的纬度或经度，只带来约 1° 的方位误差。".format(
                 pos.first, pos.second, if (!useManual && gps != null) "GPS 缓存" else "手动",
-                DateTimeFormatter.ofPattern("MM-dd HH:mm").format(Instant.ofEpochMilli(nowMs).atZone(ZoneId.of("UTC")))))
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").format(Instant.ofEpochMilli(nowMs).atZone(ZoneId.of("UTC")))))
         }
         // 有位置时把手动输入收起来，星图放到第一屏
         var editPos by rememberSaveable { mutableStateOf(false) }
@@ -86,10 +89,12 @@ fun AstroTool(onBack: () -> Unit) {
         if (pos == null) return@ToolPage
         val lat = pos.first
 
+        val gyro = Heading.hasGyro
+        if (!gyro) Warn("本机没有陀螺仪，不能天体校准。下面的星图和天体位置仍可参考，用肉眼对着真实的天体判断方向。")
         var camOpen by rememberSaveable { mutableStateOf(false) }
-        BigButton("用相机对准", { camOpen = true })
+        BigButton("用相机对准", { camOpen = true }, enabled = gyro)
         Note("打开相机取景，把天体放到十字准星中心再点“对准了”，比对着星图更精准。")
-        if (camOpen) AstroCameraDialog(pos.first, pos.second) { camOpen = false }
+        if (camOpen && gyro) AstroCameraDialog(pos.first, pos.second) { camOpen = false }
 
         // ---- 星图 ----
         val aimAz: Float? = pointing?.azimuth ?: compass?.heading
@@ -110,10 +115,10 @@ fun AstroTool(onBack: () -> Unit) {
             } else {
                 Text(sel.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Text("方位 %.0f° %s · 高度 %.0f°".format(sel.az, bearingName(sel.az.toFloat()), sel.alt), fontSize = 18.sp)
-                if (sel.kind == Astro.Kind.SUN) Warn("不要直视太阳！不要用手机镜头对着太阳看。用影子对准：背对太阳站好，把手机竖着、顶边朝向太阳方向举起，另一只手掌放在手机下方接影子；调整手机直到它投在手掌上的影子缩到最短、最窄（像一个小点）——这时顶边就正对太阳。稳住后点“对准了”。")
+                if (sel.kind == Astro.Kind.SUN) Warn("相机可以短时间对着太阳取景，但人眼不要直视太阳；用屏幕看。太阳请点上面的“用相机对准”，不要用下面的顶边瞄准。")
                 else Text("把手机顶边对准它，像瞄准一样沿手机长边看过去（单眼，让天体正好落在顶边上方）。稳住后点“对准了”。", fontSize = 16.sp, lineHeight = 22.sp)
                 val el = pointing?.elevation
-                if (el == null) Note("等待陀螺仪读数……（没有陀螺仪的手机不能校准）") else {
+                if (!gyro) Unit else if (sel.kind == Astro.Kind.SUN) Unit else if (el == null) Note("等待陀螺仪读数……（没有陀螺仪的手机不能校准）") else {
                     val dEl = el - sel.alt.toFloat()
                     Text("手机顶边仰角 %.0f°，目标高度 %.0f°，差 %+.0f°".format(el, sel.alt, dEl), fontSize = 17.sp, fontWeight = FontWeight.Medium,
                         color = if (abs(dEl) > 5f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
@@ -139,7 +144,7 @@ fun AstroTool(onBack: () -> Unit) {
         // ---- 列表 ----
         Text("现在天上可用（高度 > 5°）", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         if (lat > 0) Note("北极星几乎就在正北，高度 ≈ 当地纬度（${"%.0f".format(lat)}°），最适合找北；用北斗七星“天璇→天枢”连线向外延长约 5 倍可找到它，或用仙后座 W 开口的中间。")
-        else Note("南半球没有北极星。南十字座找南：沿十字长轴（十字架二→十字架一）向十字“脚”方向延长约 4.5 倍，再垂直落到地平线就是正南；也可作南门二、马腹一连线的中垂线，与长轴延长线相交处即南天极方向。")
+        else Note("南半球没有北极星。南十字座找南：沿十字长轴，从十字架一（Gacrux）经十字架二（Acrux）的方向延长约 4.5 倍的长度，再垂直落到地平线就是正南；也可作南门二、马腹一连线的中垂线，与长轴延长线相交处即南天极方向。")
         if (visible.isEmpty()) Note("现在没有高度超过 5° 的亮天体（天亮前后或阴天）。")
         visible.forEach { b ->
             val on = b.id == selected

@@ -34,3 +34,4 @@ train/sft/ctx.jsonl
 train/sft/ctx2.jsonl
 train/sft/train3.jsonl
 train/sft/train_all.jsonl
+eval/errata_review_input.md

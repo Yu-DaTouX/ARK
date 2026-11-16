@@ -26,7 +26,8 @@ fun SunTool(onBack: () -> Unit) {
     var lonS by rememberSaveable { mutableStateOf(prefs.getString("sun_lon", "") ?: "") }
     var useManual by rememberSaveable { mutableStateOf(false) }
     var now by remember { mutableStateOf(Instant.now()) }
-    LaunchedEffect(Unit) { while (true) { now = Instant.now(); delay(30_000) } }
+    val saving = LocalPowerSave.current
+    LaunchedEffect(saving) { while (true) { now = Instant.now(); delay(if (saving) 120_000 else 30_000) } }
 
     val gps = place.location
     val mLat = latS.toDoubleOrNull()?.takeIf { it in -90.0..90.0 }
@@ -38,10 +39,12 @@ fun SunTool(onBack: () -> Unit) {
     fun t(i: Instant?) = i?.atZone(zone)?.format(fmt) ?: "——"
 
     ToolPage("日出日落", onBack) {
+        ClockWarning()
+        if (!useManual) LocationAgeNote(gps)
         if (pos == null) Note("需要位置。允许使用位置读取系统缓存的最后位置，或在下面手动输入经纬度。") else {
             val today = LocalDate.now(zone)
             val d = Solar.compute(today, pos.first, pos.second)
-            Note("位置 %.3f°, %.3f°（%s） · %s · 时区 %s".format(pos.first, pos.second, if (!useManual && gps != null) "GPS 缓存" else "手动", today, zone.id))
+            Note("位置 %.3f°, %.3f°（%s） · %s（今天） · 时区 %s".format(pos.first, pos.second, if (!useManual && gps != null) "GPS 缓存" else "手动", today, zone.id))
             d.polar?.let { Warn(it) }
             // 距天黑：民用昏影终（太阳 −6°）；之前先看日落
             val dusk = d.dusk; val set = d.sunset

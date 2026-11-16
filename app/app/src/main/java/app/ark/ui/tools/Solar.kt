@@ -74,7 +74,21 @@ object Solar {
         return ra to dec
     }
 
-    fun compute(date: LocalDate, lat: Double, lon: Double): Day {
+    /**
+     * 当地日期 date（按 zone 的日历日）的日出日落等。算法按 UTC 日历日求解，所以对前一天、当天、后一天（UTC）各算一次，
+     * 再挑出落在 zone 本地日期 = date 内的那一个——日期变更线附近（UTC+13/+14，或西经但时区在东侧）也不会算成别的日子。
+     */
+    fun compute(date: LocalDate, lat: Double, lon: Double, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): Day {
+        val days = listOf(-1L, 0L, 1L).map { computeUtc(date.plusDays(it), lat, lon) }
+        fun pick(f: (Day) -> Instant?): Instant? = days.mapNotNull(f).firstOrNull { it.atZone(zone).toLocalDate() == date }
+        val base = days[1]
+        return Day(
+            pick { it.dawn }, pick { it.sunrise }, pick { it.noon } ?: base.noon,
+            pick { it.sunset }, pick { it.dusk }, base.polar,
+        )
+    }
+
+    private fun computeUtc(date: LocalDate, lat: Double, lon: Double): Day {
         val dayStart = date.toEpochDay() * 86400000L // 当天 UTC 0 点
         fun at(min: Double) = dayStart + (min * 60000.0).toLong()
         var noonMin = 720.0 - 4 * lon

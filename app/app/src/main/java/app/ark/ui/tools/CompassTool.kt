@@ -80,6 +80,7 @@ fun CompassTool(onBack: () -> Unit) {
             val src = when (c.source) {
                 Heading.Source.MAG -> "磁力计"
                 Heading.Source.HOLD -> "磁干扰·陀螺保持"
+                Heading.Source.DIRTY -> "磁干扰，方向可能不准"
                 Heading.Source.CELESTIAL -> "天体校准（${c.celestialMin} 分钟前）"
                 Heading.Source.NONE -> "未校准"
             }
@@ -88,7 +89,8 @@ fun CompassTool(onBack: () -> Unit) {
                 "磁场强度 实测 %.0f µT / 当地理论 %s".format(c.fieldUT, if (c.expectedUT > 0f) "%.0f µT".format(c.expectedUT) else "未知（无位置）"),
                 Modifier.fillMaxWidth(), fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (c.interference) Warn("附近有磁干扰（车辆、钢筋、磁吸壳），" + (if (c.source == Heading.Source.HOLD || c.source == Heading.Source.CELESTIAL) "方位由陀螺保持，" else "") + "可用「天体定向」重新校准。")
+            if (c.source == Heading.Source.DIRTY) Warn("方向可能偏很多：初始方向取自受干扰的磁场，还没被纠正。请用「天体定向」校准。")
+            else if (c.interference) Warn("附近有磁干扰（车辆、钢筋、磁吸壳），" + (if (c.source == Heading.Source.HOLD || c.source == Heading.Source.CELESTIAL) "方位由陀螺保持，" else "") + "可用「天体定向」重新校准。")
             else if (c.accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) Warn("地磁精度低：把手机在空中画 8 字校准，远离铁器和磁铁。")
             if (c.celestialMin >= Heading.CELESTIAL_HOLD_MS / 60_000L) Warn("天体校准已过 ${c.celestialMin} 分钟，陀螺会漂移，请重新用「天体定向」校准。")
             if (c.celestialMin >= 0) BigButton("清除天体校准", { Heading.clearCalibration() }, outlined = true)

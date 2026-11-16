@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val s = vm.settings.collectAsStateWithLifecycle().value
-            ArkTheme(s.theme) { ArkRoot(vm) }
+            ArkTheme(s.theme) { ArkRoot(vm); app.ark.ui.SafetyNotice() }
         }
         debugIntent(intent)
     }
@@ -48,6 +48,8 @@ class MainActivity : ComponentActivity() {
         i.removeExtra("ark_act")
         i.getStringExtra("ark_goto")?.let { getSharedPreferences("ark", MODE_PRIVATE).edit().putString("debug_goto", it).commit() } // 地图跳到 "纬度,经度,缩放"
         i.removeExtra("ark_goto")
+        if (i.getBooleanExtra("ark_safety", false)) getSharedPreferences("ark", MODE_PRIVATE).edit().putBoolean("debug_safety", true).remove("safety_ack").commit() // 调试：强制弹安全提醒
+        i.removeExtra("ark_safety")
         arg("ark_ask_b64")?.let { vm.ask(it) }
         arg("ark_search_b64")?.let { vm.searchLibrary(it) }
         i.getStringExtra("ark_batch")?.let { n ->

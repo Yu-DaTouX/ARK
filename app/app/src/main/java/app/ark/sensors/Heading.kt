@@ -31,7 +31,7 @@ import kotlin.math.sqrt
  * 方位指的是“手机顶边”的水平方向；手机竖起来（顶边仰角 > 60°）时改用摄像头朝向，竖着拿也不会乱转。
  */
 object Heading {
-    enum class Source(val label: String) { MAG("磁力计"), HOLD("磁干扰，陀螺保持"), CELESTIAL("天体校准"), NONE("未校准") }
+    enum class Source(val label: String) { MAG("磁力计"), HOLD("磁干扰，陀螺保持"), DIRTY("磁干扰，方向可能不准"), CELESTIAL("天体校准"), NONE("未校准") }
 
     /** 手机顶边指向（用于对星）：真北方位（未校准时 null）、仰角（度，向上为正）。 */
     data class Pointing(val azimuth: Float?, val elevation: Float)
@@ -53,6 +53,20 @@ object Heading {
     private var sm: SensorManager? = null
     private val r = FloatArray(9)
     private var gyroOk = false
+    /** 本机有陀螺仪（GAME_ROTATION_VECTOR）才能保持方向、做天体校准。start() 之后有效。 */
+    val hasGyro: Boolean get() = gyroOk
+    private var dirtyInit = false    // 偏移量是在磁场不干净时取的初值，还没被干净磁场或天体纠正过
+    private var lastPub = 0L
+    private val rm = FloatArray(9)   // 回调里复用，避免每个事件分配
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val reallyStop = Runnable {
+        if (users > 0) return@Runnable
+        sm?.unregisterListener(listener); sm = null
+        // 重新注册后 GAME_ROTATION_VECTOR 的零点可能变了，旧偏移量和天体校准都不能再用
+        offset = Float.NaN; celestialAt = 0L; diffAvg = Float.NaN; diffDev = 0f; dirtyInit = false
+        gyroHeading = Float.NaN; gyroPointAz = Float.NaN; gyroCamAz = Float.NaN; smooth = Float.NaN
+        _state.value = null; _pointing.value = null; _camera.value = null
+    }
 
     private var offset = Float.NaN   // 真北 − 陀螺方位
     private var celestialAt = 0L     // 上次天体校准的时间
@@ -82,7 +96,7 @@ object Heading {
     fun calibrate(trueAzimuth: Float): Boolean {
         if (!gyroOk || gyroPointAz.isNaN()) return false
         offset = wrap(trueAzimuth - gyroPointAz)
-        celestialAt = System.currentTimeMillis()
+        celestialAt = System.currentTimeMillis(); dirtyInit = false
         smooth = Float.NaN
         return true
     }
@@ -91,7 +105,7 @@ object Heading {
     fun calibrateCamera(trueAzimuth: Float): Boolean {
         if (!gyroOk || gyroCamAz.isNaN()) return false
         offset = wrap(trueAzimuth - gyroCamAz)
-        celestialAt = System.currentTimeMillis()
+        celestialAt = System.currentTimeMillis(); dirtyInit = false
         smooth = Float.NaN
         return true
     }
@@ -113,7 +127,8 @@ object Heading {
     fun clearCalibration() { celestialAt = 0L }
 
     fun start(ctx: Context) {
-        if (users++ > 0) return
+        handler.removeCallbacks(reallyStop)
+        if (users++ > 0 || sm != null) return
         val m = ctx.applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         sm = m
         val game = m.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
@@ -125,11 +140,12 @@ object Heading {
         m.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.let { m.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME) }
     }
 
+    /** 最后一个使用者离开 5 秒后才真正注销：页面之间切换（天体定向 → 指南针 → 地图）不会丢掉校准。 */
     fun stop() {
         if (--users > 0) return
         users = 0
-        sm?.unregisterListener(listener)
-        sm = null
+        handler.removeCallbacks(reallyStop)
+        handler.postDelayed(reallyStop, 5_000)
     }
 
     private var grav: FloatArray? = null
@@ -150,7 +166,6 @@ object Heading {
                     update()
                 }
                 Sensor.TYPE_ROTATION_VECTOR -> {
-                    val rm = FloatArray(9)
                     SensorManager.getRotationMatrixFromVector(rm, e.values)
                     magHeading = wrap(direction(rm).first + decl)
                     if (!gyroOk) update()
@@ -162,7 +177,6 @@ object Heading {
                     fieldUT = sqrt(e.values[0] * e.values[0] + e.values[1] * e.values[1] + e.values[2] * e.values[2])
                     val g = grav
                     if (g != null && sm?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) == null) {
-                        val rm = FloatArray(9)
                         if (SensorManager.getRotationMatrix(rm, null, g, e.values)) magHeading = wrap(direction(rm).first + decl)
                         if (!gyroOk) update()
                     }
@@ -193,13 +207,18 @@ object Heading {
                 diffDev = diffDev * 0.95f + dev * 0.05f
                 diffAvg = wrap(diffAvg + wrapSigned(d - diffAvg) * 0.05f)
                 if (diffDev > 8f) clean = false
-                if (offset.isNaN() && !celestial) offset = d // 第一次：磁场不干净也先用上（标注干扰），有方位总比没有强
-                else if (clean && !celestial) offset = wrap(offset + wrapSigned(d - offset) * 0.02f)
+                if (offset.isNaN() && !celestial) { offset = d; dirtyInit = !clean } // 第一次：磁场不干净也先用上（标注“可能不准”），有方位总比没有强
+                else if (clean && !celestial) {
+                    // 干净磁场纠正一个不可信的初值时直接跳过去，不用慢慢收敛
+                    offset = if (dirtyInit) d else wrap(offset + wrapSigned(d - offset) * 0.02f)
+                    dirtyInit = false
+                }
             }
             src = when {
                 celestial -> Source.CELESTIAL
                 offset.isNaN() -> Source.NONE
                 clean -> Source.MAG
+                dirtyInit -> Source.DIRTY
                 else -> Source.HOLD
             }
             if (offset.isNaN()) { _pointing.value = Pointing(null, pointEl); _camera.value = Pointing(null, camEl); publish(Float.NaN, src, !clean, now); return } // 还没有方位偏移也要给仰角，天体校准需要
@@ -212,12 +231,18 @@ object Heading {
             if (magHeading.isNaN()) return
             src = if (fieldClean()) Source.MAG else Source.HOLD // 没有陀螺仪：只能提示干扰，没法保持
             h = magHeading
-            _pointing.value = Pointing(null, pointEl)
+            _pointing.value = null // 没有陀螺仪：没有可靠仰角，天体校准不可用
         }
         publish(h, src, !fieldClean(), now)
     }
 
     private fun publish(h: Float, src: Source, interference: Boolean, now: Long) {
+        // 传感器约 50 Hz，界面 15 Hz 足够；来源变化时立刻发
+        if (now - lastPub < 66 && _state.value?.source == src) {
+            if (!h.isNaN()) smooth = if (smooth.isNaN()) h else wrap(smooth + wrapSigned(h - smooth) * 0.25f)
+            return
+        }
+        lastPub = now
         if (h.isNaN()) {
             _state.value = Compass(Float.NaN, lat == null, magAcc, src, interference, fieldUT, expectedUT, 0)
             return

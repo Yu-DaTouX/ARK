@@ -43,7 +43,9 @@ private fun Cpr() {
     val ctx = LocalContext.current
     val view = LocalView.current
     var running by rememberSaveable { mutableStateOf(false) }
-    var count by remember { mutableIntStateOf(0) }
+    var k by remember { mutableIntStateOf(0) }        // 当前这一轮已按压次数（0–30）
+    var cycles by remember { mutableIntStateOf(0) }   // 已完成的“30 + 2”轮数
+    var paused by remember { mutableStateOf(false) }  // 第 30 次后暂停，等吹完 2 口气
     var elapsed by remember { mutableLongStateOf(0L) }
     var flash by remember { mutableStateOf(false) }
     var sound by rememberSaveable { mutableStateOf(true) }
@@ -54,21 +56,30 @@ private fun Cpr() {
     DisposableEffect(running) { view.keepScreenOn = running; onDispose { view.keepScreenOn = false } }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { running = false }
 
+    // 总用时（暂停吹气期间也计）
     LaunchedEffect(running) {
         if (!running) return@LaunchedEffect
-        count = 0; elapsed = 0
+        val t0 = SystemClock.elapsedRealtime(); elapsed = 0
+        while (true) { delay(500); elapsed = SystemClock.elapsedRealtime() - t0 }
+    }
+    // 节拍：每轮 30 次，第 30 次后暂停；点“继续按压”(paused=false) 重新开始下一轮
+    LaunchedEffect(running, paused) {
+        if (!running || paused) return@LaunchedEffect
+        k = 0
         val t0 = SystemClock.elapsedRealtime()
         var n = 0L
-        while (true) {
+        while (n < 30) {
             val due = t0 + n * 60_000L / CPR_BPM
             delay((due - SystemClock.elapsedRealtime()).coerceAtLeast(0))
-            n++
-            count = n.toInt(); elapsed = SystemClock.elapsedRealtime() - t0
+            n++; k = n.toInt()
             if (sound) tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 60)
             if (vib) vibrator?.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
             flash = true
             launch { delay(150); flash = false }
         }
+        cycles++; paused = true
+        if (sound) tone?.startTone(ToneGenerator.TONE_PROP_ACK, 400)
+        if (vib) vibrator?.vibrate(VibrationEffect.createOneShot(400, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     Card2 {
@@ -79,37 +90,57 @@ private fun Cpr() {
         ) {
             val c = if (flash) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val k = if (count == 0) 0 else (count - 1) % 30 + 1
                 Text(if (running) "$k / 30" else "—", fontSize = 52.sp, fontWeight = FontWeight.Bold, color = c)
-                Text("已进行 ${fmtDuration(elapsed)} · 共 $count 次", fontSize = 16.sp, color = c)
+                Text("已进行 ${fmtDuration(elapsed)} · 已完成 $cycles 轮", fontSize = 16.sp, color = c)
             }
         }
-        if (running && count > 0 && count % 30 == 0) Warn("第 30 次：停，给 2 次人工呼吸，然后立刻继续按压")
-        Note("成人：每 30 次按压给 2 次人工呼吸。位置在胸骨下半部，按压深度约 5–6 cm，让胸廓完全回弹。节拍器不会自动暂停，吹气后继续跟着节拍按。")
+        // 固定高度的提示区，内容变化时下面的按钮不跳位
+        Box(Modifier.fillMaxWidth().heightIn(min = 72.dp)) {
+            if (running && paused) Warn("第 30 次完成：停！给 2 次人工呼吸（不会就直接继续按压），然后点下面“继续按压”")
+            else Note("成人：每 30 次按压给 2 次人工呼吸。位置在胸骨下半部，按压深度约 5–6 cm，让胸廓完全回弹。数到 30 后节拍会自动暂停，等你吹完气再点“继续按压”。")
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Switch(sound, { sound = it }); Spacer(Modifier.width(8.dp)); Text("声音", fontSize = 17.sp)
             Spacer(Modifier.width(24.dp))
             Switch(vib, { vib = it }); Spacer(Modifier.width(8.dp)); Text("振动", fontSize = 17.sp)
         }
-        if (running) BigButton("停止", { running = false }, danger = true) else BigButton("开始按压节拍", { running = true })
+        BigButton(
+            if (!running) "开始按压节拍" else if (paused) "继续按压" else "按压中……",
+            { if (!running) { cycles = 0; k = 0; paused = false; running = true } else if (paused) paused = false },
+            enabled = !running || paused,
+        )
+        BigButton("停止", { running = false; paused = false }, danger = true, enabled = running)
     }
 }
 
 @Composable
 private fun Tourniquet() {
-    val prefs = LocalContext.current.toolPrefs()
+    val ctx = LocalContext.current
+    val prefs = ctx.toolPrefs()
+    // 同时存墙钟和 elapsedRealtime（+ 开机次数）：没重启手机时用 elapsedRealtime，不受改系统时间影响；重启后退回墙钟
+    fun boot() = try { android.provider.Settings.Global.getInt(ctx.contentResolver, android.provider.Settings.Global.BOOT_COUNT, -1) } catch (_: Exception) { -1 }
     var start by remember { mutableLongStateOf(prefs.getLong("tq_start", 0L)) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var confirm by remember { mutableStateOf(false) }
-    LaunchedEffect(start) { while (start > 0) { now = System.currentTimeMillis(); delay(1000) } }
-    val el = now - start
+    val saving = LocalPowerSave.current
+    LaunchedEffect(start, saving) { while (start > 0) { now = System.currentTimeMillis(); delay(if (saving) 15_000 else 1000) } }
+    val el: Long = run {
+        now // 触发每秒刷新
+        val e0 = prefs.getLong("tq_elapsed", -1L); val b0 = prefs.getInt("tq_boot", -2)
+        val b = boot()
+        if (e0 >= 0 && b0 == b && b >= 0 && SystemClock.elapsedRealtime() >= e0) SystemClock.elapsedRealtime() - e0
+        else System.currentTimeMillis() - start
+    }
     val over = start > 0 && el >= 2 * 3600_000L
 
     Card2 {
         Text("止血带计时", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         if (start == 0L) {
             Note("上好止血带的那一刻点下面按钮。时间会保存，App 关闭或重启后仍在。")
-            BigButton("已上止血带", { start = System.currentTimeMillis(); now = start; prefs.edit().putLong("tq_start", start).apply() }, danger = true)
+            BigButton("已上止血带", {
+                start = System.currentTimeMillis(); now = start
+                prefs.edit().putLong("tq_start", start).putLong("tq_elapsed", SystemClock.elapsedRealtime()).putInt("tq_boot", boot()).apply()
+            }, danger = true)
         } else {
             Text(fmtDuration(el), Modifier.fillMaxWidth(), fontSize = 56.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
                 color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
@@ -123,7 +154,7 @@ private fun Tourniquet() {
         onDismissRequest = { confirm = false },
         title = { Text("清除止血带计时？") },
         text = { Text("清除后无法恢复已过时间。止血带仍在伤者身上时请不要清除。") },
-        confirmButton = { TextButton({ start = 0; prefs.edit().remove("tq_start").apply(); confirm = false }) { Text("清除") } },
+        confirmButton = { TextButton({ start = 0; prefs.edit().remove("tq_start").remove("tq_elapsed").remove("tq_boot").apply(); confirm = false }) { Text("清除") } },
         dismissButton = { TextButton({ confirm = false }) { Text("取消") } },
     )
 }

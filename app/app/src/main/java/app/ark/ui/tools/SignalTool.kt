@@ -31,55 +31,55 @@ import kotlinx.coroutines.delay
 
 private fun Context.activity(): Activity? = when (this) { is Activity -> this; is ContextWrapper -> baseContext.activity(); else -> null }
 
-/** 手电筒：setTorchMode 从 API 23 起不需要 CAMERA 权限。 */
-private class Torch(ctx: Context) {
-    private val cm = ctx.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-    val id: String? = try {
-        cm.cameraIdList.firstOrNull { cm.getCameraCharacteristics(it).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true }
-    } catch (_: Exception) { null }
-    var failed = false
-    fun set(on: Boolean) {
-        val i = id ?: return
-        try { cm.setTorchMode(i, on) } catch (_: Exception) { failed = true }
-    }
-}
-
 @Composable
 fun SignalTool(onBack: () -> Unit) {
     val ctx = LocalContext.current
     val view = LocalView.current
-    val torch = remember { Torch(ctx) }
-    var mode by rememberSaveable { mutableStateOf("") } // "" 停止 / "sos" / "text"
+    val hasTorch = remember { torchId(ctx) != null }
+    val active by TorchService.active.collectAsState()
+    val lit by TorchService.lit.collectAsState()
+    val failed by TorchService.failed.collectAsState()
+    var mode by rememberSaveable { mutableStateOf("") } // "" / "sos" / "text"，只用来决定显示哪个按钮
     var text by rememberSaveable { mutableStateOf("HELP") }
-    var lit by remember { mutableStateOf(false) }
     var screenLight by rememberSaveable { mutableStateOf("") } // "" / "white" / "red"
+    var screenSos by rememberSaveable { mutableStateOf(false) } // 屏幕信号灯按摩尔斯闪（闪光灯不可用时的替代）
     var blink by rememberSaveable { mutableStateOf(false) }
 
+    val running = active && mode != ""
     val steps = remember(mode, text) {
         when (mode) { "sos" -> Morse.steps("SOS"); "text" -> Morse.steps(text); else -> emptyList() }
     }
-    LaunchedEffect(steps) {
-        if (steps.isEmpty()) return@LaunchedEffect
-        try {
-            while (true) for (s in steps) { torch.set(s.on); lit = s.on; delay(s.units * Morse.UNIT_MS) }
-        } finally { torch.set(false); lit = false }
+    DisposableEffect(Unit) {
+        TorchService.clearFailed()
+        onDispose { TorchService.stop(ctx) } // 离开信号页就停
     }
-    val keepOn = mode != "" || screenLight != ""
-    DisposableEffect(keepOn) { view.keepScreenOn = keepOn; onDispose { view.keepScreenOn = false } } // 等价于 FLAG_KEEP_SCREEN_ON
-    DisposableEffect(Unit) { onDispose { torch.set(false) } }
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { mode = ""; screenLight = "" } // 切到后台就停，省电
+    DisposableEffect(running || screenLight != "") { view.keepScreenOn = running || screenLight != ""; onDispose { view.keepScreenOn = false } } // 等价于 FLAG_KEEP_SCREEN_ON
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { screenLight = "" } // 屏幕信号灯切到后台就关；闪光灯由前台服务继续
+
+    fun start(m: String) {
+        val t = if (m == "sos") "SOS" else text
+        mode = m
+        if (hasTorch) { TorchService.clearFailed(); TorchService.start(ctx, t) }
+        else { screenSos = true; screenLight = "white" } // 没有闪光灯：直接用屏幕
+    }
+    fun stop() { mode = ""; TorchService.stop(ctx); screenLight = ""; screenSos = false }
 
     ToolPage("信号", onBack) {
-        if (torch.id == null) Warn("本机没有闪光灯：只能用屏幕信号灯，或看下面的方块闪烁。")
+        if (!hasTorch) Warn("本机没有闪光灯：下面的按钮会改用屏幕信号灯。")
+        if (failed) {
+            Warn("闪光灯不可用（可能被相机占用、过热或电量过低）。")
+            BigButton("改用屏幕信号灯（按摩尔斯闪）", { screenSos = true; screenLight = "white" })
+        }
         Box(
             Modifier.fillMaxWidth().height(90.dp).background(if (lit) Color(0xFFFFEB3B) else MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.large),
             contentAlignment = Alignment.Center,
-        ) { Text(if (mode == "") "未发送" else if (lit) "亮" else "灭", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black.copy(alpha = if (lit) 1f else 0.5f)) }
+        ) { Text(if (!running) "未发送" else if (lit) "亮" else "灭", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black.copy(alpha = if (lit) 1f else 0.5f)) }
+        if (running) Note("闪光灯信号在后台服务里运行：关屏、切到别的应用也会继续闪，通知栏有“停止”按钮。离开本页会自动停止。")
 
         Card2 {
             Text("闪光灯 SOS", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Note("· · ·  — — —  · · ·，循环。国际求救信号；对着飞机、远处的人或船只发。")
-            if (mode == "sos") BigButton("停止", { mode = "" }, danger = true) else BigButton("开始 SOS 闪光", { mode = "sos" })
+            if (mode == "sos") BigButton("停止", { stop() }, danger = true) else BigButton("开始 SOS 闪光", { start("sos") })
         }
         Card2 {
             Text("文字转摩尔斯闪光", fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -92,8 +92,8 @@ fun SignalTool(onBack: () -> Unit) {
             val dots = Morse.toDots(text)
             if (dots.isNotEmpty()) Text(dots.replace('.', '·').replace('-', '—'), fontSize = 20.sp, lineHeight = 30.sp, fontWeight = FontWeight.Medium)
             Note("点 1 单位、划 3 单位，字内间隔 1、字母间 3、单词间 7；1 单位 = 250 ms。")
-            if (mode == "text") BigButton("停止", { mode = "" }, danger = true)
-            else BigButton("循环闪光", { mode = "text" }, enabled = Morse.steps(text).isNotEmpty())
+            if (mode == "text") BigButton("停止", { stop() }, danger = true)
+            else BigButton("循环闪光", { start("text") }, enabled = Morse.steps(text).isNotEmpty())
         }
         Card2 {
             Text("屏幕信号灯", fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -101,18 +101,22 @@ fun SignalTool(onBack: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Switch(blink, { blink = it }); Spacer(Modifier.width(10.dp)); Text("闪烁", fontSize = 18.sp)
             }
-            BigButton("白光", { screenLight = "white" })
-            BigButton("红光（保留夜视）", { screenLight = "red" }, outlined = true)
+            BigButton("白光", { screenSos = false; screenLight = "white" })
+            BigButton("红光（保留夜视）", { screenSos = false; screenLight = "red" }, outlined = true)
         }
     }
 
-    if (screenLight != "") ScreenLight(red = screenLight == "red", blink = blink, onClose = { screenLight = "" })
+    if (screenLight != "") ScreenLight(red = screenLight == "red", blink = blink, steps = if (screenSos) steps.ifEmpty { Morse.steps("SOS") } else null, onClose = { screenLight = ""; screenSos = false })
 }
 
 @Composable
-private fun ScreenLight(red: Boolean, blink: Boolean, onClose: () -> Unit) {
+private fun ScreenLight(red: Boolean, blink: Boolean, steps: List<Morse.Step>?, onClose: () -> Unit) {
     var on by remember { mutableStateOf(true) }
-    LaunchedEffect(blink) { on = true; if (blink) while (true) { delay(500); on = !on } }
+    LaunchedEffect(blink, steps) {
+        on = true
+        if (steps != null) while (true) for (s in steps) { on = s.on; delay(s.units * Morse.UNIT_MS) } // 按摩尔斯时序闪
+        else if (blink) while (true) { delay(500); on = !on }
+    }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         val act = LocalContext.current.activity()
         val dw = (LocalView.current.parent as? DialogWindowProvider)?.window

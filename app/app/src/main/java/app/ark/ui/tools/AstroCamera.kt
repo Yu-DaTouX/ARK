@@ -21,6 +21,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -76,31 +78,40 @@ private fun pickCamera(ctx: Context): CamSetup? = try {
     }
 } catch (_: Exception) { null }
 
-/** Camera2 预览（不引入 CameraX：不加依赖、包体不增加）。close() 可重复调用。 */
+/**
+ * Camera2 预览（不引入 CameraX：不加依赖、包体不增加）。close() 可重复调用、可在任何时刻调用：
+ * 若 close() 时设备还没打开完（openCamera 在途），不立刻退出线程，等 onOpened 里发现已关闭就 d.close()，
+ * 再由 onClosed 退出线程，避免 CameraDevice 泄漏。状态切换用 lock 保护，避免 onOpened 与 close() 交错。
+ */
 private class CamRunner(private val ctx: Context, private val setup: CamSetup) {
     private val thread = HandlerThread("ark-cam").also { it.start() }
     private val handler = Handler(thread.looper)
+    private val lock = Any()
     @Volatile private var closed = false
-    private var dev: CameraDevice? = null
-    private var sess: CameraCaptureSession? = null
+    @Volatile private var opening = false
+    @Volatile private var dev: CameraDevice? = null
+    @Volatile private var sess: CameraCaptureSession? = null
+    private var quit = false
+
+    private fun quitThread() { synchronized(lock) { if (!quit) { quit = true; thread.quitSafely() } } }
 
     @SuppressLint("MissingPermission")
     fun open(st: SurfaceTexture) {
-        if (closed) return
+        synchronized(lock) { if (closed || opening) return; opening = true }
         st.setDefaultBufferSize(setup.size.width, setup.size.height)
         val surface = Surface(st)
         val cm = ctx.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             cm.openCamera(setup.id, object : CameraDevice.StateCallback() {
                 override fun onOpened(d: CameraDevice) {
-                    if (closed) { d.close(); return }
-                    dev = d
+                    val shut = synchronized(lock) { opening = false; if (closed) true else { dev = d; false } }
+                    if (shut) { d.close(); return } // onClosed 会退出线程
                     try {
                         @Suppress("DEPRECATION")
                         d.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
                             override fun onConfigured(s: CameraCaptureSession) {
-                                if (closed) { s.close(); return }
-                                sess = s
+                                val shut2 = synchronized(lock) { if (closed) true else { sess = s; false } }
+                                if (shut2) { s.close(); return }
                                 try {
                                     val rb = d.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
                                     rb.addTarget(surface)
@@ -115,18 +126,27 @@ private class CamRunner(private val ctx: Context, private val setup: CamSetup) {
                         }, handler)
                     } catch (_: Exception) {}
                 }
-                override fun onDisconnected(d: CameraDevice) { d.close() }
-                override fun onError(d: CameraDevice, e: Int) { d.close() }
+                override fun onDisconnected(d: CameraDevice) { opening = false; d.close() }
+                override fun onError(d: CameraDevice, e: Int) { opening = false; d.close() }
+                override fun onClosed(d: CameraDevice) { quitThread() }
             }, handler)
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            synchronized(lock) { opening = false }
+            if (closed) quitThread()
+        }
     }
 
     fun close() {
-        if (closed) return
-        closed = true
-        try { sess?.close() } catch (_: Exception) {}
-        try { dev?.close() } catch (_: Exception) {}
-        thread.quitSafely()
+        val d: CameraDevice?; val s: CameraCaptureSession?
+        synchronized(lock) {
+            if (closed) return
+            closed = true
+            d = dev; s = sess; dev = null; sess = null
+        }
+        try { s?.close() } catch (_: Exception) {}
+        if (d != null) { try { d.close() } catch (_: Exception) {} } // onClosed 退出线程
+        else if (!opening) quitThread()                               // 没有设备也没有在打开：直接退出
+        // else：openCamera 在途，onOpened / onError 里会关掉并退出
     }
 }
 
@@ -168,6 +188,13 @@ private fun CameraContent(lat: Double, lon: Double, onClose: () -> Unit) {
             }
             return@Box
         }
+        if (!Heading.hasGyro) {
+            Column(Modifier.fillMaxSize().padding(24.dp).statusBarsPadding(), verticalArrangement = Arrangement.Center) {
+                Text("本机没有陀螺仪，不能天体校准。", color = Color.White, fontSize = 18.sp)
+                Spacer(Modifier.height(16.dp)); BigButton("返回", onClose)
+            }
+            return@Box
+        }
         val setup = remember { pickCamera(ctx) }
         if (setup == null) {
             Column(Modifier.fillMaxSize().padding(24.dp).statusBarsPadding(), verticalArrangement = Arrangement.Center) {
@@ -203,12 +230,16 @@ private fun BoxScope.CameraBody(setup: CamSetup, lat: Double, lon: Double, onClo
         val az = c.azimuth
         return if (az != null) CamProj.angularDistance(az.toDouble(), c.elevation.toDouble(), b.az, b.alt) else abs(c.elevation - b.alt)
     }
-    val target = remember(cam, cands, manual) {
-        cands.firstOrNull { it.id == manual } ?: cands.minByOrNull { dist(it) }
+    // 方位已知：默认取离准星最近的；方位未知（offset NaN）：不自动选，必须用户按名字手选
+    val target = remember(cam, cands, manual, azKnown) {
+        val m = cands.firstOrNull { it.id == manual }
+        if (azKnown) m ?: cands.minByOrNull { dist(it) } else m
     }
+    val ranked = remember(cam, cands, azKnown) { if (azKnown || cam == null) emptyList() else cands.sortedBy { abs(cam!!.elevation - it.alt) }.take(14) }
     val tDist = target?.let { dist(it) }
     val dEl = if (cam != null && target != null) cam!!.elevation - target.alt.toFloat() else null
-    val canCal = cam != null && target != null && abs(dEl!!) <= 3f && cam!!.elevation < 80f && target.alt < 80.0
+    val canCal = cam != null && target != null && abs(dEl!!) <= 3f && cam!!.elevation < 80f && target.alt < 80.0 &&
+        (!azKnown || (tDist ?: 999.0) < 5.0) // 方位已知时目标必须离准星不到 5°
 
     // ---- 取景 + 叠加 ----
     val pw = setup.size.height.toFloat(); val ph = setup.size.width.toFloat() // 竖屏下预览的宽、高（缓冲区像素）
@@ -268,6 +299,20 @@ private fun BoxScope.CameraBody(setup: CamSetup, lat: Double, lon: Double, onClo
                     if (CamProj.project(rot, off, a, 0.0, f, cx, cy, tmp) && tmp[0] in 0f..w && tmp[1] in 0f..h)
                         drawIntoCanvas { it.nativeCanvas.drawText(t, tmp[0] - 6f, tmp[1] - 10f, txt) }
                 }
+                if (!known) { // 方位未知：只画目标所在的“等高线”（与方位无关），不画会误导的星位置
+                    target?.let { t ->
+                        var qx = 0f; var qy = 0f; var qOk = false; var best = Float.MAX_VALUE; var lx = 0f; var ly = 0f
+                        for (a in 0..360 step 5) {
+                            val ok = CamProj.project(rot, 0f, a.toDouble(), t.alt, f, cx, cy, tmp)
+                            if (ok && abs(tmp[0]) < 6000 && abs(tmp[1]) < 6000) {
+                                if (qOk) drawLine(Color(0xFF69F0AE), Offset(qx, qy), Offset(tmp[0], tmp[1]), 3f)
+                                qx = tmp[0]; qy = tmp[1]; qOk = true
+                                if (abs(tmp[0] - cx) < best) { best = abs(tmp[0] - cx); lx = tmp[0]; ly = tmp[1] }
+                            } else qOk = false
+                        }
+                        drawIntoCanvas { it.nativeCanvas.drawText(t.name.substringBefore(' ') + " 高度 %.0f°".format(t.alt), 16f, ly - 10f, txtT) }
+                    }
+                } else {
                 // 天极
                 val (paz, palt) = Astro.pole(lat)
                 if (CamProj.project(rot, off, paz, palt, f, cx, cy, tmp) && tmp[0] in -50f..w + 50 && tmp[1] in -50f..h + 50) {
@@ -298,6 +343,7 @@ private fun BoxScope.CameraBody(setup: CamSetup, lat: Double, lon: Double, onClo
                     if (n < hitId.size) { hitX[n] = x; hitY[n] = y; hitId[n] = b.id; n++ }
                 }
                 hitN = n
+                }
             }
             // 十字准星 = 光轴
             val g = 10.dp.toPx(); val l = 34.dp.toPx()
@@ -317,7 +363,7 @@ private fun BoxScope.CameraBody(setup: CamSetup, lat: Double, lon: Double, onClo
             FilterChip(showLines, { showLines = !showLines }, { Text("星座连线", fontSize = 15.sp) }, Modifier.heightIn(min = 48.dp))
         }
         if (cam != null && !azKnown) Surface(color = Color(0xE6B71C1C), shape = MaterialTheme.shapes.medium) {
-            Text("方位未知，只有高度可信：标记的左右位置不对。把目标按高度对到准星高度（按高度差挑目标）后点“对准了”。", Modifier.padding(12.dp), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text("方位未知，只有高度可信，所以不显示星的位置，只画地平线和目标的等高线。请在下方按名字选一个你能认出的天体（已按与准星高度的差排序），在画面里找到它放进准星后点“对准了”。", Modifier.padding(12.dp), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 
@@ -334,19 +380,24 @@ private fun BoxScope.CameraBody(setup: CamSetup, lat: Double, lon: Double, onClo
                 color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp,
             )
             Text("准星仰角 %.0f°，与目标高度差 %+.1f°".format(cam!!.elevation, dEl), color = if (canCal) accent else Color(0xFFFFAB91), fontSize = 15.sp)
-        } else Text("等待陀螺仪读数……（没有陀螺仪的手机不能用相机对准）", color = Color.White, fontSize = 16.sp)
+        } else if (cam != null) Text("方位未知：请从下面选一个天体作为目标。", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        else Text("等待陀螺仪读数……", color = Color.White, fontSize = 16.sp)
+        if (!azKnown && cam != null) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ranked.forEach { b -> FilterChip(manual == b.id, { manual = b.id }, { Text(b.name.substringBefore(' ') + " 高%.0f°".format(b.alt), fontSize = 15.sp) }, Modifier.heightIn(min = 48.dp)) }
+        }
         val tip = when {
-            target?.kind == Astro.Kind.SUN || sunAlt > 0 -> "不要用眼睛直视太阳。对太阳时只看屏幕，把太阳放进准星即可。"
+            target?.kind == Astro.Kind.SUN || sunAlt > 0 -> "相机可以短时间对着太阳取景，但人眼不要直视太阳；用屏幕看。"
             sunAlt < -6 -> "夜里相机通常只拍得到月亮、行星和最亮的几颗星；看不到星时，把手机举到眼前，沿着手机背面方向对准肉眼看到的星，再点“对准了”。"
             else -> null
         }
         tip?.let { Text(it, color = Color(0xFFFFE082), fontSize = 13.sp, lineHeight = 18.sp) }
         if (target != null && !canCal && cam != null) Text(
             when {
+                azKnown && (tDist ?: 0.0) >= 5.0 -> "目标离准星还有 %.0f°：把目标放到准星中心（角距要小于 5°）才能校准。".format(tDist)
                 cam!!.elevation >= 80f || target.alt >= 80.0 -> "太接近头顶，方位不稳，换一个低一点的目标。"
                 else -> "准星仰角与目标高度差超过 3°：${if (dEl!! > 0) "手机放低一点" else "手机抬高一点"}，让目标落在准星高度。"
             }, color = Color(0xFFFFAB91), fontSize = 14.sp)
-        Text("点画面上的名字可换目标。", color = Color(0xFFB0BEC5), fontSize = 12.sp)
+        if (azKnown) Text("点画面上的名字可换目标。", color = Color(0xFFB0BEC5), fontSize = 12.sp)
         BigButton("对准了", {
             val t = target; val before = cam?.azimuth
             if (t != null && Heading.calibrateCamera(t.az.toFloat())) {

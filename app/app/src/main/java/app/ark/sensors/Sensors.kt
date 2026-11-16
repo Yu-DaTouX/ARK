@@ -1,3 +1,6 @@
+// 文件职责：指南针 / 气压计的 Compose 封装（rememberCompass、rememberBarometer）、气压趋势与海拔估算、方位名工具。
+// 调用方：地图页、工具页；依赖 Heading（真正的方位计算）。
+// 省电：监听跟随页面生命周期（ON_START 注册、ON_STOP 注销），锁屏/退后台不耗电；状态变化小时不更新，避免整页频繁重组。
 package app.ark.sensors
 
 import android.content.Context
@@ -35,6 +38,7 @@ data class Compass(
 /** 气压读数（hPa）。 */
 data class Pressure(val hPa: Float, val time: Long)
 
+/** 气压相关的纯计算（国际标准大气公式，系数 44330 与指数 1/5.255）。 */
 object Baro {
     const val STD = 1013.25f
 
@@ -79,6 +83,7 @@ object PressureLog {
         points.sortBy { it.time }
     }
 
+    /** 记录一个点：距上一点不足 5 分钟忽略；超过 6 小时的旧点被删除；有变化才写 SharedPreferences（异步 apply）。 */
     @Synchronized fun add(p: Pressure) {
         var changed = false
         if (points.isEmpty() || p.time - points.last().time >= 5 * 60_000L) { points += p; changed = true }
@@ -87,6 +92,7 @@ object PressureLog {
         if (changed) prefs?.edit()?.putString("points", points.joinToString(";") { "${it.time}:${it.hPa}" })?.apply()
     }
 
+    /** 当前记录的快照（按时间升序）。 */
     @Synchronized fun all(): List<Pressure> = points.toList()
 
     /** 3 小时变化量（hPa）；记录不足 1 小时返回 null。不足 3 小时按已有时长线性折算。 */
@@ -134,7 +140,10 @@ fun rememberCompass(lat: Double? = null, lon: Double? = null, stepDeg: Float = 0
     return c?.takeIf { !it.heading.isNaN() }
 }
 
-/** 气压计：没有气压传感器的手机返回 null。读数同时记进 PressureLog。 */
+/**
+ * 气压计：没有气压传感器的手机返回 null。读数同时记进 PressureLog。
+ * 主线程（Compose）调用；读数用指数滑动平均（0.9/0.1）去抖。注意生命周期观察者只在宿主 Context 是 LifecycleOwner（Activity）时有效。
+ */
 @Composable
 fun rememberBarometer(): Pressure? {
     val ctx = LocalContext.current
@@ -167,6 +176,7 @@ fun rememberBarometer(): Pressure? {
     return value
 }
 
+/** 本机是否有气压传感器。 */
 fun hasBarometer(ctx: Context) = (ctx.getSystemService(Context.SENSOR_SERVICE) as SensorManager).getDefaultSensor(Sensor.TYPE_PRESSURE) != null
 
 /** 方位角 → 八方位中文，例如 45 → “东北”。 */

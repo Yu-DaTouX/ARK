@@ -1,3 +1,11 @@
+/**
+ * ShareService.kt —— 离线分享（局域网 HTTP 下载）的前台服务。
+ *
+ * 位置：资料页“分享给附近的人”卡片（ShareUi.ShareCard）→ ShareService.start()；
+ * 真正的 HTTP 服务器是同目录的 ShareServer，本文件只管生命期、前台通知和系统限制。
+ * 只在用户点“开启”时运行；点“关闭”、通知上点“关闭”、30 分钟无人访问或达到系统时长额度时停止。
+ * 耗电：有人在下载时才明显；空闲时只有一个 accept 线程。
+ */
 package app.ark.share
 
 import android.app.Notification
@@ -19,6 +27,7 @@ class ShareService : Service() {
 
     override fun onBind(i: Intent?): IBinder? = null
 
+    /** 幂等：重复 start 不会起第二个 ShareServer；任何异常都 stopSelf，不在后台留半个服务。 */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
         TrackService.channel(this)
@@ -47,6 +56,7 @@ class ShareService : Service() {
     }
 
     private fun notif(): Notification {
+        // 通知 ID 43，与其他服务（蓝牙 61、警报 62）错开
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 3, Intent(this, ShareService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
         return Notification.Builder(this, TrackService.CH)
@@ -61,7 +71,11 @@ class ShareService : Service() {
     companion object {
         const val ID = 43
         const val ACTION_STOP = "app.ark.SHARE_STOP"
+
+        /** 从界面开启（走 Android 8+ 的前台服务启动路径）。 */
         fun start(ctx: Context) { ContextCompat.startForegroundService(ctx, Intent(ctx, ShareService::class.java)) }
+
+        /** 从界面关闭；服务器线程和已接入的连接在 onDestroy 里收掉。 */
         fun stop(ctx: Context) { ctx.stopService(Intent(ctx, ShareService::class.java)) }
     }
 }

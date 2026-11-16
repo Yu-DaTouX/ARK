@@ -1,3 +1,6 @@
+// 文件职责：轨迹记录前台服务，把 GPS 点写入 data/TrackStore。调用方：地图页的轨迹开关。
+// 前台服务类型 location（API 29+ 才传 type）；调用前需要 ACCESS_FINE_LOCATION，没有则立即退出。
+// 这里的通知渠道 ark_track（“后台任务”）也被 BeaconService、ShareService 复用。
 package app.ark.sensors
 
 import android.annotation.SuppressLint
@@ -82,16 +85,19 @@ class TrackService : Service() {
     }
 
     companion object {
-        const val ID = 41
+        const val ID = 41 // 通知 ID，见 BeaconService.ID 的编号说明
         const val CH = "ark_track"
         const val ACTION_STOP = "app.ark.TRACK_STOP"
 
+        /** 创建“后台任务”通知渠道（低重要性），幂等；本服务、信标、分享服务共用。注意：没做 API 26 版本判断，靠 minSdk ≥ 26。 */
         fun channel(ctx: Context) {
             val nm = ctx.getSystemService(NotificationManager::class.java)
             if (nm.getNotificationChannel(CH) == null) nm.createNotificationChannel(NotificationChannel(CH, "后台任务", NotificationManager.IMPORTANCE_LOW))
         }
 
+        /** 开始记录轨迹（前台服务，持续 GPS，耗电）。 */
         fun start(ctx: Context) { androidx.core.content.ContextCompat.startForegroundService(ctx, Intent(ctx, TrackService::class.java)) }
+        /** 停止记录并注销定位。 */
         fun stop(ctx: Context) { ctx.stopService(Intent(ctx, TrackService::class.java)) }
     }
 }

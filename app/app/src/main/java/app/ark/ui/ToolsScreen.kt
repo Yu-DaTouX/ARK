@@ -1,3 +1,9 @@
+/*
+ * ToolsScreen.kt —— “工具”标签页：求生小工具的目录，点进去切换到具体工具（ui/tools 包、ui/comm/CommScreen）。
+ * 导航：用 cur（工具 id，空串=目录）自己管理，不用 NavHost；系统返回键回到目录。
+ * “省电模式”：把窗口亮度压到 30% + 纯黑配色（OLED 省电），并通过 LocalPowerSave 通知各工具降低刷新/动画；
+ * 只在工具页内生效，离开恢复。偏好存在 SharedPreferences("ark_tools")。
+ */
 package app.ark.ui
 
 import android.app.Activity
@@ -22,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ark.ui.tools.*
 
+// 目录项：id 对应下面 when 里的分支，改名要两处一起改
 private class ToolItem(val id: String, val title: String, val sub: String)
 
 /** 按求生紧急程度排序：急救 → 信号 / 联络 → 方向 → 水和物资 → 其他。 */
@@ -47,6 +54,7 @@ private val BlackScheme = darkColorScheme(
     errorContainer = Color(0xFF5C1111), onErrorContainer = Color.White,
 )
 
+// 从 Compose 的 Context 层层剥出 Activity（用来改窗口亮度）
 private fun Context.activity(): Activity? = when (this) { is Activity -> this; is ContextWrapper -> baseContext.activity(); else -> null }
 
 /** 工具页：卡片列表 → 点进单个工具，系统返回键回到列表。全部离线。顶部有省电模式开关。 */

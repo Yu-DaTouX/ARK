@@ -1,3 +1,6 @@
+/*
+ * ArkIcons.kt —— 补充图标（项目只引入了 material-icons-core，扩展包体积大），用 SVG 路径内嵌，运行时解析一次。
+ */
 package app.ark.ui
 
 import androidx.compose.ui.graphics.Color

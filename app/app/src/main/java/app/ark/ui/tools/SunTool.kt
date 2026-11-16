@@ -1,3 +1,7 @@
+/*
+ * SunTool.kt —— “日出日落”工具页：晨光/日出/正午/日落/昏影时刻 + “距天黑还有多久”。
+ * 计算在 Solar.kt（离线）；位置用系统缓存或手动经纬度（存 prefs sun_lat/sun_lon）；时间依赖手机时钟，故显示 ClockWarning。
+ */
 package app.ark.ui.tools
 
 import androidx.compose.foundation.layout.*
@@ -17,6 +21,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/** 日出日落页 */
 @Composable
 fun SunTool(onBack: () -> Unit) {
     val ctx = LocalContext.current

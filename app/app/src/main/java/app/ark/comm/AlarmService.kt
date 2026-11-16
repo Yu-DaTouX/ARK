@@ -1,3 +1,7 @@
+// 文件职责：警报声前台服务——最大音量播放 AlarmGen 生成的求救声，并提供耗电估算。
+// 调用方：通讯界面的警报卡片（AlarmService.start/stop 和各 StateFlow）；依赖 AlarmSound.kt（样式与波形）、CommService.channel。
+// 前台服务类型 mediaPlayback：它就是在播放声音；USAGE_ALARM 走闹钟音量流（独立于媒体音量）。
+// 规则：启动时把闹钟音量拉满并记下旧值，退出时还原；持有 PARTIAL_WAKE_LOCK（最长 12 小时）保证关屏不断；用户没停而播放线程自己结束时要停服务。
 package app.ark.comm
 
 import android.annotation.SuppressLint
@@ -42,7 +46,7 @@ class AlarmService : Service() {
         try {
             ServiceCompat.startForeground(this, ID, notif(pat), type)
         } catch (e: Exception) { error.value = "无法启动警报：${e.message}"; stopSelf(); return START_NOT_STICKY }
-        // 已在播放：换样式
+        // 已在播放：换样式（先停掉旧线程再起新的，最多等 500 ms）
         stop = true; thread?.interrupt(); thread?.join(500)
         stop = false
         val am = getSystemService(AudioManager::class.java)
@@ -64,6 +68,7 @@ class AlarmService : Service() {
         return START_NOT_STICKY
     }
 
+    // 在 ark-alarm 线程跑，阻塞到 stop 或中断。TRIPLE 走专门的省电循环。
     private fun play(pat: AlarmPattern) {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO)
         val sr = AlarmGen.SR
@@ -131,7 +136,7 @@ class AlarmService : Service() {
     }
 
     companion object {
-        const val ID = 62
+        const val ID = 62 // 通知 ID（蓝牙服务用 61）
         const val ACTION_STOP = "app.ark.ALARM_STOP"
         const val EXTRA_PATTERN = "pattern"
         val active = MutableStateFlow<AlarmPattern?>(null)
@@ -139,12 +144,15 @@ class AlarmService : Service() {
         var startedAt = 0L
         var startLevel = -1
 
+        /** 开始/切换警报样式。副作用：开前台服务、拉满闹钟音量、持有唤醒锁（耗电）。起动失败写 [error]。 */
         fun start(ctx: Context, p: AlarmPattern) {
             error.value = null
             ContextCompat.startForegroundService(ctx, Intent(ctx, AlarmService::class.java).putExtra(EXTRA_PATTERN, p.ordinal))
         }
+        /** 停止警报；还原音量、释放唤醒锁在 onDestroy 里做。 */
         fun stop(ctx: Context) { ctx.stopService(Intent(ctx, AlarmService::class.java)) }
 
+        /** 当前电量百分比，取不到返回 -1。 */
         fun batteryPct(ctx: Context): Int = ctx.getSystemService(BatteryManager::class.java)?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
 
         /** 电池容量 mAh：用 充电计数(µAh) ÷ 电量百分比 反推；取不到就按 4000 mAh。第二个值 = 是否为实测推算。 */

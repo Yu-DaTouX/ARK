@@ -1,3 +1,8 @@
+/*
+ * CommScreen.kt —— “通讯”工具页：三个标签（蓝牙消息 / 超声传信 / 警报声），分别是 BtChatTab、AcousticTab、AlarmTab。
+ * 从 ToolsScreen 进入。三个标签背后的引擎/服务都在 app.ark.comm 包（CommEngine、AcousticLink、AlarmService），
+ * 协议和后台服务说明见 docs/ARCHITECTURE.md。
+ */
 package app.ark.ui.comm
 
 import androidx.activity.compose.BackHandler
@@ -48,4 +53,5 @@ fun CommScreen(onBack: () -> Unit) {
     }
 }
 
+// 三个标签页共用的纵向间距
 internal val GAP = Arrangement.spacedBy(10.dp)

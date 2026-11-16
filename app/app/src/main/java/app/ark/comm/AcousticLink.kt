@@ -1,3 +1,8 @@
+// 文件职责：声波传信的音频收发——麦克风录音循环喜给 AcousticModem.Decoder，发送用 AudioTrack 播放调制后的波形，另有单机自测。
+// 调用方：ui/comm 的超声界面（读各 StateFlow）；依赖 AcousticModem、CommProto.truncUtf8。
+// 关键决定：只用近超声（可闻模式太吵）；录音源优先 UNPROCESSED（避免系统降噪/AGC 把 17 kHz 以上的音滤掉），不支持时回退普通 MIC；
+// 发送时忽略自己的声音（ignoreOwn）；录音/播放都在独立线程，优先级 URGENT_AUDIO。
+// 权限：需 RECORD_AUDIO（由界面负责申请）；监听期间持续耗电，没有前台服务，退到后台系统可能切断麦克风。
 package app.ark.comm
 
 import android.annotation.SuppressLint
@@ -35,7 +40,7 @@ object AcousticLink {
     @Volatile private var selfPayload: ByteArray? = null
     @Volatile private var selfResult: AcousticModem.Frame? = null
 
-    /** 估算发送时长（秒）。 */
+    /** 估算发送时长（秒）；超过 140 字节返回 0。不含前后 200 ms 静音。 */
     fun duration(text: String, c: ModemConfig = cfg.value): Double {
         val b = text.toByteArray(Charsets.UTF_8)
         if (b.size > AcousticModem.MAX_BYTES) return 0.0
@@ -45,6 +50,7 @@ object AcousticLink {
     /** 截到 140 字节（按字符边界）。 */
     fun clip(text: String) = CommProto.truncUtf8(text, AcousticModem.MAX_BYTES)
 
+    /** 开始监听（幂等）：起 ark-acoustic-rx 线程打开麦克风持续录音（耗电）。失败原因写入 [message]，不抛异常。任意线程可调。 */
     @Synchronized
     fun startListening() {
         if (reader?.isAlive == true) return
@@ -55,6 +61,7 @@ object AcousticLink {
         t.start()
     }
 
+    /** 停止监听：置标志并中断线程，录音资源在线程退出时释放（异步）。若 [dumpDir] 非空会写 acoustic_rx.pcm。 */
     @Synchronized
     fun stopListening() {
         stopFlag = true
@@ -67,6 +74,7 @@ object AcousticLink {
         val min = AudioRecord.getMinBufferSize(c.sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         if (min <= 0) { message.value = "这台手机不支持 ${c.sampleRate} Hz 录音"; return }
         var rec: AudioRecord? = null
+        // 先试未处理音频源，失败再用普通 MIC
         for (src in intArrayOf(MediaRecorder.AudioSource.UNPROCESSED, MediaRecorder.AudioSource.MIC)) {
             val r = runCatching { AudioRecord(src, c.sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, 16384)) }.getOrNull()
             if (r != null && r.state == AudioRecord.STATE_INITIALIZED) { rec = r; break }
@@ -87,7 +95,8 @@ object AcousticLink {
                 if (n <= 0) { if (n < 0) { message.value = "麦克风读取出错"; break }; continue }
                 dec.feed(buf, n)
                 if (keep != null) for (i in 0 until n) { keep[(kpos % keep.size).toInt()] = buf[i]; kpos++ }
-                if (++tick % 2 == 0) {
+                if (++tick % 2 == 0) { // 每两块（2048 样本）更新一次界面状态，减少 StateFlow 刷新
+                    // 经验系数：RMS/8000 约对应“很响”，仅供显示
                     var e = 0.0
                     for (i in 0 until n) e += buf[i] * buf[i].toDouble()
                     level.value = (sqrt(e / n) / 8000.0).toFloat().coerceIn(0f, 1f)
@@ -116,7 +125,7 @@ object AcousticLink {
         received.value = (listOf(Rx(text, System.currentTimeMillis(), f.corrected, f.quality, false)) + received.value).take(50)
     }
 
-    /** 播放一条消息（后台线程，阻塞到播完）。[self]=true 用于自测：不过滤自己的声音。 */
+    /** 播放一条消息（后台线程，阻塞到播完）。成功返回 true；被中断或出错返回 false（出错写 [message]）。用媒体音量播放，音量由用户调。 */
     private fun play(payload: ByteArray, c: ModemConfig): Boolean {
         val wave = AcousticModem.encode(payload, c)
         val pcm = ShortArray(wave.size) { (wave[it] * 32767f).toInt().coerceIn(-32768, 32767).toShort() }
@@ -141,6 +150,10 @@ object AcousticLink {
         }
     }
 
+    /**
+     * 发送文本（先按 140 字节截断）：异步播放，立即返回。空文本或正在发送返回 false。
+     * 播放期间 [ignoreOwn] 为真，避免本机麦克风把自己的声音当成收到的消息。
+     */
     @Synchronized
     fun send(text: String): Boolean {
         val b = clip(text).toByteArray(Charsets.UTF_8)

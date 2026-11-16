@@ -1,3 +1,7 @@
+// 文件职责：“保持在线”前台服务，让 CommEngine 在后台继续广播/低占空比扫描/接收，并用通知展示状态。
+// 调用方：通讯界面的“保持在线”开关、通知上的“关闭”按钮；依赖 CommEngine、MainActivity。
+// 前台服务类型 connectedDevice（API 29+ 才传 type）：因为是在与外部蓝牙设备交互；需要相应蓝牙权限（Android 14 起系统会校验）。
+// 通知渠道与暂停通知刷新的设计：只在邻居数/新消息数变化时才重发，省电。
 package app.ark.comm
 
 import android.annotation.SuppressLint
@@ -55,7 +59,7 @@ class CommService : Service() {
             if (!CommEngine.running.value && CommEngine.error.value != null && CommEngine.missingPermissions(this).isNotEmpty()) { stopSelf(); return START_NOT_STICKY }
             h.postDelayed(tick, 15_000L)
         }
-        return START_STICKY
+        return START_STICKY // 被系统杀掉后尝试重建（重建时 intent 为 null）
     }
 
     override fun onDestroy() {
@@ -80,11 +84,12 @@ class CommService : Service() {
     }
 
     companion object {
-        const val ID = 61
+        const val ID = 61 // 通知 ID；警报服务用 62，避免冲突
         const val CH = "ark_comm"
         const val ACTION_STOP = "app.ark.COMM_STOP"
         val kept = kotlinx.coroutines.flow.MutableStateFlow(false)
 
+        /** 创建“蓝牙消息”通知渠道（API 26+，低重要性无声）；警报服务也复用它。幂等。 */
         fun channel(ctx: Context) {
             if (Build.VERSION.SDK_INT >= 26) {
                 val nm = ctx.getSystemService(NotificationManager::class.java)
@@ -92,7 +97,9 @@ class CommService : Service() {
             }
         }
 
+        /** 启动前台服务（开蓝牙广播/扫描，持续耗电）。Android 12+ 后台启动可能被系统拒绝，此时服务自己会退出并写 CommEngine.error。 */
         fun start(ctx: Context) { ContextCompat.startForegroundService(ctx, Intent(ctx, CommService::class.java)) }
+        /** 停止服务，释放引擎在后台的那一路。 */
         fun stop(ctx: Context) { ctx.stopService(Intent(ctx, CommService::class.java)) }
     }
 }

@@ -1,3 +1,9 @@
+/*
+ * QaStore.kt —— 问答历史与书签的 SQLite 存储（filesDir/ark.db，表 qa）。
+ * 由 ArkApp 创建，AppViewModel 读写，BookmarksScreen/AskScreen 订阅 history / bookmarks。
+ * 设计：出处原文（sources）连同回答一起以 JSON 存进同一行，这样资料包被删或更新后书签仍可读；
+ * 历史只在内存里保留最近 100 条，书签全量。
+ */
 package app.ark.data
 
 import androidx.sqlite.SQLiteConnection
@@ -35,6 +41,7 @@ class QaStore(private val file: File) {
     val history: StateFlow<List<Qa>> = _history
     val bookmarks: StateFlow<List<Qa>> = _bookmarks
 
+    // WAL：写入不阻塞读，异常断电后也不损坏。连接惰性打开，由 lock 保护
     private fun db(): SQLiteConnection = c ?: BundledSQLiteDriver().open(file.path).also {
         it.execSQL("PRAGMA journal_mode=WAL")
         it.execSQL(
@@ -59,11 +66,13 @@ class QaStore(private val file: File) {
         }
     }
 
+    /** 从库里重新读出历史（最近 100 条）和书签，刷新两个 StateFlow。其他写操作都会自动调用它。 */
     suspend fun reload() = io {
         _history.value = query("SELECT * FROM qa ORDER BY id DESC LIMIT 100")
         _bookmarks.value = query("SELECT * FROM qa WHERE bookmarked = 1 ORDER BY ts DESC")
     }
 
+    /** 插入一条问答并刷新；返回新行 id。挂起，在 IO 线程执行；数据库错误会抛出。 */
     suspend fun add(q: Qa): Long {
         val id = io {
             prepare("INSERT INTO qa(ts, question, answer, sources, model, mode, seconds, bookmarked) VALUES(?,?,?,?,?,?,?,?)").use { st ->
@@ -88,6 +97,7 @@ class QaStore(private val file: File) {
         reload()
     }
 
+    /** 清空历史，保留书签 */
     suspend fun clearHistory() {
         io { exec("DELETE FROM qa WHERE bookmarked = 0") }
         reload()

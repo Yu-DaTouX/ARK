@@ -1,3 +1,11 @@
+// 文件职责：超声/可闻声传信的调制解调（16-MFSK + Barker-13 前导 + RS 纠错 + CRC16），纯 Kotlin。
+// 调用方：AcousticLink（扬声器/麦克风收发）；依赖 Rs（GF(256) Reed-Solomon）。
+// 关键决定：
+//  - 16-MFSK：每音 4 bit，非相干检测（Goertzel 取能量），对手机扬声器/麦克风的相位、时延不敏感。
+//  - Barker-13 前导：自相关旁瓣低，错位对齐得分 ≤ 0.5，不会锁到错误位置；打分用“峰值能量占总能量比例”，与音量无关，免 AGC。
+//  - 同步门限 THRESH=0.5，且得分过峰后再等 8 步（1 个符号）才锁定：真实房间里前导刚进来时得分就能越过门限，过早锁定会错位 1 个符号以内。
+//  - 假同步（头部 RS/版本/CRC 失败）后只跳过该峰，用环形缓冲里已存的能量行回扫，避免错过紧随其后的真前导。
+//  - 头部与体分别 RS，体按块交错，抗突发噪声；最后整段再加 CRC16 兜底（RS 可能“纠错成别的码字”）。
 package app.ark.comm
 
 import kotlin.math.PI
@@ -38,7 +46,9 @@ class ModemConfig(
     }
 }
 
+/** 调制解调器入口：[symbols]/[encode] 发，[Decoder] 收。全部无副作用（不开音频设备）。 */
 object AcousticModem {
+    /** 单帧最大载荷字节数（头部长度字段 1 字节，这里取 140）。 */
     const val MAX_BYTES = 140
     const val VERSION = 1
     private const val BLOCK_DATA = 48
@@ -49,6 +59,7 @@ object AcousticModem {
     private const val RING = 4096 // 保存最近 4096 个 5 ms 的能量行 ≈ 20 秒
     private const val THRESH = 0.5f // 两台手机实测：真峰 0.97，前导进来一半时约 0.45；误同步会被头部 RS、版本号和 CRC 拒掉
 
+    /** CRC16-CCITT（多项式 0x1021，初值 0xFFFF），取 [b] 前 [len] 字节。 */
     fun crc16(b: ByteArray, len: Int = b.size): Int {
         var crc = 0xFFFF
         for (i in 0 until len) {
@@ -59,12 +70,13 @@ object AcousticModem {
         return crc
     }
 
+    // 把 total 字节尽量平均切成若干块，每块 ≤ BLOCK_DATA（48）：平均分使各块纠错余量一致，RS 码字总长 ≤ 60 < 255。
     private fun blockSizes(total: Int): IntArray {
         val nb = (total + BLOCK_DATA - 1) / BLOCK_DATA
         return IntArray(nb) { total / nb + if (it < total % nb) 1 else 0 }
     }
 
-    /** 载荷 → 符号序列（含前导）。 */
+    /** 载荷 → 符号序列（0..15，含前导）。载荷超过 [MAX_BYTES] 抛 IllegalArgumentException。 */
     fun symbols(payload: ByteArray): IntArray {
         require(payload.size <= MAX_BYTES) { "too long" }
         val head = byteArrayOf(payload.size.toByte(), VERSION.toByte())
@@ -90,7 +102,7 @@ object AcousticModem {
         return out
     }
 
-    /** 载荷 → 波形（单声道，-1..1），前后各加 [padMs] 毫秒静音。 */
+    /** 载荷 → 波形（单声道，-1..1），前后各加 [padMs] 毫秒静音。每个符号首尾 1.5 ms 余弦淡入淡出，避免相邻音切换的“咔嗒”宽带噪声。 */
     fun encode(payload: ByteArray, cfg: ModemConfig, amp: Float = 0.8f, padMs: Int = 200): FloatArray {
         val syms = symbols(payload)
         val pad = cfg.sampleRate * padMs / 1000
@@ -111,6 +123,7 @@ object AcousticModem {
         return out
     }
 
+    /** 解出的一帧：[corrected] 为 RS 纠正的字节总数（0 表示信道很干净），[quality] 为正文符号的平均峰值占比 0..1。 */
     class Frame(val payload: ByteArray, val corrected: Int, val quality: Float)
 
     /** 流式解码器：不断 feed 麦克风采样，解出一帧就回调。非线程安全（单线程喂入）。 */
@@ -141,8 +154,10 @@ object AcousticModem {
         /** 最近一步的总能量（粗略的“音量”）。 */
         @Volatile var level = 0f
 
+        /** 放弃当前状态回到找同步（不清环形缓冲）。 */
         fun reset() { state = 0; cand = false; scanned = n }
 
+        /** 喂入 [count] 个 16 bit 单声道采样（需与 cfg 采样率一致）；解出帧时在调用线程同步回调 onFrame。 */
         fun feed(pcm: ShortArray, count: Int) {
             for (i in 0 until count) {
                 // 把样本直接放进窗口末尾；满一个步进就整体左移、处理
@@ -173,10 +188,12 @@ object AcousticModem {
             if (n < PRE.size * 8) return
             while (true) when (state) {
                 0 -> {
+                    // 补扫的下界：太早的能量行已被环形缓冲覆盖
                     val oldest = n - RING + 8L * PRE.size + 8 // 再早的能量行已经被覆盖
                     while (state == 0 && scanned < n) { scanned++; if (scanned >= maxOf(oldest, 8L * PRE.size)) scanSync(scanned) }
                     if (state == 0) return
                 }
+                // 判决点：lockN 是前导最后一个符号结束时的步进号；第 j 个后续符号的完整窗口结束于 lockN + 8*(j+1)，读那一行能量即可
                 1 -> if (n >= lockN + 8 * HEAD_SYMS) decodeHead() else return
                 2 -> if (n >= lockN + 8L * (HEAD_SYMS + bodySyms)) decodeBody() else return
             }

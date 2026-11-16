@@ -1,3 +1,6 @@
+/*
+ * Morse.kt —— 摩尔斯码编码（文字 → 亮灭时序），供 SignalTool / TorchService 的闪光灯和屏幕信号使用。纯函数，无 Android 依赖。
+ */
 package app.ark.ui.tools
 
 /**

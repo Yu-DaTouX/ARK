@@ -1,3 +1,8 @@
+/*
+ * TorchService.kt —— 闪光灯摩尔斯信号的前台服务（类型 specialUse，子类型 flashlight_morse_signal，见清单；
+ * Android 14+ 才必须带 FGS 类型，更低版本传 0）。由 SignalTool 通过 start()/stop() 控制，状态用静态 StateFlow 回传界面。
+ * 耗电：闪光灯 + 持有 PARTIAL_WAKE_LOCK（最长 2 小时自动释放）；通知栏有“停止”。
+ */
 package app.ark.ui.tools
 
 import android.app.Notification
@@ -30,6 +35,7 @@ fun torchId(ctx: Context): String? = try {
  * 闪光灯被占用 / 过热 / 低电量导致 setTorchMode 失败时，failed 置 true 并自动停止，界面提示改用屏幕信号灯。
  */
 class TorchService : Service() {
+    // 主线程协程：CameraManager.setTorchMode 可在主线程调用，信号时序用 delay 驱动
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var job: Job? = null
     private var cm: CameraManager? = null
@@ -42,7 +48,7 @@ class TorchService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
-        TrackService.channel(this)
+        TrackService.channel(this) // 复用轨迹服务创建的通知渠道
         val type = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
         ServiceCompat.startForeground(this, ID, notif(), type)
         val text = intent?.getStringExtra("text") ?: "SOS"
@@ -104,7 +110,7 @@ class TorchService : Service() {
     }
 
     companion object {
-        const val ID = 47
+        const val ID = 47 // 通知 id，各前台服务各用不同值
         const val ACTION_STOP = "app.ark.TORCH_STOP"
         private val _active = MutableStateFlow(false)
         private val _lit = MutableStateFlow(false)

@@ -1,3 +1,6 @@
+// 文件职责：“最近一次定位”的全局共享点（MyFix）、一个简化的 LocationListener、界面可见时的定位 Composable。
+// 调用方：TrackService / BeaconService / 地图页往里报；comm/CommEngine 发带位置消息时读。
+// 耗电约定：界面端定位只在页面可见（STARTED）时注册。
 package app.ark.sensors
 
 import android.annotation.SuppressLint
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 object MyFix {
     val last = MutableStateFlow<Location?>(null)
 
+    /** 报告一个定位：不比当前最新的早超过 5 秒才采纳（允许 GPS 与网络定位交替时小幅乱序）。任意线程。 */
     fun offer(l: Location) {
         val c = last.value
         if (c == null || l.time >= c.time - 5_000) last.value = l
@@ -30,6 +34,7 @@ object MyFix {
         return ((android.os.SystemClock.elapsedRealtimeNanos() - ns) / 1_000_000L).coerceAtLeast(0L)
     }
 
+    /** 取各提供者的系统缓存定位中最新的一个（不触发定位）。无权限/异常返回 null。 */
     @SuppressLint("MissingPermission")
     fun lastKnown(ctx: Context): Location? = runCatching {
         val lm = ctx.getSystemService(LocationManager::class.java)
@@ -38,6 +43,7 @@ object MyFix {
 }
 
 /** 不用 AndroidX 的 LocationListener：在 API 26–29 上也不缺方法。 */
+// 注意：在旧版系统里 LocationListener 要求实现 onStatusChanged，所以这里保留空实现。
 open class SimpleLocationListener(private val onLoc: (Location) -> Unit) : LocationListener {
     override fun onLocationChanged(location: Location) = onLoc(location)
     @Deprecated("old API") override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
@@ -45,7 +51,10 @@ open class SimpleLocationListener(private val onLoc: (Location) -> Unit) : Locat
     override fun onProviderDisabled(provider: String) {}
 }
 
-/** 界面可见且 enabled 时每 3 秒一次定位（给“指向航点”用），离开界面或关闭即停止。 */
+/**
+ * 界面可见且 enabled 时 GPS 每 3 秒一次、网络定位每 10 秒一次（给“指向航点”用），离开界面或关闭即停止。
+ * 需要精确定位权限，没有则不注册；返回 MyFix.last 的可观察状态（这里不保证是刚刚的定位）。
+ */
 @SuppressLint("MissingPermission")
 @Composable
 fun rememberMyLocation(enabled: Boolean): State<Location?> {

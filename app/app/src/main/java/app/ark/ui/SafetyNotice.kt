@@ -1,3 +1,8 @@
+/*
+ * SafetyNotice.kt —— 首次启动 / 每次升级后的安全提醒弹窗（5 秒倒计时后才能点“我已了解”）。
+ * 在 MainActivity 里叠在 ArkRoot 之上。“已读”按 versionCode 记在 prefs(safety_ack)，所以升级后会再弹一次；
+ * 文案要与仓库根目录 DISCLAIMER.md、README 顶部声明保持一致。
+ */
 package app.ark.ui
 
 import android.content.Context
@@ -25,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 
-private const val WAIT_SEC = 5
+private const val WAIT_SEC = 5 // 强制阅读的秒数
 
 /**
  * 公开版（release）首次启动和每次升级后弹一次安全提醒，倒计时 5 秒后才能关闭；读完后按版本号记住，不再打扰。
@@ -39,6 +44,7 @@ fun SafetyNotice() {
     val version = remember {
         runCatching {
             val pi = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+            // longVersionCode 从 API 28 起提供，更早只有 int 的 versionCode
             if (android.os.Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong()
         }.getOrDefault(0L)
     }

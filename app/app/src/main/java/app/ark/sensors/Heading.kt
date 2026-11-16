@@ -1,3 +1,8 @@
+// 文件职责：拗干扰方位引擎（单例），把陀螺仪方位 + 偏移量融合成真北方位，输出 Compass（Sensors.kt）、顶边/摄像头指向。
+// 调用方：Sensors.kt 的 rememberCompass（按页面生命周期 start/stop）、天体定向界面（calibrate / rotation / offsetDeg）。
+// 设计原因：手机磁力计在车/钢筋/磁吸壳旁会乱跳，而 GAME_ROTATION_VECTOR 不用磁力计、短时稳定。所以平时只在“磁场干净”时缓慢修正偏移，
+// 否则保持陀螺方位；天体校准最可信，30 分钟内压制磁力计修正。
+// 线程：传感器监听注册时未指定 Handler，回调在主线程，所以内部状态没加锁；start/stop 也必须在主线程调用（users 计数非原子）。
 package app.ark.sensors
 
 import android.content.Context
@@ -83,6 +88,7 @@ object Heading {
 
     const val CELESTIAL_HOLD_MS = 30 * 60_000L
 
+    /** 设置当前位置以计算磁偏角和理论磁场强度；与上次相差不到 0.5° 就忽略（磁偏角变化很慢）。 */
     fun setLocation(la: Double?, lo: Double?) {
         if (la == null || lo == null) return
         if (lat != null && abs(la - lat!!) < 0.5 && abs(lo - lon!!) < 0.5) return
@@ -126,6 +132,7 @@ object Heading {
     /** 清除天体校准，回到磁力计。 */
     fun clearCalibration() { celestialAt = 0L }
 
+    /** 开始使用（引用计数）：首个使用者才注册传感器（持续耗电），与 [stop] 成对调用，主线程。 */
     fun start(ctx: Context) {
         handler.removeCallbacks(reallyStop)
         if (users++ > 0 || sm != null) return
@@ -151,6 +158,7 @@ object Heading {
     private var grav: FloatArray? = null
     private var mag: FloatArray? = null
 
+    // 注意：没有 ROTATION_VECTOR 时才用“加速度 + 磁力计”算磁方位
     private val listener = object : SensorEventListener {
         override fun onSensorChanged(e: SensorEvent) {
             when (e.sensor.type) {
@@ -187,12 +195,15 @@ object Heading {
         override fun onAccuracyChanged(s: Sensor, a: Int) { if (s.type == Sensor.TYPE_MAGNETIC_FIELD) magAcc = a }
     }
 
+    // 磁场干净：强度与理论值偏差 ≤ 15%（不知道位置则 25–65 µT）且系统精度 ≥ MEDIUM。“磁-陀螺差值抓抖”的部分在 update() 里。
     private fun fieldClean(): Boolean {
         if (fieldUT <= 0f) return false
         val okStrength = if (expectedUT > 0f) abs(fieldUT / expectedUT - 1f) <= 0.15f else fieldUT in 25f..65f
         return okStrength && magAcc >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
     }
 
+    // 每次陀螺事件（约 50 Hz）调用：更新偏移量→算出方位→publish。
+    // 磁修正的系数 0.02/次；差值拖动平均 0.05/次；抖动超过 8° 视为不干净。
     private fun update() {
         val now = System.currentTimeMillis()
         val celestial = celestialAt > 0 && now - celestialAt < CELESTIAL_HOLD_MS
@@ -236,6 +247,7 @@ object Heading {
         publish(h, src, !fieldClean(), now)
     }
 
+    // 限频发布（约 15 Hz）；显示用方位再做一阶平滑（系数 0.25），NaN 表示还没有偏移。
     private fun publish(h: Float, src: Source, interference: Boolean, now: Long) {
         // 传感器约 50 Hz，界面 15 Hz 足够；来源变化时立刻发
         if (now - lastPub < 66 && _state.value?.source == src) {
@@ -267,6 +279,8 @@ object Heading {
         return Pair(wrap(Math.toDegrees(atan2(x.toDouble(), y.toDouble())).toFloat()), Math.toDegrees(asin(z.coerceIn(-1f, 1f).toDouble())).toFloat())
     }
 
+    /** 角度归一到 [0, 360)。 */
     fun wrap(a: Float) = ((a % 360f) + 360f) % 360f
+    /** 角度归一到 (-180, 180]，用于求最短转角差。 */
     fun wrapSigned(a: Float): Float { var d = wrap(a); if (d > 180f) d -= 360f; return d }
 }

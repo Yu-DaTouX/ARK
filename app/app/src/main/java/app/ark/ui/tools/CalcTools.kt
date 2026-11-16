@@ -1,3 +1,6 @@
+/*
+ * CalcTools.kt —— “饮水消毒”和“单位换算”两个工具页的界面，计算在 Calc.kt（WaterCalc / Units）。
+ */
 package app.ark.ui.tools
 
 import androidx.compose.foundation.layout.*
@@ -18,6 +21,7 @@ private fun Chips(options: List<String>, selected: Int, onSelect: (Int) -> Unit)
         options.forEachIndexed { i, o -> FilterChip(selected == i, { onSelect(i) }, { Text(o, fontSize = 17.sp) }, Modifier.heightIn(min = 48.dp)) }
     }
 
+// 输入框只留数字、小数点、负号，最多 12 个字符
 private fun numFilter(s: String) = s.filter { it.isDigit() || it == '.' || it == '-' }.take(12)
 
 @Composable

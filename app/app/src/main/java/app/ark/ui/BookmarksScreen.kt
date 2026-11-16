@@ -1,3 +1,7 @@
+/*
+ * BookmarksScreen.kt —— “书签”标签页：列出 bookmarked=1 的问答，可按关键词在问题和回答里过滤。
+ * 数据来自 QaStore.bookmarks；出处原文随书签存储，不依赖资料包还在不在。
+ */
 package app.ark.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+/** 书签页 */
 @Composable
 fun BookmarksScreen(vm: AppViewModel) {
     val all by vm.qa.bookmarks.collectAsStateWithLifecycle()

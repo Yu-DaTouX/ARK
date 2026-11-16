@@ -1,3 +1,5 @@
+// 文件职责：Reed-Solomon 编解码。调用方：AcousticModem（头部 nsym=4、正文每块 nsym=12），ModemSim。
+// 约束：码字总长必须 ≤ 255（GF(256)），调用方负责保证；纠错超过 nsym/2 时可能“误纠”成另一个合法码字，所以上层还要再用 CRC16 检验。
 package app.ark.comm
 
 /**
@@ -18,6 +20,7 @@ object Rs {
         for (i in 255 until 512) EXP[i] = EXP[i - 255]
     }
 
+    // GF(256) 乘/除：查对数表；EXP 表复制一份到 512 项，免取模。
     private fun mul(a: Int, b: Int) = if (a == 0 || b == 0) 0 else EXP[LOG[a] + LOG[b]]
     private fun div(a: Int, b: Int): Int = if (a == 0) 0 else EXP[(LOG[a] + 255 - LOG[b]) % 255]
 
@@ -38,7 +41,7 @@ object Rs {
         }
     }
 
-    /** 返回 nsym 个校验字节。 */
+    /** 返回 [data] 的 [nsym] 个校验字节（多项式长除法余式）。线程安全。 */
     fun parity(data: ByteArray, nsym: Int): ByteArray {
         val g = gen(nsym)
         val out = IntArray(data.size + nsym)
@@ -50,7 +53,10 @@ object Rs {
         return ByteArray(nsym) { out[data.size + it].toByte() }
     }
 
-    /** 原地纠错 [cw]=数据+校验；成功返回纠正的字节数，无法纠正返回 -1。 */
+    /**
+     * 原地纠错 [cw]=数据+校验；成功返回纠正的字节数（写回 [cw]），无法纠正返回 -1（此时 [cw] 不被修改）。
+     * 流程：算校验子 → Berlekamp-Massey 求错误定位多项式 → Chien 搜索定位 → Forney 求错误值 → 复查。
+     */
     fun correct(cw: ByteArray, nsym: Int): Int {
         val n = cw.size
         val r = IntArray(n) { cw[it].toInt() and 0xFF }

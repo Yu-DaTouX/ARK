@@ -1,3 +1,8 @@
+/*
+ * FirstAidTool.kt —— “急救计时”：CPR 节拍器（30:2）+ 止血带计时。
+ * CPR：110 次/分的声音+振动+闪屏节拍，每 30 次自动暂停等待人工呼吸；退到后台自动停止（避免锁屏后误以为还在按）。
+ * 止血带：开始时间写入 prefs（ark_tools：tq_*），重启 App 后继续；超过 2 小时红字提醒送医。
+ */
 package app.ark.ui.tools
 
 import android.content.Context
@@ -30,6 +35,7 @@ import java.util.Locale
 /** CPR 按压频率：AHA / ERC 指南成人 100–120 次/分，取 110。按压:通气 = 30:2（成人，单人施救）。 */
 private const val CPR_BPM = 110
 
+/** 急救计时页 */
 @Composable
 fun FirstAidTool(onBack: () -> Unit) {
     ToolPage("急救计时", onBack) {
@@ -69,7 +75,7 @@ private fun Cpr() {
         val t0 = SystemClock.elapsedRealtime()
         var n = 0L
         while (n < 30) {
-            val due = t0 + n * 60_000L / CPR_BPM
+            val due = t0 + n * 60_000L / CPR_BPM // 按绝对时刻对齐节拍，避免逐拍 delay 累积误差
             delay((due - SystemClock.elapsedRealtime()).coerceAtLeast(0))
             n++; k = n.toInt()
             if (sound) tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 60)

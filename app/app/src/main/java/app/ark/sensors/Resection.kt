@@ -1,3 +1,4 @@
+// 文件职责：两点后方交会的纯计算（见下方 KDoc）。调用方：地图页/工具页的“没有 GPS 时定位”。无 Android 依赖。
 package app.ark.sensors
 
 import kotlin.math.abs
@@ -14,6 +15,10 @@ object Resection {
     data class Landmark(val lat: Double, val lon: Double, val bearing: Float) // bearing：真北方位角，从我指向地标
     data class Fix(val lat: Double, val lon: Double, val angle: Float)        // angle：两条方位线的夹角，30–150° 才可靠
 
+    /**
+     * 求交点。两条方位线近乎平行（det<1e-6）或交点在地标“后面”（测量方向反了）时返回 null。
+     * 返回的 [Fix.angle] 越接近 90° 越可靠；调用方应自己按 30–150° 提示可信度。
+     */
     fun solve(a: Landmark, b: Landmark): Fix? {
         val lat0 = Math.toRadians((a.lat + b.lat) / 2)
         val kx = 111_320.0 * cos(lat0) // 每度经度的米数

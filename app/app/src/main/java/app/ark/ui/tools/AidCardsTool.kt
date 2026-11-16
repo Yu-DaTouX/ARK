@@ -1,3 +1,9 @@
+/*
+ * AidCardsTool.kt —— “急救步骤卡”：列表 → 一步一屏的大字卡片（内容来自 AidData），不用 AI、不联网、零额外耗电。
+ * 设计：慌乱中可能单独打开任一张卡，所以每页顶部都有急救电话横幅；卡片页保持屏幕常亮；
+ * 带倒计时的步骤（如烧伤冲水 20 分钟）用进程级计时器，切步骤/离开页面不丢，后台也照常走。
+ * 步骤里的 actionTool 是 ToolsScreen 的工具 id（如 "aid" 打开 CPR 节拍器），通过 onOpen 跳转。
+ */
 package app.ark.ui.tools
 
 import android.media.AudioManager
@@ -18,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 /** 急救步骤卡：列表 → 一步一屏的大字卡片，可前后翻；返回键先回列表。内容见 AidData。 */
+// onBack 回到工具目录；onOpen(toolId) 跳到另一个工具
 @Composable
 fun AidCardsTool(onBack: () -> Unit, onOpen: (String) -> Unit) {
     var cardId by rememberSaveable { mutableStateOf("") }
@@ -70,6 +77,7 @@ fun AidCardsTool(onBack: () -> Unit, onOpen: (String) -> Unit) {
 private fun CallBanner() = Warn("有条件，立即拨打 120（多数国家 112）呼叫急救 / 送医。下面的步骤是等待救援时做的。")
 
 /** 计时器状态放在进程级：切步骤 / 离开页面不丢；用 elapsedRealtime 的截止时刻算剩余，后台挂起也照常走。 */
+// endAt：SystemClock.elapsedRealtime 基准的结束时刻，0 = 未在计时；leftMs：暂停/未开始时的剩余毫秒
 private class TimerState(val totalMs: Long) { var endAt = 0L; var leftMs = totalMs }
 private val timers = HashMap<String, TimerState>()
 

@@ -1,3 +1,6 @@
+// 文件职责：蓝牙求救信标的广播包编解码（格式见下方 KDoc）与运行状态/本机配置的共享容器。
+// 调用方：BeaconService（写状态、收发）、BeaconUi/地图页（读 seen）。与 comm/CommProto（聊天广播，A7 43）同用公司 ID 0xFFFF，靠第二个魔数字节 4B 区分。
+// 关键决定：不连接、不配对的纯广播（求救场景下越简单越可靠），负载压到 ≤ 24 字节以便单包放得下；位置用 3 字节定点量化。
 package app.ark.sensors
 
 import android.content.Context
@@ -40,11 +43,13 @@ object Beacon {
     const val PERIOD_MS = 60_000L
     private const val NONE = 0xFFFFFF
 
+    /** 广播包的内存形态；[ageMin] = 位置已过去的分钟数，[lat]/[lon] 为 null = 没有定位。 */
     data class Packet(val id: Int, val sos: Boolean, val lat: Double?, val lon: Double?, val ageMin: Int, val msg: String)
 
     /** 收到的信标：time = 本机收到的时间。 */
     data class Seen(val id: Int, val sos: Boolean, val lat: Double?, val lon: Double?, val ageMin: Int, val msg: String, val rssi: Int, val time: Long)
 
+    /** 按字符（码点）边界把 [msg] 截到不超过 [maxBytes] 字节的 UTF-8，不会切坏汉字。 */
     fun truncate(msg: String, maxBytes: Int = MSG_MAX): ByteArray {
         val out = ByteArrayOutputStream()
         var i = 0
@@ -58,8 +63,10 @@ object Beacon {
         return out.toByteArray()
     }
 
+    // 量化到 0..0xFFFFFE，把 0xFFFFFF 留给“无定位”
     private fun q(v: Double, off: Double): Int = Math.round((v + off) * 10000).toInt().coerceIn(0, NONE - 1)
 
+    /** 编码成载荷字节（不含公司 ID，由系统在广播里添加）。短消息超长会被截断，ageMin 封顶 255。 */
     fun encode(p: Packet): ByteArray {
         val o = ByteArrayOutputStream()
         o.write(MAGIC0); o.write(MAGIC1)
@@ -73,6 +80,7 @@ object Beacon {
         return o.toByteArray()
     }
 
+    /** 解码载荷；太短（<12 字节）、魔数或版本不符返回 null。 */
     fun decode(b: ByteArray?): Packet? {
         if (b == null || b.size < 12) return null
         fun u(i: Int) = b[i].toInt() and 0xFF
@@ -96,6 +104,7 @@ object Beacon {
     private val _seen = MutableStateFlow<List<Seen>>(emptyList())
     val seen: StateFlow<List<Seen>> = _seen
 
+    /** 记录收到的信标：同一节点 ID 只保留最新一条，按时间倒序、最多 60 条。由 BeaconService 的扫描回调（主线程）调用。 */
     fun onSeen(s: Seen) {
         _seen.value = (_seen.value.filter { it.id != s.id } + s).sortedByDescending { it.time }.take(60)
     }
@@ -106,16 +115,19 @@ object Beacon {
     var sos = false
     var message = ""
 
+    /** 从 SharedPreferences（"ark"）读本机状态和短消息。 */
     fun loadConfig(ctx: Context) {
         val p = ctx.applicationContext.getSharedPreferences("ark", Context.MODE_PRIVATE)
         sos = p.getBoolean("beacon_sos", false); message = p.getString("beacon_msg", "") ?: ""
     }
 
+    /** 保存并立即生效（服务在跑时需再次 start 以重发广播）。 */
     fun saveConfig(ctx: Context, sos: Boolean, msg: String) {
         this.sos = sos; message = msg
         ctx.applicationContext.getSharedPreferences("ark", Context.MODE_PRIVATE).edit().putBoolean("beacon_sos", sos).putString("beacon_msg", msg).apply()
     }
 
+    /** 本机信标节点 ID（16 位，首次随机生成并持久化）。注意与 comm 里的 32 位 CommEngine.nodeId 是两个不同的 ID。 */
     fun nodeId(ctx: Context): Int {
         val p = ctx.applicationContext.getSharedPreferences("ark", Context.MODE_PRIVATE)
         var id = p.getInt("beacon_id", -1)

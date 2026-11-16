@@ -1,3 +1,6 @@
+/*
+ * Zambretti.kt —— 气压趋势 + 海平面气压 + 季节 → 一句话简易天气预报（BaroTool 使用）。纯函数。
+ */
 package app.ark.ui.tools
 
 /**

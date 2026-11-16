@@ -1,3 +1,9 @@
+/*
+ * LibraryScreen.kt —— “资料”标签页：资料原文搜索（不用 AI）、AI 模型 / 语义检索模型 / 资料包 / 地图的
+ * 安装、下载、删除、开关，文件导入，回答长度/省电/外观设置，关于。
+ * 这是 App 的“管理页”：所有状态来自 AppViewModel，下载目录项来自 assets/catalog.json（data/Catalog.kt）。
+ * 下载由系统 DownloadManager 执行；已安装的项目从目录里隐藏，避免重复下载。
+ */
 package app.ark.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -52,12 +58,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ark.data.CatalogItem
 import app.ark.llm.LlmManager
 
+/** 字节数 → "1.2 GB" / "165 MB" / "12 KB" */
 fun sizeText(b: Long): String = when {
     b >= 1L shl 30 -> "%.1f GB".format(b / (1L shl 30).toDouble())
     b >= 1L shl 20 -> "%.0f MB".format(b / (1L shl 20).toDouble())
     else -> "%.0f KB".format(b / 1024.0)
 }
 
+/** 资料页（整页是一个 LazyColumn，按分区排列） */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LibraryScreen(vm: AppViewModel) {
@@ -151,7 +159,7 @@ fun LibraryScreen(vm: AppViewModel) {
         }
         item {
             SwitchRow("GPU 加速", "更快、更省电（实测功耗约为 CPU 的一半）。不支持的手机会自动改用 CPU。", settings.gpu) { on ->
-                if (on) vm.llm.resetGpu()
+                if (on) vm.llm.resetGpu() // 手动打开视为“再试一次 GPU”，清掉崩溃标记
                 vm.update { it.copy(gpu = on) }
             }
             if (settings.gpu && vm.llm.gpuBroken) {
@@ -221,6 +229,7 @@ fun LibraryScreen(vm: AppViewModel) {
         item {
             Text("回答长度", style = MaterialTheme.typography.bodyLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 最长输出 token 数（直接影响耗电和耗时）
                 listOf("简短" to 320, "标准" to 512, "详细" to 900).forEach { (label, n) ->
                     FilterChip(selected = settings.maxTokens == n, onClick = { vm.update { it.copy(maxTokens = n) } }, label = { Text(label) })
                 }

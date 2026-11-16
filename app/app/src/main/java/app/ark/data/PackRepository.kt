@@ -1,3 +1,15 @@
+/*
+ * PackRepository.kt —— .arkpack 资料包（只读 SQLite + FTS5）的打开、检索和读取。
+ *
+ * 位置：AppViewModel 提问/搜索时调 search()；ReaderDialog 用 chunkAt()/original()；Storage 提供文件列表。
+ * 包格式见 docs/DATA.md、docs/ARCHITECTURE.md；由 data/build_pack.py 等脚本生成，向量由 tools/embed 写入 vec 表。
+ *
+ * 关键设计：
+ *  - 混合检索：FTS5 关键词 + 语义向量两路，RRF 合并（实测好段落排第一 27/40 → 33/40）。
+ *  - “检索用英文、显示用中文”：中文版包（meta.display=zh）的 FTS 索引和向量仍是英文的，chunks.text 是译文，
+ *    text_en 是 zlib 压缩的英文原文。试过纯中文检索（trigram + 中文向量）明显变差，所以保持英文检索（docs/HANDOFF.md 3b）。
+ *  - 单把 Mutex 串行化所有数据库访问；连接按“文件大小:修改时间”缓存，文件被替换后自动重开。
+ */
 package app.ark.data
 
 import android.content.SharedPreferences
@@ -15,6 +27,7 @@ import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+/** 一个已安装资料包的元信息（来自包内 meta 表）；enabled 是用户在资料页的开关（prefs: pack_off_<id>） */
 data class PackInfo(
     val id: String,
     val title: String,
@@ -54,6 +67,7 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
     private val _packs = MutableStateFlow<List<PackInfo>>(emptyList())
     val packs: StateFlow<List<PackInfo>> = _packs
 
+    /** 重新扫描 packs/ 目录并更新 [packs]；打不开的文件会被忽略。IO 线程，拿库锁。 */
     suspend fun refresh() = withContext(Dispatchers.IO) {
         lock.withLock {
             val files = storage.packFiles()
@@ -69,6 +83,7 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
         return driver.open(f.path, SQLITE_OPEN_READONLY).also { conns[f.path] = sig to it }
     }
 
+    // meta 表缺字段时给默认值：lang=en、chunks=0
     private fun info(f: File): PackInfo {
         val meta = HashMap<String, String>()
         conn(f).prepare("SELECT key, coalesce(value,'') FROM meta").use { st ->
@@ -89,11 +104,13 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
         )
     }
 
+    /** 启用/停用某个包（只改偏好，不删文件） */
     suspend fun setEnabled(p: PackInfo, on: Boolean) {
         prefs.edit().putBoolean("pack_off_${p.id}", !on).apply()
         refresh()
     }
 
+    /** 关闭连接并删除包文件（含内置包——下次 App 更新会重新复制出来） */
     suspend fun delete(p: PackInfo) = withContext(Dispatchers.IO) {
         lock.withLock {
             conns.remove(p.file.path)?.second?.close()
@@ -199,6 +216,7 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
         return out.sortedBy { it.score }
     }
 
+    // q 是所有向量的 int8 值首尾相接（第 i 条从 i*dim 开始），scale[i] 是第 i 条的缩放系数；与 tools/embed 的 quantize 对应
     private class Vecs(val ids: LongArray, val q: ByteArray, val scale: FloatArray, val dim: Int)
 
     /** 资料包里的 vec 表（chunk_id, v = 4 字节缩放系数 + dim 个 int8），第一次用时读进内存（7800 段约 2 MB）。 */
@@ -241,6 +259,7 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
     }
 
     /** 读同一篇文档里第 seq 段（用于阅读器的上一段 / 下一段）。 */
+    // 注意：没有 runCatching，库错误会抛给调用方
     suspend fun chunkAt(packId: String, docId: Long, seq: Int): Passage? = withContext(Dispatchers.IO) {
         lock.withLock {
             val p = _packs.value.firstOrNull { it.id == packId } ?: return@withLock null
@@ -253,9 +272,10 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
     }
 
     companion object {
+        // 防御畸形包：压缩炸弹
         private const val MAX_INFLATE = 4L shl 20 // 单段解压上限 4 MB
-        private const val CANDIDATES = 50
-        private const val RRF_K = 60
+        private const val CANDIDATES = 50 // 每一路（关键词/语义）取前 50
+        private const val RRF_K = 60 // RRF 常数，业界默认值
         private const val BY_IDS = """
             SELECT c.id, c.doc_id, c.seq, coalesce(d.title, c.title, ''), c.text
             FROM chunks c LEFT JOIN docs d ON d.id = c.doc_id WHERE c.id IN (?)"""
@@ -268,6 +288,7 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
             FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid LEFT JOIN docs d ON d.id = c.doc_id
             WHERE chunks_fts MATCH ? ORDER BY s LIMIT ?"""
 
+        /** zlib 解压为 UTF-8 文本，限制 4 MB；数据损坏抛 DataFormatException */
         fun inflate(b: ByteArray): String {
             val inf = java.util.zip.Inflater()
             try {
@@ -296,6 +317,7 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
             SELECT c.id, coalesce(d.title, c.title, ''), c.text FROM chunks c LEFT JOIN docs d ON d.id = c.doc_id
             WHERE c.doc_id = ? AND c.seq = ?"""
 
+        /** 英文 FTS5 查询串：每个词加引号（防止 FTS 语法字符），最多 10 个，OR 连接 */
         fun enMatch(terms: List<String>): String =
             terms.map { t -> t.filter { it.isLetterOrDigit() } }
                 .filter { it.length >= 2 }.distinct().take(10)

@@ -1,3 +1,8 @@
+/*
+ * Calc.kt —— 饮水消毒（漂白剂滴数）和单位换算的纯计算，界面在 CalcTools.kt。
+ * 所有系数来自 CDC / NIST SP 811，改动前请对照原始来源，涉及安全（消毒剂量）。
+ * 注意：与 llm/ArkTools.kt 里给模型用的 Calc（认单位计算器）是两套独立代码。
+ */
 package app.ark.ui.tools
 
 import java.math.BigDecimal
@@ -15,6 +20,7 @@ object WaterCalc {
         P825("8.25%（浓缩型）", 6),
     }
 
+    /** 需要的滴数：按每加仑滴数线性折算，浑浊加倍，四舍五入，至少 1 滴 */
     fun drops(b: Bleach, liters: Double, cloudy: Boolean): Int {
         val d = b.dropsPerGal * (liters / GAL_L) * (if (cloudy) 2 else 1)
         return maxOf(1, d.roundToInt())
@@ -38,6 +44,7 @@ object Units {
         Cat("容积", listOf(Unit("L", 1.0), Unit("gal(美)", 3.785411784), Unit("qt(美)", 0.946352946))),
     )
 
+    /** 在同一类别内换算；温度单独处理（有偏移，不能用比例系数） */
     fun convert(cat: Cat, from: Unit, to: Unit, v: Double): Double {
         if (cat.temp) {
             val c = if (from.name == "°C") v else (v - 32) * 5 / 9

@@ -1,3 +1,9 @@
+/*
+ * AstroTool.kt —— “天体定向”工具页：算出太阳/月亮/亮星此刻的方位和高度，画星图，用户把手机对准某天体后点“对准了”，
+ * 以该天体的真方位校准陀螺方位（Heading.calibrate），之后不受磁干扰；校准 30 分钟内有效（Heading.CELESTIAL_HOLD_MS）。
+ * 依赖：Astro（天体位置）、Heading（sensors，陀螺/磁力计融合）、AstroCamera（相机取景对准）。
+ * 前提：手机时钟准确 + 大概位置（经纬度误差 1° 约引入 1° 方位误差）；没有陀螺仪的手机只能看星图。
+ */
 package app.ark.ui.tools
 
 import androidx.compose.foundation.Canvas
@@ -52,6 +58,7 @@ fun AstroTool(onBack: () -> Unit) {
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val saving = LocalPowerSave.current
     LaunchedEffect(saving) { while (true) { nowMs = System.currentTimeMillis(); delay(if (saving) 20_000 else 5000) } }
+    // 手机顶边指向（方位+仰角）：150 ms 轮询一次引擎状态，避免高频重组整页
     val pointing by produceState<Heading.Pointing?>(null) { while (true) { value = Heading.pointing.value; delay(150) } }
 
     var selected by rememberSaveable { mutableStateOf("") }

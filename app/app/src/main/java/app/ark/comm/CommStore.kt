@@ -1,3 +1,6 @@
+// 文件职责：蓝牙消息的本地持久化（内部 JSON 文件）和去重索引。调用方：CommEngine、通讯界面（订阅 [CommStore.list]）。
+// 设计：状态用 StateFlow 快照对外；写盘交给单线程执行器，先写临时文件再原子替换，写一半被杀不会损坏旧数据；
+// 所有修改方法 @Synchronized，可从任意线程调用。
 package app.ark.comm
 
 import android.content.Context
@@ -18,6 +21,7 @@ object CommStore {
     const val ST_SENT = 1
     const val ST_FAILED = 2
 
+    /** 一条落库记录：[mine]=本机发出；[status] 见 ST_*；[delivered]=已送达的邻居数（仅 mine）；[recvTime] 本机收到/创建时间（毫秒）；[rssi] 收到时源节点信号，0=未知。 */
     class Stored(
         val msg: CommProto.Msg, val mine: Boolean, val visible: Boolean, val status: Int, val delivered: Int,
         val recvTime: Long, val rssi: Int,
@@ -30,6 +34,7 @@ object CommStore {
     private val io = Executors.newSingleThreadExecutor { Thread(it, "comm-store").apply { isDaemon = true } }
     private var loaded = false
 
+    /** 从文件载入（只执行一次）；文件不存在或解析失败都当空列表，不抛异常。读盘在调用线程，别在主线程大量调用。 */
     @Synchronized
     fun load(ctx: Context) {
         if (loaded) return
@@ -53,6 +58,7 @@ object CommStore {
         _list.value = out
     }
 
+    /** 是否已有该去重键（见 CommProto.Msg.key）。注意：被 CAP 挤掉的旧消息键也会删除。 */
     @Synchronized fun has(key: String) = key in keys
 
     /** 新消息入库；已有（去重）返回 false。 */
@@ -66,6 +72,7 @@ object CommStore {
         return true
     }
 
+    /** 按键更新状态并把已送达数累加 [addDelivered]；键不存在则无事。 */
     @Synchronized
     fun update(key: String, status: Int? = null, addDelivered: Int = 0) {
         _list.value = _list.value.map {
@@ -74,6 +81,7 @@ object CommStore {
         save()
     }
 
+    /** 清空全部消息（含去重键，清完后同一条消息可能再次被接收、转发）。 */
     @Synchronized
     fun clear() { _list.value = emptyList(); keys.clear(); save() }
 

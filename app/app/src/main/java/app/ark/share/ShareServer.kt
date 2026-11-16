@@ -1,3 +1,9 @@
+// 文件职责：“离线分享”的 HTTP 服务端——让附近的人用浏览器直接从本机下载 APK、资料包、地图。
+// 调用方：ShareService（启停）、ShareUi（读 ShareServer.state）。依赖 ArkApp.storage（文件列表）。
+// 关键决定：手写 ServerSocket 而不引入 HTTP 库（无依赖、体积小）；只按目录条目完全匹配文件名（防路径穿越）；
+// 有界线程池 + 请求头死线 + 连接看门狗，防慢速/恶意客户端耗尽资源；没有认证/加密（局域网明文 HTTP，同网络任何人都能下载），
+// 所以只分享安装包/资料包/地图，且 30 分钟无人访问自动关闭。端口从 8080 起在 8080–8099 里找空闲的。
+// 线程：一个 accept 线程、一个空闲/看门狗线程、请求处理在线程池；都不在主线程。
 package app.ark.share
 
 import android.content.Context
@@ -15,6 +21,7 @@ import java.net.URLEncoder
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
+/** 分享状态（给界面）：[urls] 为可在同一局域网/热点里访问的地址，[downloads] 为完整传完的次数，[idleLeftMin] 为距自动关闭的大致分钟数。 */
 data class ShareInfo(val running: Boolean = false, val urls: List<String> = emptyList(), val downloads: Int = 0, val idleLeftMin: Int = 30)
 
 /**
@@ -36,6 +43,7 @@ class ShareServer(private val ctx: Context, private val onIdle: () -> Unit) {
     @Volatile private var stopped = false
     private var done = 0
 
+    // 一个可下载条目：路径（已 URL 编码）、文件、首页显示名、MIME
     private class Entry(val path: String, val file: File, val label: String, val mime: String)
 
     private fun entries(): List<Entry> {
@@ -49,7 +57,10 @@ class ShareServer(private val ctx: Context, private val onIdle: () -> Unit) {
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8").replace("+", "%20")
 
-    /** 返回监听端口；失败抛异常。 */
+    /**
+     * 返回监听端口；8080–8099 都被占用时抛 IllegalStateException。
+     * 副作用：绑定所有网卡的 TCP 端口、起两个守护线程（接入 + 空闲看门狗）。空闲超时后回调 onIdle（在后台线程）。
+     */
     fun start(): Int {
         var s: ServerSocket? = null
         for (p in 8080..8099) {
@@ -81,11 +92,13 @@ class ShareServer(private val ctx: Context, private val onIdle: () -> Unit) {
 
     private var port = 0
 
+    /** 把当前状态写入 [state]（剩余分钟数向上取整，最大 30）。任意线程。 */
     fun publish() {
         val left = ((IDLE_MS - (System.currentTimeMillis() - last)) / 60_000L).toInt().coerceIn(0, 30) + 1
         state.value = ShareInfo(!stopped, addresses().map { "http://$it:$port/" }, done, minOf(left, 30))
     }
 
+    /** 停止：关监听、关所有连接、结束线程池并把 [state] 复位。 */
     fun stop() {
         stopped = true
         runCatching { server?.close() }
@@ -168,6 +181,8 @@ $items
 
     private fun esc(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+    // 支持 Range："bytes=a-b"、"bytes=a-"、后缀 "bytes=-n"；只处理第一段（忽略多段范围）；越界返回 416。
+    // 传输期间 active>0，空闲计时不走；只有按请求字节数全部写完才算一次“已下载”。
     private fun sendFile(out: OutputStream, e: Entry, range: String?, head: Boolean, sock: Socket) {
         val len = e.file.length()
         var from = 0L; var to = len - 1

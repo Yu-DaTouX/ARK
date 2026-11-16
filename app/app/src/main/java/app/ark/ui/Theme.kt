@@ -1,3 +1,6 @@
+/*
+ * Theme.kt —— 浅色 / 深色配色方案。设置里 theme：0 跟随系统、1 深色、2 浅色（见 AppViewModel.Settings）。
+ */
 package app.ark.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -36,6 +39,7 @@ private val Dark = darkColorScheme(
     surfaceContainerHighest = Color(0xFF202626), outlineVariant = Color(0xFF2E3636),
 )
 
+/** @param mode 0 跟随系统 / 1 强制深色 / 2 强制浅色 */
 @Composable
 fun ArkTheme(mode: Int, content: @Composable () -> Unit) {
     val dark = when (mode) { 1 -> true; 2 -> false; else -> isSystemInDarkTheme() }

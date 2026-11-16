@@ -1,3 +1,7 @@
+/*
+ * Waypoints.kt —— 航点（水源、营地等标记）：类型枚举 + filesDir/waypoints.json 存储。
+ * 地图页增删改，Gpx 导出读取。整体读写 JSON（航点量级小），用 AtomicFile 保证写失败不坏旧数据。
+ */
 package app.ark.data
 
 import android.content.Context
@@ -28,6 +32,7 @@ object WaypointStore {
     private val _list = MutableStateFlow<List<Waypoint>>(emptyList())
     val list: StateFlow<List<Waypoint>> = _list
 
+    /** 读入已有航点，重复调用无效 */
     @Synchronized fun init(ctx: Context) {
         if (file != null) return
         val f = File(ctx.applicationContext.filesDir, "waypoints.json")
@@ -42,6 +47,7 @@ object WaypointStore {
         }
     }
 
+    /** 新增航点；名字为空时用类型名。返回新航点。 */
     @Synchronized fun add(name: String, type: WpType, lat: Double, lon: Double): Waypoint {
         val w = Waypoint(UUID.randomUUID().toString().take(8), name.ifBlank { type.label }, type, lat, lon, System.currentTimeMillis())
         save(_list.value + w)

@@ -1,3 +1,5 @@
+// 文件职责：警报声的样式枚举和波形生成器（纯 Kotlin）。调用方：AlarmService、界面。
+// 基频 3 kHz（人耳敏感、穿透力强）；SOS 与三短声对应常见求救信号。
 package app.ark.comm
 
 import kotlin.math.PI
@@ -31,6 +33,7 @@ class AlarmGen(private val pattern: AlarmPattern, private val sr: Int = SR) {
     private var phase = 0.0
     private var env = 0.0
 
+    /** 往 [buf] 前 [n] 个位置写入下一段 16 bit 单声道 PCM，内部保存相位/时间，可连续调用。非线程安全（一个实例只在一个线程用）。 */
     fun fill(buf: ShortArray, n: Int) {
         for (i in 0 until n) {
             val t = pos.toDouble() / sr

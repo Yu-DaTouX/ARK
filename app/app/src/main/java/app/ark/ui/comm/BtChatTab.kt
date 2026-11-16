@@ -1,3 +1,10 @@
+/*
+ * BtChatTab.kt —— “蓝牙消息”标签：不配对的 BLE 广播短消息（群发/单发、最多 3 跳接力、可附位置）。
+ * 引擎在 comm/CommEngine（广播+扫描、去重、接力、重试），历史在 comm/CommStore，协议帧在 comm/CommProto，
+ * 可选后台保活是 comm/CommService（前台服务）。本文件只做界面和“何时开关引擎”的生命周期策略：
+ *   - “开启蓝牙通讯”= 仅界面这一路（离开本页 release）；“保持在线”= 启动前台服务 CommService（低占空比）。
+ *   - 退到后台 30 秒后放掉界面这一路（宽限让在发的消息发完），回前台自动恢复。
+ */
 package app.ark.ui.comm
 
 import android.Manifest
@@ -52,6 +59,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** 蓝牙消息页。权限（Android 12+ 附近设备 / 旧系统位置）缺失时先申请，通过后再启动引擎。 */
 @Composable
 fun BtChatTab() {
     val ctx = LocalContext.current
@@ -65,7 +73,7 @@ fun BtChatTab() {
     val now by produceState(System.currentTimeMillis()) { while (true) { value = System.currentTimeMillis(); delay(5_000) } }
     val myId = remember { CommEngine.nodeId(ctx) }
     var nick by remember { mutableStateOf(CommEngine.nick(ctx)) }
-    var target by remember { mutableIntStateOf(0) } // 0 = 群发
+    var target by remember { mutableIntStateOf(0) } // 目的节点 id；0 = 群发
     var text by remember { mutableStateOf("") }
     var withLoc by remember { mutableStateOf(false) }
     var btOn by remember { mutableStateOf(CommEngine.bluetoothOn(ctx)) }
@@ -177,6 +185,7 @@ fun BtChatTab() {
                         val meta = buildString {
                             append(fmt.format(Date(m.time * 1000)))
                             if (s.mine) append(" · " + when { s.delivered > 0 -> "已送达 ${s.delivered} 台"; s.status == CommStore.ST_FAILED -> "未送达（有邻居出现时自动重试）"; else -> "等待邻居…" })
+                            // ttl 每转发一跳减 1，用初始 TTL 反推已经过的跳数
                             else append(" · 经 ${(CommProto.DEFAULT_TTL + 1 - m.ttl).coerceAtLeast(1)} 跳")
                             if (m.lat != null && m.lon != null) append(" · 位置 %.4f, %.4f".format(m.lat, m.lon))
                         }

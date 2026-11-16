@@ -1,3 +1,7 @@
+/*
+ * AlarmTab.kt —— “警报声”标签：选一种求救声样式（AlarmPattern），由前台服务 AlarmService 以最大音量循环播放，
+ * 并显示粗估的耗电和已播放时长/实际掉电。声音服务本身见 comm/AlarmService.kt。
+ */
 package app.ark.ui.comm
 
 import android.Manifest
@@ -32,6 +36,7 @@ import app.ark.comm.AlarmPattern
 import app.ark.comm.AlarmService
 import kotlinx.coroutines.delay
 
+/** 警报声页 */
 @Composable
 fun AlarmTab() {
     val ctx = LocalContext.current
@@ -42,6 +47,7 @@ fun AlarmTab() {
     var pending by remember { mutableStateOf<AlarmPattern?>(null) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { pending?.let { AlarmService.start(ctx, it) }; pending = null }
     fun go(p: AlarmPattern) {
+        // Android 13+ 要先有通知权限，前台服务的通知（及“停止”按钮）才可见；用户拒绝则不启动
         if (Build.VERSION.SDK_INT >= 33 && ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) { pending = p; launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
         else AlarmService.start(ctx, p)
     }

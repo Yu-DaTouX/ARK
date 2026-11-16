@@ -1,3 +1,8 @@
+/*
+ * AcousticTab.kt —— “超声传信”标签：用 17–19.5 kHz 近超声在两台手机间传短消息（发：扬声器；收：麦克风）。
+ * 全部逻辑在 comm/AcousticLink（收发会话）和 comm/AcousticModem（16-MFSK 调制解调）；本文件只是界面。
+ * 设计：麦克风只在本页前台时开（离开页面或退到后台就关），避免偷偷录音和空耗电。
+ */
 package app.ark.ui.comm
 
 import android.Manifest
@@ -42,9 +47,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** 超声传信页 */
 @Composable
 fun AcousticTab() {
     val ctx = LocalContext.current
+    // 仅调试包：把监听到的原始 PCM 存到 files/acoustic_rx.pcm，用 tools/embed 的 rxfile 复盘
     if (ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) AcousticLink.dumpDir = ctx.getExternalFilesDir(null)
     val cfg by AcousticLink.cfg.collectAsState()
     val listening by AcousticLink.listening.collectAsState()
@@ -80,6 +87,7 @@ fun AcousticTab() {
         pendingTest = false
     }
 
+    // 切换调制配置（目前界面不暴露，只留近超声）：先停监听，改完再按需恢复
     fun setMode(c: ModemConfig) {
         if (c === cfg) return
         val was = listening

@@ -1,3 +1,18 @@
+/*
+ * AppViewModel.kt —— 全应用唯一的 ViewModel：设置、提问流程、资料搜索/阅读、文件导入与下载的界面状态。
+ *
+ * 位置：MainActivity 创建，各 Screen 通过 StateFlow 订阅；业务对象（llm / packs / qa / embedder / storage）
+ * 来自 ArkApp 单例，本类不拥有它们的生命周期。
+ *
+ * 提问流程（ask）：语义向量(Embedder) → [模型加载] → 模型把中文问题改写成英文关键词 → PackRepository.search
+ * 混合检索取 4 段 → Prompts.RAG + 资料生成回答（无资料则用 CLOSED 闭卷）→ 存入 QaStore。
+ * 关键约定：
+ *  - 只有“检索用英文”的包（lang 不以 zh 开头；中文显示版包 lang 仍是 en）才需要模型改写关键词，
+ *    纯中文包用原问题的 trigram 检索即可，省一次生成。
+ *  - 停止：stop() 置 stopReq 并让引擎中断，各步骤之间用 checkStop() 抛 StopAsk 退出，
+ *    不当作错误显示。
+ *  - 10 分钟无操作自动卸载模型和向量模型（idleJob 挂在 ArkApp.appScope，不随 ViewModel 取消）。
+ */
 package app.ark.ui
 
 import android.app.Application
@@ -26,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+/** 用户设置，持久化在 SharedPreferences("ark") */
 data class Settings(
     val model: String? = null,   // models/ 下的文件名
     val gpu: Boolean = true,
@@ -52,8 +68,10 @@ data class Live(
     val sources: List<Passage> = emptyList(),
 )
 
+/** 一个进行中的系统下载；done/total 字节，total 未知时用目录里的 size 估计 */
 data class Download(val id: Long, val item: CatalogItem, val done: Long = 0, val total: Long = 0)
 
+/** 见文件头。所有 fun 都在主线程调用，耗时部分内部切到 IO / 模型线程。 */
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val ark = app as ArkApp
     val storage = ark.storage
@@ -75,11 +93,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val searchResults = MutableStateFlow<List<Passage>?>(null)
     val reading = MutableStateFlow<Passage?>(null)
 
+    // 放在 ArkApp 里，ViewModel 被销毁（Activity 彻底退出）后倒计时仍然有效
     private var idleJob: Job?
         get() = ark.idleJob
         set(v) { ark.idleJob = v }
     private var pollJob: Job? = null
     @Volatile private var stopReq = false
+    // 用户点“停止”后在各步骤之间退出提问流程用的内部信号，不是错误
     private class StopAsk : RuntimeException()
     private fun checkStop() { if (stopReq) throw StopAsk() }
 
@@ -100,10 +120,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         restoreDownloads()
     }
 
+    /** 修改设置并立即写入 prefs */
     fun update(f: (Settings) -> Settings) {
         settings.update { f(it).also { s -> s.save(prefs) } }
     }
 
+    /** 重新扫描 models/ packs/ maps/（用户可能用数据线拷了文件，MainActivity.onResume 会调用） */
     fun refreshFiles() {
         models.value = storage.modelFiles()
         embedModel.value = storage.embedModel()
@@ -111,6 +133,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { packs.refresh() }
     }
 
+    /** 设置里选中的模型；没选或文件没了就退到第一个；一个都没有返回 null */
     fun currentModel(): File? {
         val all = models.value.ifEmpty { storage.modelFiles() }
         return all.firstOrNull { it.name == settings.value.model } ?: all.firstOrNull()
@@ -118,6 +141,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- 提问：改写检索词 → 检索资料 → 按资料作答 ----------------
 
+    /**
+     * 发起一次提问（已有进行中的提问时忽略）。异步，结果通过 [live]（过程）和 QaStore（完成后）反映；
+     * 出错/停止通过 [message] 提示。没有模型或开了“只检索”时只做检索，mode=search。
+     */
     fun ask(question: String) {
         val q = question.trim()
         if (q.isEmpty() || live.value != null) return
@@ -135,7 +162,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 checkStop()
                 if (model == null || s.searchOnly) {
                     status("正在检索资料…")
-                    val ps = packs.search(terms, q, 6, qvec)
+                    val ps = packs.search(terms, q, 6, qvec) // 只检索展示 6 段；交给模型时只取 4 段
                     val note = when {
                         ps.isNotEmpty() -> ""
                         model == null && qvec == null -> "没有找到相关资料。\n还没有安装模型：中文问题需要语义检索模型或 AI 模型才能查英文资料。请到「资料」页下载，或者直接用英文关键词搜索。"
@@ -149,7 +176,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 checkStop()
                 if (packs.packs.value.any { it.enabled && !it.lang.startsWith("zh") }) {
                     status("正在理解问题…")
-                    terms = (Prompts.parseKeywords(llm.generate(Prompts.KEYWORDS, q, 48)) + terms).distinct()
+                    terms = (Prompts.parseKeywords(llm.generate(Prompts.KEYWORDS, q, 48)) + terms).distinct() // 48 token 足够 3–6 个关键词
                 }
                 checkStop()
                 status("正在检索资料…")
@@ -227,6 +254,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         qa.add(q.copy(seconds = (SystemClock.elapsedRealtime() - t0) / 1000.0))
     }
 
+    /** 停止当前提问：不等模型出完，已生成的部分丢弃（不存入历史） */
     fun stop() { stopReq = true; llm.stop() }
 
     /** 10 分钟没提问就释放模型，把内存（约 2–3 GB）还给系统和地图。 */
@@ -247,6 +275,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- 资料：直接搜索和阅读（不用模型，几乎不耗电） ----------------
 
+    /** 资料页搜索：不调大模型，结果写入 [searchResults]（最多 30 段）；空串清空结果 */
     fun searchLibrary(text: String) {
         val q = text.trim()
         if (q.isEmpty()) { searchResults.value = null; return }
@@ -261,6 +290,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun open(p: Passage) { reading.value = p }
     fun closeReader() { reading.value = null }
+    /** 阅读器翻到同一文档的上一段(-1)/下一段(+1)；到头时提示 */
     fun step(delta: Int) = safeLaunch {
         val cur = reading.value ?: return@safeLaunch
         packs.chunkAt(cur.packId, cur.docId, cur.seq + delta)?.let { reading.value = it }
@@ -284,6 +314,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- 导入和下载 ----------------
 
+    /** 导入用户选的 .litertlm / .arkpack / .pmtiles（进度见 [importProgress]） */
     fun import(uri: Uri) = viewModelScope.launch {
         importProgress.value = 0f
         try {
@@ -297,6 +328,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** 交给系统下载管理器下载目录项，并持久化任务 id（重启 App 后继续跟踪） */
     fun download(item: CatalogItem) {
         if (downloads.value.any { it.item.file == item.file }) return
         val id = runCatching { storage.startDownload(item.url, item.file, item.title) }.getOrElse {
@@ -327,6 +359,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (saved.isNotEmpty()) poll()
     }
 
+    // 每秒查一次系统下载状态直到没有任务；成功→把 .part 改名为正式文件，失败/记录丢失→清掉半成品
     private fun poll() {
         if (pollJob?.isActive == true) return
         pollJob = viewModelScope.launch {

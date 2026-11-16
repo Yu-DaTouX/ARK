@@ -1,3 +1,8 @@
+/*
+ * MapStyle.kt —— 生成 MapLibre 样式 JSON（离线地图的全部图层定义）。由 MapScreen 在 IO 线程调用 build()，
+ * 每当“已安装地图文件 / 卫星开关 / 海图开关”变化就重建并 setStyle。资源：assets/maps 下的 pmtiles、assets/fonts；
+ * 用户下载的区域图放在 maps/ 目录（Storage.maps），按 PMTiles 头里的瓦片类型决定当矢量还是栅格用。
+ */
 package app.ark.ui
 
 import org.json.JSONArray
@@ -34,6 +39,13 @@ object MapStyle {
         }
     }.getOrDefault(0)
 
+    /**
+     * 生成完整样式 JSON。
+     * @param regions maps/ 目录下的文件（chart* 开头的是海图，其余是区域详图）
+     * @param satellite 是否显示卫星底图（关掉则放大后直接是矢量地图）
+     * @param chart 是否叠加海图（水深着色、等深线、航标）
+     * 会读每个 PMTiles 文件头（tileType），有磁盘 IO，别在主线程调。
+     */
     fun build(regions: List<File>, satellite: Boolean, chart: Boolean = false): String {
         val sources = JSONObject()
             .put("sat", JSONObject().put("type", "raster").put("url", WORLD_SAT).put("tileSize", 256))
@@ -70,6 +82,7 @@ object MapStyle {
             }
         }
         // 先画所有面（各数据源），再画线，最后画文字，避免区域详图把全球图的文字盖住
+        // fade：卫星模式下，矢量面在 5.5→8 级之间由透明渐显，与上面卫星图 6→8.5 级的淡出衔接
         val fade = if (satellite) """["interpolate",["linear"],["zoom"],5.5,0,8,1]""" else "1"
         val waterFade = if (satellite) """["interpolate",["linear"],["zoom"],5.5,0,8,1]""" else "1"
         for (s in vec) {

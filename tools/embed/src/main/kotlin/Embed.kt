@@ -19,6 +19,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 fun docTitle(t: String?): String {
+    // 标题取文件名的最后一段：路径前缀含版权书目，不应出现在向量输入里
     if (t.isNullOrBlank()) return "none"
     var s = t.substringAfterLast('/').removeSuffix(".pdf").removeSuffix(".html")
     if (s.startsWith("en_wtnd")) return "Where There Is No Doctor"
@@ -34,6 +35,7 @@ fun docText(title: String?, text: String): String {
 }
 fun queryText(q: String) = "task: search result | query: $q"
 
+/** 取模型的第一个可用后端：默认先 GPU，失败退 CPU；设了 ARK_EMBED_CPU 环境变量则只用 CPU（排查 GPU 问题用）。 */
 fun engine(model: String, maxLen: Int): EmbeddingEngine {
     val gpu = System.getenv("ARK_EMBED_CPU") == null
     for (b in if (gpu) listOf("gpu", "cpu") else listOf("cpu")) {
@@ -51,6 +53,7 @@ fun engine(model: String, maxLen: Int): EmbeddingEngine {
     error("没有可用的后端")
 }
 
+/** 单条嵌入：超长输入会让模型报错，按 3/4 递缩短到能算为止（手机端由 PackRepository 按 token 边界切，不靠这个）。 */
 fun embedOne(eng: EmbeddingEngine, text: String, o: EmbeddingOptions): com.google.ai.edge.litertlm.EmbeddingResponse {
     var x = text
     while (true) {
@@ -60,6 +63,7 @@ fun embedOne(eng: EmbeddingEngine, text: String, o: EmbeddingOptions): com.googl
     }
 }
 
+/** 向量量化成 int8 + 一个 float 缩放系数（资料包 vec.v 的格式）：4 字节系数 + N 字节，手机端反量化后归一化再算余弦。 */
 fun quantize(v: FloatArray): ByteArray {
     val m = v.maxOf { abs(it) }.coerceAtLeast(1e-9f)
     val bb = ByteBuffer.allocate(4 + v.size).order(ByteOrder.LITTLE_ENDIAN)
@@ -69,6 +73,7 @@ fun quantize(v: FloatArray): ByteArray {
 }
 
 fun main(args: Array<String>) {
+    // 模式见文件头；每个模式都是一次性命令行工具，不常驻
     val mode = args[0]
     val opts = { dim: Int -> EmbeddingOptions(normalize = true, outputSize = dim) }
     when (mode) {

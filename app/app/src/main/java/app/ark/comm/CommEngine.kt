@@ -1,3 +1,13 @@
+// 文件职责：蓝牙消息引擎——BLE 广播（报自己）、低占空比扫描（找邻居）、GATT 服务端（收）、GATT 客户端（发）、去重和 3 跳接力。
+// 调用方：CommService（后台保持在线）、ui/comm 里的界面；依赖 CommProto（协议）、CommStore（持久化）、sensors/MyFix（带位置发送）。
+// 关键决定：
+//  - 不配对：每条消息临时 connectGatt → 分片写 RX → 等 ACK 通知 → 断开；不用系统配对，陌生人即可互发。
+//  - 接力：收到的消息和自己发的都走 backfill → 发送队列，发给每个邻居；发出前 TTL-1（自己发的不减），TTL<1 不发；
+//    去重用 (消息 ID, 源)；不把消息回发给它的源；发给本机的单发到此为止。
+//  - 收到消息先落盘 (CommStore.flush) 再回 ACK，避免进程被杀导致发送方误以为送达。
+//  - 省电：扫描按占空比（见 CommEngine 的 KDoc），广播后台用 LOW_POWER、界面开着用 BALANCED。
+//  - 线程：所有 BLE 起停/扫描调度都在主线程 Handler；发送由单独的 comm-sender 线程串行执行（一次只连一个设备）；GATT 服务端回调在系统 Binder 线程。
+//  - Android 12(API 31) 起用 BLUETOOTH_SCAN/ADVERTISE/CONNECT；更早版本扫描需定位权限。API 33 起 GATT 读写 API 带值参数，旧版用已废弃的 .value。
 package app.ark.comm
 
 import android.Manifest
@@ -98,6 +108,7 @@ object CommEngine {
     // ---------------- 本机身份 ----------------
     private fun prefs() = app.getSharedPreferences("ark", Context.MODE_PRIVATE)
 
+    /** 本机节点 ID（首次随机生成并写入 SharedPreferences，之后稳定；不会为 0，0 在协议里表示“群发”）。 */
     fun nodeId(ctx: Context): Int {
         val p = ctx.applicationContext.getSharedPreferences("ark", Context.MODE_PRIVATE)
         var id = p.getInt("comm_id", 0)
@@ -105,17 +116,20 @@ object CommEngine {
         return id
     }
 
+    /** 本机昵称：用户设置的，否则“方舟”+ 4 位短 ID。 */
     fun nick(ctx: Context): String {
         val p = ctx.applicationContext.getSharedPreferences("ark", Context.MODE_PRIVATE)
         return p.getString("comm_nick", null)?.takeIf { it.isNotBlank() } ?: ("方舟" + CommProto.shortId(nodeId(ctx)))
     }
 
+    /** 设置昵称（截到 12 字节），引擎在跑则重启广播以更新扫描响应。 */
     fun setNick(ctx: Context, nick: String) {
         ctx.applicationContext.getSharedPreferences("ark", Context.MODE_PRIVATE).edit().putString("comm_nick", CommProto.truncUtf8(nick.trim(), CommProto.NICK_MAX)).apply()
         if (running.value) main.post { restartAdvertising() }
     }
 
     // ---------------- 权限 / 蓝牙状态 ----------------
+    /** 当前系统版本需要的运行时权限。 */
     fun requiredPermissions(): Array<String> =
         if (Build.VERSION.SDK_INT >= 31) arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_CONNECT)
         else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION) // 旧版：BLUETOOTH/ADMIN 是安装时权限，扫描需要定位权限
@@ -129,7 +143,11 @@ object CommEngine {
     fun hasBle(ctx: Context) = ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 
     // ---------------- 启停 ----------------
-    /** [fromService]=true 表示后台保持在线；false 表示界面在用。 */
+    /**
+     * 启动（幂等）。[fromService]=true 表示后台保持在线；false 表示界面在用。
+     * 副作用：加载 CommStore、注册蓝牙状态广播接收器、开 BLE 广播/扫描/GATT 服务（耗电）。
+     * 失败（无 BLE、缺权限、蓝牙未开）不抛异常，而是写 [error]；蓝牙稍后打开会自动恢复。可从任意线程调用。
+     */
     @Synchronized
     fun start(ctx: Context, fromService: Boolean) {
         app = ctx.applicationContext
@@ -175,6 +193,7 @@ object CommEngine {
         }
     }
 
+    // 必须在主线程调用（由 main.post 保证）
     private fun bringUp() {
         if (running.value) return
         if (missingPermissions(app).isNotEmpty()) { error.value = "缺少蓝牙权限"; return }
@@ -279,7 +298,7 @@ object CommEngine {
         }
     }
 
-    /** 立刻扫一轮（界面按钮）。 */
+    /** 立刻扫一轮（界面按钮）；引擎没在跑则无事发生。可从任意线程调用。 */
     fun scanNow() {
         main.post {
             if (!running.value) return@post
@@ -290,7 +309,11 @@ object CommEngine {
     }
 
     // ---------------- 发送 ----------------
-    /** 发新消息：dst=0 群发；否则单发给该短 ID。返回消息，false 表示没有开启。 */
+    /**
+     * 发新消息：dst=0 群发；否则单发给该短 ID。[withLocation] 只使用 30 分钟内的 MyFix 定位。
+     * 返回消息；文本为空时返回 null。注意：引擎未运行时仍会入库为“待发送”，等引擎起来、发现邻居后由 backfill 补发。
+     * 副作用：写 CommStore（文件）、可能触发一轮扫描。
+     */
     fun send(ctx: Context, text: String, dst: Int, withLocation: Boolean): CommProto.Msg? {
         val t = CommProto.truncUtf8(text.trim(), CommProto.TEXT_MAX)
         if (t.isEmpty()) return null
@@ -317,6 +340,7 @@ object CommEngine {
         for (s in CommStore.list.value.takeLast(40)) {
             val m = s.msg
             if (nowS - m.time > BACKFILL_WINDOW_S || m.src == n.id) continue
+            // 只扫最近 40 条、且 6 小时内的消息；自己发的保持原 TTL，转发的减 1（这就是“3 跳”的来源）
             val sendTtl = if (s.mine) m.ttl else m.ttl - 1
             if (sendTtl < 1) continue
             if (!s.mine && m.dst == me) continue // 发给我的单发，到我为止
@@ -352,7 +376,7 @@ object CommEngine {
             // 只有对方明确回“新消息/重复”才算送达；ST_BAD 与 99（写入完成但没等到确认）不算
             ok = st == CommProto.ST_NEW || st == CommProto.ST_DUP
             fresh = st == CommProto.ST_NEW
-            if (st == 99) {
+            if (st == 99) { // 99 = 自定义“写完但无 ACK”，不是协议状态码
                 // 写入都成功但没收到确认：最多再试 2 次，仍无确认就当已送达，避免永远重发
                 val c = (unconfirmed[job.key] ?: 0) + 1
                 unconfirmed[job.key] = c
@@ -380,6 +404,7 @@ object CommEngine {
         private class Ev(val t: Int, val status: Int, val value: ByteArray? = null)
         private const val CONN = 0; private const val MTU = 1; private const val SVC = 2; private const val DESC = 3; private const val WRITE = 4; private const val NOTI = 5
 
+        // 阻塞调用，只能在 comm-sender 线程跑。各步超时：连接 12s、MTU 2.5s、发现服务 10s、CCCD 4s、每片写 6s、ACK 4s。
         /** 返回 ack 状态（0/1/2），99 = 全部写入成功但没等到 ack，-1 = 失败。失败时用 20 字节分片重试一次。 */
         fun send(ctx: Context, dev: BluetoothDevice, data: ByteArray, id: Int, xfer: Int): Int {
             for (attempt in 0..1) {
@@ -409,6 +434,7 @@ object CommEngine {
                 val c = await(q, CONN, 12_000) ?: return -1
                 if (c.status != BluetoothProfile.STATE_CONNECTED) return -1
                 var mtu = 23
+                // 请求 MTU 247（常见上限）；协商失败的老设备退回 23（每片数据 17 字节）
                 if (requestMtu && gatt.requestMtu(247)) mtu = await(q, MTU, 2_500)?.status ?: 23
                 if (!gatt.discoverServices()) return -1
                 if ((await(q, SVC, 10_000)?.status ?: -1) != 0) return -1
@@ -422,6 +448,7 @@ object CommEngine {
                     else { cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE; gatt.writeDescriptor(cccd) }
                     canAck = wrote && (await(q, DESC, 4_000)?.status ?: -1) == 0
                 }
+                // 每片数据 = MTU - 3（ATT 头）- 3（分片头），上限 200
                 val chunk = (mtu - 3 - CommProto.FRAG_HEAD).coerceAtLeast(CommProto.DEFAULT_CHUNK).coerceAtMost(200)
                 for (frag in CommProto.fragment(data, xfer, chunk)) {
                     val started = if (Build.VERSION.SDK_INT >= 33) gatt.writeCharacteristic(rx, frag, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == 0
@@ -466,6 +493,7 @@ object CommEngine {
     }
 
     // ---------------- GATT 服务端（收消息） ----------------
+    // 权限类型写死：RX 只写、ACK 只通知。注册的服务是异步完成的，没等 onServiceAdded。
     private fun openServer(mgr: BluetoothManager?) {
         runCatching { server?.close() }
         val s = mgr?.openGattServer(app, serverCb) ?: run { error.value = "无法打开蓝牙 GATT 服务：收不到别人的消息"; return }
@@ -490,6 +518,7 @@ object CommEngine {
         }
 
         override fun onCharacteristicWriteRequest(device: BluetoothDevice, requestId: Int, c: BluetoothGattCharacteristic, prepared: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?) {
+            // 先回写响应（协议栈确认每片），再处理；重组和入库在 Binder 线程同步完成
             if (responseNeeded) server?.sendResponse(device, requestId, android.bluetooth.BluetoothGatt.GATT_SUCCESS, offset, value)
             if (c.uuid != CommProto.RX || value == null) return
             val full = reassemblers.getOrPut(device.address) { CommProto.Reassembler() }.add(value) ?: return

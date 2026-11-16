@@ -1,3 +1,4 @@
+// 文件职责：信标的设置/列表对话框（Compose）。纯显示，不直接起服务；状态和回调由地图页传入（Beacon/BeaconService）。
 package app.ark.sensors
 
 import androidx.compose.foundation.clickable

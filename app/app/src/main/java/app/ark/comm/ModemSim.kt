@@ -1,3 +1,4 @@
+// 文件职责：给 AcousticModem/Rs 做 PC 上的信道仿真与回归测试（main 入口）；App 运行时不调用。修改调制解调参数后用它复测成功率和误报率。
 package app.ark.comm
 
 import java.util.Random
@@ -12,6 +13,7 @@ import kotlin.math.sqrt
  *       时钟偏差（±ppm 线性重采样）、可选回声（12 ms/0.35 + 30 ms/0.2）、16 bit 量化。
  */
 object ModemSim {
+    /** 把波形 [w] 过一道模拟信道，返回 16 bit PCM。[snrDb] 按有声段 RMS 计算；[ppm] 为时钟偏差；[burstMs]>0 加一段强突发噪声。 */
     fun channel(w: FloatArray, snrDb: Double, rnd: Random, ppm: Double = 0.0, echo: Boolean = false, sr: Int = 44100, ripple: Double = 0.03, burstMs: Int = 0): ShortArray {
         val lead = (rnd.nextDouble() * 1.5 * sr).toInt()
         val trail = (0.5 * sr).toInt()
@@ -47,6 +49,7 @@ object ModemSim {
         return out
     }
 
+    // 以随机大小的块喂给解码器，模拟真实麦克风分块；只取第一帧
     private fun run(cfg: ModemConfig, msg: ByteArray, pcm: ShortArray, rnd: Random): AcousticModem.Frame? {
         var got: AcousticModem.Frame? = null
         val dec = AcousticModem.Decoder(cfg) { if (got == null) got = it }

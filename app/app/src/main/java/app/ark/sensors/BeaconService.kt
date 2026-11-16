@@ -1,3 +1,7 @@
+// 文件职责：求救信标前台服务——持续广播本机状态/位置，周期性扫描其他方舟信标。包格式见 Beacon。
+// 调用方：地图页“更多”里的信标开关（BeaconService.start/stop）；依赖 Beacon、MyFix、TrackService（通知渠道）、comm/CommEngine（权限检查）。
+// 前台服务类型：connectedDevice（蓝牙），有定位权限时再加 location（Android 14 起声明类型会检查前提权限，缺就不声明）。
+// 线程：全部在主线程（Handler + 系统回调默认主线程）。权衡：扫描用 LOW_LATENCY但每分钟只扫 10 秒，广播用 LOW_POWER。
 package app.ark.sensors
 
 import android.annotation.SuppressLint
@@ -54,6 +58,7 @@ class BeaconService : Service() {
         override fun onScanFailed(errorCode: Int) { Beacon.error.value = "扫描失败（错误 $errorCode）" }
     }
 
+    // 每 PERIOD_MS（60 s）一轮：刷新广播内容（位置/已过分钟数）、扫描 SCAN_MS（10 s）
     private val cycle = object : Runnable {
         override fun run() {
             advertise()
@@ -120,6 +125,7 @@ class BeaconService : Service() {
         }
     }
 
+    // 定位每 60 s 一次、不设最小距离；GPS 与网络定位都注册，结果都交给 MyFix（按时间取新）。服务退出时在 onDestroy 注销。
     private fun startLocation() {
         val m = getSystemService(LocationManager::class.java); lm = m
         val l = SimpleLocationListener { MyFix.offer(it) }
@@ -131,6 +137,7 @@ class BeaconService : Service() {
         }
     }
 
+    // 重新广播（先停后启）；不可连接、无超时、不带设备名，以节省 31 字节广播空间。位置过时程度靠 ageMin（封顶 255 分钟）告诉接收方。
     private fun advertise() {
         val a = adv ?: return
         runCatching { a.stopAdvertising(advCb) }
@@ -159,6 +166,7 @@ class BeaconService : Service() {
     private fun startScan() {
         val s = scanner ?: return
         if (scanning) return
+        // 厂商数据过滤：公司 ID 0xFFFF + 前两字节匹配 A7 4B，掩码 FF FF = 必须完全相等；这样聊天广播（A7 43）不会被收进来
         val filter = ScanFilter.Builder().setManufacturerData(Beacon.COMPANY, byteArrayOf(Beacon.MAGIC0.toByte(), Beacon.MAGIC1.toByte()), byteArrayOf(-1, -1)).build()
         val st = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         runCatching { s.startScan(listOf(filter), st, scanCb); scanning = true }.onFailure { Beacon.error.value = "扫描失败：${it.message}" }
@@ -197,9 +205,11 @@ class BeaconService : Service() {
     }
 
     companion object {
-        const val ID = 42
+        const val ID = 42 // 通知 ID：轨迹 41、信标 42、分享 43、蓝牙消息 61、警报 62，互不冲突
         const val ACTION_STOP = "app.ark.BEACON_STOP"
+        /** 启动信标前台服务（耗电：持续广播 + 每分钟扫描 + 定位）。服务已在跑时再调用会立即重发广播（用于改状态/消息）。 */
         fun start(ctx: Context) { ContextCompat.startForegroundService(ctx, Intent(ctx, BeaconService::class.java)) }
+        /** 停止信标：停广播、停扫描、注销定位。 */
         fun stop(ctx: Context) { ctx.stopService(Intent(ctx, BeaconService::class.java)) }
     }
 }

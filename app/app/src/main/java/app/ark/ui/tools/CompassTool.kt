@@ -1,3 +1,8 @@
+/*
+ * CompassTool.kt —— “指南针”工具页：表盘随朝向旋转、真北/磁北提示、方位来源和磁干扰警告、锁定方位找回方向。
+ * 朝向数据来自 sensors/Heading（rememberCompass，磁力计 + 陀螺融合，可被“天体定向”校准覆盖）；
+ * 位置只读系统缓存（不开 GPS），用于磁偏角修正。
+ */
 package app.ark.ui.tools
 
 import android.graphics.Paint
@@ -26,6 +31,7 @@ import app.ark.sensors.rememberCompass
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+/** 指南针页 */
 @Composable
 fun CompassTool(onBack: () -> Unit) {
     val place = rememberPlace()
@@ -46,6 +52,7 @@ fun CompassTool(onBack: () -> Unit) {
             drawCircle(dim, r, ctr, style = Stroke(3f))
             val tp = Paint().apply { color = fg.toArgb(); textAlign = Paint.Align.CENTER; textSize = r * 0.16f; isFakeBoldText = true; isAntiAlias = true }
             val np = Paint(tp).apply { color = north.toArgb() }
+            // 表盘反向旋转 h：手机顶部指向的方位始终对着最上方的固定标线
             rotate(-h, ctr) { // 表盘随手机转动
                 for (a in 0 until 360 step 5) rotate(a.toFloat(), ctr) {
                     val len = if (a % 90 == 0) r * 0.12f else if (a % 45 == 0) r * 0.09f else if (a % 15 == 0) r * 0.06f else r * 0.03f
@@ -112,6 +119,7 @@ fun CompassTool(onBack: () -> Unit) {
                 var d = h - l; if (d > 180) d -= 360f; if (d < -180) d += 360f
                 val dd = d.roundToInt()
                 Text(
+                    // ±3° 内算方向正确（手持抖动和传感器噪声）
                     when { abs(dd) <= 3 -> "方向正确 ✔"; dd > 0 -> "向右偏了 $dd°，向左转 $dd°"; else -> "向左偏了 ${-dd}°，向右转 ${-dd}°" },
                     fontSize = 22.sp, fontWeight = FontWeight.Bold, color = if (abs(dd) <= 3) primary else MaterialTheme.colorScheme.error,
                 )

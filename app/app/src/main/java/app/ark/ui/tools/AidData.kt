@@ -1,6 +1,11 @@
+/*
+ * AidData.kt —— 急救步骤卡的全部内容（纯数据，25 张卡）：AidCard → 若干 Step，卡底写明依据。
+ * 由 AidCardsTool 显示。加/改卡见 docs/ARCHITECTURE.md“维护任务”；内容经过两份审查（eval/medreview/），
+ * 改医学内容务必写明依据并保持“简化要点”的口径。
+ */
 package app.ark.ui.tools
 
-/**
+/*
  * 急救步骤卡内容（离线、不用 AI）。要点按下列指南简化，写不准的不写：
  *  - AHA 2025 心肺复苏与心血管急救指南；ILCOR 2025 CoSTR；ERC 2021 欧洲复苏/急救指南
  *  - AHA 与美国红十字会急救指南（2020 重点更新 / 2024 全面更新）；IFRC 国际急救、复苏和教育指南 2020
@@ -10,14 +15,20 @@ package app.ark.ui.tools
  * 每张卡底部都写了依据。剂量只写通用、明确的。内容不能代替专业培训和医生。
  * 读者可能慌乱中单独打开任何一张卡：每张卡都要自带“先看呼吸、没有正常呼吸就 CPR”和急救电话。
  */
+/**
+ * 一个步骤。timerSec>0 时在该步骤显示倒计时（timerLabel 为标签）；
+ * actionTool 非空时显示一个跳转按钮（actionLabel 文字，actionTool 是 ToolsScreen 的工具 id）。
+ */
 class Step(
     val title: String, val body: String,
     val timerSec: Int = 0, val timerLabel: String = "",
     val actionLabel: String = "", val actionTool: String = "",
 )
 
+/** 一张急救卡：id 唯一且稳定（计时器按 id+步骤号做键），basis 是显示在卡底的依据说明 */
 class AidCard(val id: String, val title: String, val sub: String, val steps: List<Step>, val basis: String)
 
+/** 全部卡片，列表顺序就是界面顺序（心肺复苏 → 常见急症 → 外伤/环境） */
 object AidData {
     /** 急救电话，全 App 统一写法。 */
     private const val CALL = "120（多数国家 112）"

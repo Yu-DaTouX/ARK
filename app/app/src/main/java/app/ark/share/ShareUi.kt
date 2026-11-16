@@ -1,3 +1,10 @@
+/**
+ * ShareUi.kt —— 资料页“分享给附近的人”卡片（开关、网址、二维码、开热点说明）和二维码绘制。
+ *
+ * 位置：LibraryScreen 的资料页；服务状态来自 ShareServer.state，开关走 ShareService。
+ * 为什么不用系统分享：断网时让对方浏览器直接下载 APK / 资料包 / 地图，不用装 App、不用配对。
+ * 安全：无认证，同一网络内谁都能下（手机热点通常要密码）；分享的只是公开文件，没有个人数据。
+ */
 package app.ark.share
 
 import android.Manifest
@@ -29,12 +36,13 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 
 /** 资料页“分享给附近的人”卡片：开关、网址、二维码、开热点说明。 */
+/** 分享卡片。Android 13+ 要先拿通知权限，否则前台服务通知不显示、用户无从关闭。 */
 @Composable
 fun ShareCard() {
     val ctx = LocalContext.current
     val info by ShareServer.state.collectAsState()
     val cs = MaterialTheme.colorScheme
-    val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ShareService.start(ctx) }
+    val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ShareService.start(ctx) } // 权限对话框回来就照开（拒绝也能运行，只是没有常驻通知）
     Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
         Text(
             "断网时把方舟传给身边的人：对方不用装任何东西，用浏览器就能下载安装包、资料包和已下载的地图。",
@@ -67,6 +75,7 @@ fun ShareCard() {
 /** 二维码：zxing core 生成矩阵，Canvas 直接画（白底黑块，深色主题下也能扫）。 */
 @Composable
 private fun Qr(text: String) {
+    // 纠错等级用最低的 L：屏幕距离近，换更短的码（网址不长，扫得动）
     val m = remember(text) {
         QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, 0, 0, mapOf(EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.L, EncodeHintType.MARGIN to 2))
     }
@@ -74,6 +83,7 @@ private fun Qr(text: String) {
         drawRect(Color.White)
         val cell = size.width / m.width
         for (y in 0 until m.height) for (x in 0 until m.width) if (m.get(x, y)) {
+            // 每块多画 0.5px，盖住相邻块之间的抗锯齿白缝
             drawRect(Color.Black, Offset(x * cell, y * cell), Size(cell + 0.5f, cell + 0.5f))
         }
     }

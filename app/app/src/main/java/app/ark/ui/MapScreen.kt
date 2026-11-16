@@ -1,3 +1,14 @@
+/*
+ * MapScreen.kt —— “地图”标签页：MapLibre 地图 + 十字线坐标 + 定位/罗盘/气压 + 航点、轨迹记录、
+ * 沿轨迹返回、后方交会定位、BLE 求救信标显示与导航 + GPX 导出。
+ *
+ * 位置：依赖 ui/MapStyle（样式）、data/WaypointStore & TrackStore（航点/轨迹）、sensors 包（MyFix、Heading、Beacon、
+ * TrackService、BeaconUi 等）。后台服务由菜单项触发（TrackService.start、Beacon），见 docs/ARCHITECTURE.md。
+ * 生命周期：MapView 手工接到 Compose 的 Lifecycle（onStart/onResume/...），onDispose 时销毁；
+ * 指南针/气压计/定位只在页面显示（或需要导航）时监听以省电。
+ * 图层：fix（交会点）、wps（航点）、track（轨迹）、beacons（信标）、navline（到目标的连线），
+ * 都是样式重建后由 overlayInit 补加，数据变化只 setGeoJson。
+ */
 package app.ark.ui
 
 import android.Manifest
@@ -163,6 +174,7 @@ fun MapScreen(vm: AppViewModel) {
     fun withPerms(p: Array<String>, run: () -> Unit) {
         if (p.all { Perms.granted(ctx, it) }) run() else { afterPerm = run; afterPerms = p; askPerm.launch(p) }
     }
+    // 需要持续定位刷新的场景（有选中目标 / 返回模式 / 打开了列表）
     val navOn = selWp != null || selBeacon != null || returning || showWpList || showBeacon
     val meLoc by rememberMyLocation(navOn)
 
@@ -178,10 +190,11 @@ fun MapScreen(vm: AppViewModel) {
                 }
                 m.uiSettings.isAttributionEnabled = false
                 m.uiSettings.isLogoEnabled = false
-                m.uiSettings.setCompassMargins(0, 200, 32, 0)
+                m.uiSettings.setCompassMargins(0, 200, 32, 0) // 把地图自带罗盘挪到坐标条下面
                 m.addOnMapLongClickListener { ll -> addAt = ll; true }
                 m.addOnMapClickListener { ll ->
                     val pt = m.projection.toScreenLocation(ll)
+                    // 点击点周围 ±28 px 的方框内找航点/信标图标，便于手指点中
                     val hit = m.queryRenderedFeatures(RectF(pt.x - 28f, pt.y - 28f, pt.x + 28f, pt.y + 28f), "wps-sym", "beacons-sym").firstOrNull()
                     when (hit?.getStringProperty("kind")) {
                         "wp" -> { selWp = hit.getStringProperty("id"); selBeacon = null; returning = false; true }
@@ -552,6 +565,7 @@ fun MapScreen(vm: AppViewModel) {
     }
 }
 
+// 沿轨迹返回的下一个目标：lat/lon 目标点；left 剩余路程（米）；arrived 已接近起点
 private class Ret(val lat: Double, val lon: Double, val left: Double, val arrived: Boolean)
 
 /** 沿轨迹返回：找离我最近的轨迹点，再往回（起点方向）取 40 米外的点作为下一个目标；离轨迹超过 60 米先回到轨迹上。 */

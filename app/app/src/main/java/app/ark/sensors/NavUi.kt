@@ -1,3 +1,4 @@
+// 文件职责：导航相关界面件：地图图标（MapIcons）、航点编辑/列表对话框、指向面板 NavPanel。调用方：地图页。依赖 Geo、data/Waypoint。
 package app.ark.sensors
 
 import android.graphics.Bitmap
@@ -67,7 +68,9 @@ object MapIcons {
         return bmp
     }
 
+    /** 航点图标 Bitmap（72×72，每次调用新建，调用方应缓存）。 */
     fun waypoint(t: WpType) = disc(t.color, t.glyph)
+    /** 信标图标：求救 = 红色三角“救”，平安 = 青绿圆“安”。 */
     fun beacon(sos: Boolean) = if (sos) disc(0xFFD50000.toInt(), "救", triangle = true) else disc(0xFF00897B.toInt(), "安")
 }
 

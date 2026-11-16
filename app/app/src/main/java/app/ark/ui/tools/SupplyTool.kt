@@ -1,3 +1,6 @@
+/*
+ * SupplyTool.kt —— “物资计算”（人数 × 天数 → 水和热量，对照现有存量）+ 72 小时应急包清单（勾选状态存 prefs supply_checked）。
+ */
 package app.ark.ui.tools
 
 import androidx.compose.foundation.clickable
@@ -22,6 +25,7 @@ import kotlin.math.floor
  *  - 炎热气候或重体力活动：这里按 +2 L/人/天；哺乳期：+1 L/人/天——这两项是经验估算，不是官方定值（CDC 只说这些人需要更多水）。
  *  - 热量：成人静坐等待约 2000 kcal/人/天；寒冷或重体力 2500 kcal 作为保守值（粗略估算，个体差异大）。
  */
+// 页面本身无副作用，仅读写 prefs 的勾选状态
 @Composable
 fun SupplyTool(onBack: () -> Unit) {
     val prefs = LocalContext.current.toolPrefs()
@@ -87,6 +91,7 @@ fun SupplyTool(onBack: () -> Unit) {
     }
 }
 
+// 清单项：id 用于持久化勾选（改 id 会丢用户已勾状态），label 是显示文字
 private val kit = listOf(
     "water" to "饮用水：每人每天 4 L × 3 天",
     "food" to "不用加热的耐储存食物 3 天份",

@@ -1,3 +1,8 @@
+/*
+ * ToolsCommon.kt —— 各工具共用的页面骨架（ToolPage）、大按钮、提示条，以及位置缓存、时钟可信度检查。
+ * 设计：工具页要在紧急、戴手套、低电量时用——按钮和字号偏大；定位只读系统缓存（lastLocation），
+ * 不主动开 GPS 以省电；手机时钟可能因断电重启而错（天体/日出日落依赖时间），所以提供 ClockWarning。
+ */
 package app.ark.ui.tools
 
 import android.Manifest
@@ -23,9 +28,11 @@ import androidx.compose.ui.unit.sp
 import app.ark.ui.ArkIcons
 
 /** 工具页自己的小设置（止血带起始时间、手动经纬度、锁定方位等）。气压校准用主 prefs "ark" 的 "baro_sea_level"（和地图页共用）。 */
+// 工具页专用偏好文件 "ark_tools"
 fun Context.toolPrefs() = getSharedPreferences("ark_tools", Context.MODE_PRIVATE)
 fun Context.arkPrefs() = getSharedPreferences("ark", Context.MODE_PRIVATE)
 
+/** 精确或粗略定位权限有一个即可 */
 fun hasLocationPermission(ctx: Context) =
     ctx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
         ctx.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -40,8 +47,10 @@ fun lastLocation(ctx: Context): Location? {
         .maxByOrNull { it.time }
 }
 
+/** 位置状态：location 缓存位置（可能为 null）、permitted 是否已授权、request() 弹出授权请求（授权后自动刷新） */
 class Place(val location: Location?, val permitted: Boolean, val request: () -> Unit)
 
+/** 在 Composable 里获取 [Place]；授权对话框返回后重新读取缓存位置 */
 @Composable
 fun rememberPlace(): Place {
     val ctx = LocalContext.current
@@ -54,6 +63,7 @@ fun rememberPlace(): Place {
     }
 }
 
+/** 带返回键和标题的可滚动工具页 */
 @Composable
 fun ToolPage(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize()) {
@@ -69,6 +79,7 @@ fun ToolPage(title: String, onBack: () -> Unit, content: @Composable ColumnScope
     }
 }
 
+/** 大号按钮（最小高 64dp）；danger=红色，outlined=描边样式 */
 @Composable
 fun BigButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, danger: Boolean = false, outlined: Boolean = false, enabled: Boolean = true) {
     val m = modifier.fillMaxWidth().heightIn(min = 64.dp)
@@ -97,6 +108,7 @@ fun Card2(content: @Composable ColumnScope.() -> Unit) = Surface(
     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), shape = MaterialTheme.shapes.large,
 ) { Column(Modifier.padding(14.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp), content = content) }
 
+/** 毫秒 → "mm:ss"（≥1 小时为 "h:mm:ss"），负数按 0 */
 fun fmtDuration(ms: Long): String {
     val s = (ms / 1000).coerceAtLeast(0)
     val h = s / 3600; val m = s % 3600 / 60; val sec = s % 60
@@ -111,6 +123,7 @@ fun locationAge(loc: Location): String {
 }
 
 /** 构建日期：手机时钟早于它说明时间设置不对（电池耗尽后重启、没有网络授时等）。 */
+// 注意：这是写死的日期，发布新版本时可考虑更新；手机时钟早于它就当作“时间不对”
 private val BUILD_MS = java.time.Instant.parse("2026-11-01T00:00:00Z").toEpochMilli()
 
 fun clockSuspect(): Boolean = System.currentTimeMillis() < BUILD_MS

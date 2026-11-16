@@ -1,3 +1,6 @@
+/*
+ * CamProj.kt —— 天体定向“相机取景”叠加层用的投影数学（把天体方位/高度投到屏幕像素）。AstroCamera 使用。
+ */
 package app.ark.ui.tools
 
 import kotlin.math.*

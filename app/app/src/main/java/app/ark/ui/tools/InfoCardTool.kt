@@ -1,3 +1,7 @@
+/*
+ * InfoCardTool.kt —— 应急信息卡：把血型、过敏、用药、联系人等存在本机（prefs ark_tools 的 info_*），
+ * 可全屏大字（白底黑字，屏幕常亮）给救援人员看。不联网、不上传。
+ */
 package app.ark.ui.tools
 
 import androidx.compose.foundation.background

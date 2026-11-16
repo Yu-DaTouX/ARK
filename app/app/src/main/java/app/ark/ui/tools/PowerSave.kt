@@ -1,3 +1,7 @@
+/*
+ * PowerSave.kt —— 工具页“省电模式”的开关条和电量/剩余时间估算。
+ * 开关状态由 ToolsScreen 持有并通过 LocalPowerSave 下发（纯黑配色、亮度 30% 在 ToolsScreen 里实现）。
+ */
 package app.ark.ui.tools
 
 import android.content.Context
@@ -23,6 +27,7 @@ val LocalPowerSave = compositionLocalOf { false }
  * 剩余电量能用多久：BatteryManager 的 CHARGE_COUNTER（剩余电荷，µAh）÷ 当前电流 CURRENT_NOW（µA，符号各机型不同取绝对值）。
  * 部分机型用 mAh / mA 为单位：数值明显偏小时（电流 < 10000、电荷 < 100000）按 mA、mAh 理解。读不到（0 或不支持）返回 null。
  */
+// 注意：CURRENT_NOW 的符号和单位各厂商不一致，这里只是粗估
 fun batteryRuntimeHours(ctx: Context): Double? {
     val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
     var cur = abs(bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW).toDouble())
@@ -34,6 +39,7 @@ fun batteryRuntimeHours(ctx: Context): Double? {
     return if (h.isFinite() && h > 0 && h < 2000) h else null
 }
 
+/** 省电开关卡片 + 电量与估算续航（开省电后每 60 秒刷新，否则 20 秒） */
 @Composable
 fun PowerSaveBar(on: Boolean, onChange: (Boolean) -> Unit) {
     val ctx = LocalContext.current

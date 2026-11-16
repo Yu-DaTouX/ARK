@@ -1,3 +1,12 @@
+/*
+ * Common.kt —— 问答/资料共用的显示组件和文本处理。
+ *
+ * 内容：delatex（LaTeX → 纯文本）、renderAnswer（Markdown/出处链接/红色数字）、unverifiedNumbers（数字核对）、
+ * QaCard / SourceList / PassageRow（问答卡片与出处行）、ReaderDialog（全屏阅读原文，可切译文/原文）。
+ * 被 AskScreen、BookmarksScreen、LibraryScreen、Root 使用。
+ * 设计：小模型会把数字抄错（剂量错一位可能出人命），所以回答里在出处和问题里找不到的数字一律标红并提示；
+ * 资料里常有 LaTeX，手机上不渲染，转成可读文本。
+ */
 package app.ark.ui
 
 import android.content.ClipData
@@ -58,18 +67,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** 资料和回答里的 LaTeX 公式（如 $\\frac{492}{f_{MHz}}$）在手机上显示成可读的纯文本：492/f_MHz。只处理常见写法。 */
+// LaTeX 命令 → 符号的对照表（delatex 用）
 private val greek = mapOf("times" to "×", "cdot" to "·", "lambda" to "λ", "approx" to "≈", "le" to "≤", "leq" to "≤", "ge" to "≥", "geq" to "≥",
     "pm" to "±", "circ" to "°", "degree" to "°", "Omega" to "Ω", "omega" to "ω", "mu" to "μ", "pi" to "π", "Delta" to "Δ", "delta" to "δ",
     "alpha" to "α", "beta" to "β", "theta" to "θ", "sigma" to "σ", "rho" to "ρ", "eta" to "η", "infty" to "∞", "neq" to "≠", "rightarrow" to "→",
     "to" to "→", "%" to "%", "," to " ", ";" to " ", "quad" to " ", "qquad" to " ", "left" to "", "right" to "")
 
+/** 资料和回答里的 LaTeX 公式（如 $\\frac{492}{f_{MHz}}$）在手机上显示成可读的纯文本：492/f_MHz。只处理常见写法；没有 `\` 和 `$` 时原样返回。纯函数。 */
 fun delatex(src: String): String {
     if ('\\' !in src && '$' !in src) return src
     var s = src.replace(Regex("\\\\(begin|end)\\{(equation|align|displaymath)\\*?\\}"), " ").replace("\\[", "\\(").replace("\\]", "\\)")
     fun math(m0: String): String {
         var m = m0.replace('~', ' ')
-        repeat(6) {
+        repeat(6) { // 嵌套（分数里套上下标等）一层层剥，最多 6 层
             m = m.replace(Regex("\\\\(?:mathrm|text|textbf|mathbf|mathit|operatorname|textrm)\\{([^{}]*)\\}"), "$1")
                 .replace(Regex("\\\\[dt]?frac\\{([^{}]*)\\}\\{([^{}]*)\\}")) { r ->
                     fun w(x: String) = if (Regex("^[\\w.]+$").matches(x.trim())) x.trim() else "(${x.trim()})"
@@ -84,6 +94,7 @@ fun delatex(src: String): String {
     // \\(…\\)、\\[…\\]、$$…$$、$…$：只转换公式片段；正文里的 ~（如“1~2 片”）和花括号不动
     s = Regex("\\\\\\((.+?)\\\\\\)", RegexOption.DOT_MATCHES_ALL).replace(s) { math(it.groupValues[1]) }
     s = Regex("\\$\\$([^$]+)\\$\\$").replace(s) { math(it.groupValues[1]) }
+    // 单个 $…$ 容易和正文里的美元符号混淆：只有内容像公式（含 \ _ ^ = / { } 或很短）才转换
     s = Regex("\\$([^$\\n]{1,300}?)\\$").replace(s) { r ->
         val c = r.groupValues[1]
         if (Regex("[\\\\_^=/{}]").containsMatchIn(c) || (c.length <= 3 && ' ' !in c)) math(c) else r.value
@@ -193,10 +204,15 @@ private fun zhNumbers(t: String): List<String> = Regex("[零一二两三四五�
     }
 }.toList()
 
+/** 文档路径/文件名 → 好看的标题：去目录、扩展名，下划线换空格 */
 fun prettyTitle(t: String) = t.substringAfterLast('/').removeSuffix(".pdf").removeSuffix(".html").replace('_', ' ')
 
 private val timeFmt = SimpleDateFormat("M月d日 HH:mm", Locale.CHINA)
 
+/**
+ * 一问一答卡片。onBookmark(true/false) 切换书签；onOpen 点出处编号/出处行；onDelete 为 null 时不显示删除键（书签页不显示）。
+ * 数字核对在这里按 qa.id 缓存计算。
+ */
 @Composable
 fun QaCard(
     qa: Qa,
@@ -261,6 +277,7 @@ fun QaCard(
     }
 }
 
+/** 回答上方的小标签，说明这条回答的来源类型（见 Qa.mode）；未知类型不显示 */
 @Composable
 fun ModeTag(mode: String) {
     val cs = MaterialTheme.colorScheme
@@ -273,6 +290,7 @@ fun ModeTag(mode: String) {
     Text(text, style = MaterialTheme.typography.labelMedium, color = color, modifier = Modifier.padding(bottom = 6.dp))
 }
 
+/** 可折叠的出处列表；检索类问答默认展开（结果本身就是答案） */
 @Composable
 fun SourceList(sources: List<Passage>, initiallyOpen: Boolean, onOpen: (Passage) -> Unit) {
     var open by rememberSaveable { mutableStateOf(initiallyOpen) }
@@ -284,6 +302,7 @@ fun SourceList(sources: List<Passage>, initiallyOpen: Boolean, onOpen: (Passage)
     }
 }
 
+/** 一条资料摘要（标题、包名、段号、前 3 行） */
 @Composable
 fun PassageRow(p: Passage, prefix: String = "", onClick: () -> Unit) {
     val cs = MaterialTheme.colorScheme
@@ -302,7 +321,10 @@ fun PassageRow(p: Passage, prefix: String = "", onClick: () -> Unit) {
     }
 }
 
-/** 全屏阅读原文，可以往前往后翻同一篇文档的相邻段落。 */
+/**
+ * 全屏阅读原文，可以往前往后翻同一篇文档的相邻段落。
+ * loadOriginal：取英文原文（仅“检索英文、显示中文”的包返回非 null；此时显示“原文/译文”切换和机器翻译提示）。
+ */
 @Composable
 fun ReaderDialog(p: Passage, onStep: (Int) -> Unit, onClose: () -> Unit, loadOriginal: suspend (Passage) -> String? = { null }) {
     val cs = MaterialTheme.colorScheme

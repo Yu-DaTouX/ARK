@@ -1,3 +1,6 @@
+/*
+ * Solar.kt —— 日出日落与太阳赤经赤纬（NOAA/Meeus），纯数学、离线。SunTool 显示时刻，Astro 取太阳坐标。
+ */
 package app.ark.ui.tools
 
 import java.time.Instant
@@ -14,6 +17,7 @@ import kotlin.math.*
  * 经度东正西负。不含海拔对地平线的修正。
  */
 object Solar {
+    /** 一天的太阳事件；某事件当天不存在（极昼/极夜）时为 null，noon 总有值 */
     data class Day(
         val dawn: Instant?, val sunrise: Instant?, val noon: Instant,
         val sunset: Instant?, val dusk: Instant?,

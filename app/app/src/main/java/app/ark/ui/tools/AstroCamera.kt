@@ -1,3 +1,10 @@
+/*
+ * AstroCamera.kt —— “天体定向”的相机取景：Camera2 预览 + 天体标记叠加（CamProj 投影），
+ * 准星 = 相机光轴，用户把天体放到准星上点“对准了”，以其真方位校准陀螺方位（比对着星图更准）。
+ * 约束：锁竖屏（投影按竖屏设备坐标算）、退到后台即关相机；对焦固定无穷远；预览尺寸取宽 ≤ 1280 的最接近 16:9，省算力。
+ * 方位来源 Heading.camera：陀螺方位未校准（azimuth 为 null）时必须由用户按名字手选天体，只用仰角校准。
+ * 权限：CAMERA（运行时申请）；摄像头只在此对话框打开期间占用。
+ */
 package app.ark.ui.tools
 
 import android.Manifest
@@ -151,6 +158,7 @@ private class CamRunner(private val ctx: Context, private val setup: CamSetup) {
 }
 
 /** 相机对准：全屏相机取景，叠加天体标记，十字准星 = 光轴方向，对准后校准方位。 */
+// 全屏对话框；onClose 在用户返回、退后台或权限被拒时调用
 @Composable
 fun AstroCameraDialog(lat: Double, lon: Double, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {

@@ -11,7 +11,7 @@ grep -v '^\s*$' docs/public_exclude.txt | tr '\n' '\0' | xargs -0 git rm -q --ca
 T=$(git write-tree)
 P=$(git rev-parse -q --verify public || true)
 [ -n "$P" ] && [ "$(git rev-parse "$P^{tree}")" = "$T" ] && { echo "没有变化"; exit 0; }
-C=$(git -c user.name=ARK -c user.email=ark@localhost commit-tree "$T" ${P:+-p "$P"} -m "${1:-更新}")
+C=$(git commit-tree "$T" ${P:+-p "$P"} -m "${1:-更新}")
 git branch -f public "$C"
 rm -f "$GIT_INDEX_FILE"
 git push github public:main

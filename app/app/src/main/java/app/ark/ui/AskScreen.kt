@@ -1,3 +1,8 @@
+/*
+ * AskScreen.kt —— “问答”标签页：顶栏模型状态、历史/进行中的问答列表、输入框。
+ * 状态全来自 AppViewModel（live = 进行中、qa.history = 历史）；回答卡片 QaCard 和 renderAnswer（[n] 出处链接、
+ * 数字核对标红）在 Common.kt。列表 reverseLayout：最新的在底部，滚动位置 0 即最新。
+ */
 package app.ark.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +66,7 @@ private val examples = listOf(
     "失温的人怎么取暖",
 )
 
+/** 问答页。onOpenLibrary：点顶栏模型状态时跳到“资料”页（下载/切换模型）。 */
 @Composable
 fun AskScreen(vm: AppViewModel, onOpenLibrary: () -> Unit) {
     val history by vm.qa.history.collectAsStateWithLifecycle()
@@ -75,7 +81,7 @@ fun AskScreen(vm: AppViewModel, onOpenLibrary: () -> Unit) {
 
     LaunchedEffect(live?.question) { if (live != null) list.scrollToItem(0) }
 
-    // 生成回答时保持亮屏（只在生成期间，答完就恢复系统的息屏时间）
+    // 生成回答时保持亮屏（防止息屏中断 GPU 推理体验）（只在生成期间，答完就恢复系统的息屏时间）
     val view = LocalView.current
     val busy = live != null
     DisposableEffect(busy) {

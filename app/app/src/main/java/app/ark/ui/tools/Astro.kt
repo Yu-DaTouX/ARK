@@ -1,3 +1,8 @@
+/*
+ * Astro.kt —— 天体位置计算（太阳、月亮、50 颗亮星 → 方位角/高度角），纯数学、无 Android 依赖、完全离线。
+ * 被 AstroTool（列表/指南针校准界面）和 AstroCamera（相机取景叠加）使用；太阳坐标来自 Solar.kt。
+ * 算法出处、精度和对照 USNO 的自检数据见下面 object Astro 的说明。注意：时间必须可信，手机时钟错了结果全错（见 ToolsCommon.ClockWarning）。
+ */
 package app.ark.ui.tools
 
 import kotlin.math.*
@@ -25,8 +30,10 @@ import kotlin.math.*
 object Astro {
     enum class Kind { SUN, MOON, STAR }
 
+    /** 恒星：raH 赤经（小时）、decD 赤纬（度），J2000 历元；mag 视星等 */
     class Star(val id: String, val name: String, val raH: Double, val decD: Double, val mag: Float)
 
+    /** 某一时刻、某地的天体：az 真北起算顺时针（度），alt 视高度（度，含折射） */
     data class Body(val id: String, val name: String, val kind: Kind, val mag: Float, val az: Double, val alt: Double)
 
     // ---- 恒星表：id、中文名、赤经（时）、赤纬（度）、视星等 ----
@@ -99,6 +106,7 @@ object Astro {
     )
 
     // ---- 时间 ----
+    /** Unix 毫秒 → 儒略日 */
     fun julianDay(ms: Long) = ms / 86400000.0 + 2440587.5
 
     /** 格林尼治平恒星时（度），Meeus 式 12.4。 */
@@ -184,6 +192,7 @@ object Astro {
     }
 
     /** 天极（北半球北天极，南半球南天极）的方位和高度：方位 0° / 180°，高度 = |纬度|。 */
+    // 注意：只对应“天极”方向，不是北极星本身（北极星离天极约 0.7°）
     fun pole(lat: Double): Pair<Double, Double> = (if (lat >= 0) 0.0 else 180.0) to abs(lat)
 
     fun star(id: String) = byId[id]

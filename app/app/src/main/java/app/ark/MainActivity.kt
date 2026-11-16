@@ -1,3 +1,11 @@
+/*
+ * MainActivity.kt —— 唯一的 Activity：只负责挂载 Compose 界面（ArkRoot）并处理“调试版 adb 自动化”入口。
+ *
+ * 位置：界面状态全在 AppViewModel（ui/AppViewModel.kt），本类不持有业务状态；
+ * 依赖 ui/ 下的 ArkRoot、ArkTheme、SafetyNotice。
+ * 设计：adb 不能直接输入中文，所以调试 Intent 用 base64 传问题；这些入口只在
+ * FLAG_DEBUGGABLE 的包里生效，release 包里 debugIntent 直接返回，不会被第三方 App 利用。
+ */
 package app.ark
 
 import android.content.Intent
@@ -13,6 +21,7 @@ import app.ark.ui.AppViewModel
 import app.ark.ui.ArkRoot
 import app.ark.ui.ArkTheme
 
+/** 单 Activity 应用的入口。主线程运行；ViewModel 跨旋转保留。 */
 class MainActivity : ComponentActivity() {
     private val vm: AppViewModel by viewModels()
 
@@ -26,6 +35,7 @@ class MainActivity : ComponentActivity() {
         debugIntent(intent)
     }
 
+    // 调试 Intent 既可能在冷启动（onCreate）也可能在已运行时（onNewIntent）到达，两处都要处理
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         debugIntent(intent)
@@ -40,6 +50,8 @@ class MainActivity : ComponentActivity() {
     private fun debugIntent(i: Intent?) {
         if (i == null || applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) return
         fun arg(k: String) = i.getStringExtra(k)?.let { String(Base64.decode(it, Base64.DEFAULT)) }
+        // 处理完立即 removeExtra：Activity 重建或再次 onNewIntent 时不会把同一条调试命令重放一遍
+        // 下面几项写 prefs 用 commit()（同步），保证随后立刻发起的加载/提问能读到新值
         i.getStringExtra("ark_model")?.let { m -> vm.update { it.copy(model = m) } } // --es ark_model <models/ 下的文件名>
         i.removeExtra("ark_model")
         i.getStringExtra("ark_spec")?.let { getSharedPreferences("ark", MODE_PRIVATE).edit().putString("debug_spec", it).commit() }

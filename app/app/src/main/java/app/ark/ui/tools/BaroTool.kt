@@ -1,3 +1,8 @@
+/*
+ * BaroTool.kt —— “气压 / 海拔”工具页：气压计读数、用已知海拔或 GPS 海拔校准海平面气压、3 小时趋势和 Zambretti 简易预报。
+ * 气压数据和历史记录来自 sensors（rememberBarometer、PressureLog、Baro）。校准值写 prefs "ark" 的 baro_sea_level，与地图页共用；
+ * 趋势判断前先用 checkMoved 排除“人在移动”（移动会把气压变化误当天气）。
+ */
 package app.ark.ui.tools
 
 import androidx.compose.foundation.Canvas
@@ -25,6 +30,7 @@ import kotlin.math.roundToInt
 /** 校准值（海平面气压 hPa）与地图页共用：SharedPreferences "ark" 的 "baro_sea_level"。 */
 private const val KEY = "baro_sea_level"
 
+/** 气压 / 海拔页（没有气压计的手机只显示提示） */
 @Composable
 fun BaroTool(onBack: () -> Unit) {
     val ctx = LocalContext.current
@@ -37,7 +43,7 @@ fun BaroTool(onBack: () -> Unit) {
         var input by remember { mutableStateOf("") }
         fun calibrate(alt: Float) {
             val cur = p ?: return
-            if (!alt.isFinite() || alt < -500f || alt > 10000f) return
+            if (!alt.isFinite() || alt < -500f || alt > 10000f) return // 合理海拔范围
             val s = Baro.seaLevel(cur.hPa, alt)
             if (!s.isFinite() || s < 800f || s > 1200f) return
             sea = s; prefs.edit().putFloat(KEY, s).apply()
@@ -87,6 +93,7 @@ fun BaroTool(onBack: () -> Unit) {
     }
 }
 
+// 6 小时气压折线图：纵轴自动取范围（至少 2 hPa 跨度，避免微小抖动被放大成大起伏）
 @Composable
 private fun Chart() {
     val pts = PressureLog.all()

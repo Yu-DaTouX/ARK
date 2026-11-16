@@ -1,5 +1,13 @@
-// 给模型用的计算器工具（LiteRT-LM 工具调用）。App 里 app/src/main/java/app/ark/llm/ArkTools.kt 是同一份代码，改一处要同步另一处。
-// 小模型心算常出错，也常漏掉单位换算（146 MHz 写成 146），所以计算器自己认单位：模型只要把数字连同单位写进去。
+/*
+ * ArkTools.kt —— 给端侧模型用的“认单位计算器”（LiteRT-LM 工具调用）。
+ *
+ * 位置：电脑端评测用（tools/embed 的 gen / calc 命令）；App 里同一份代码在 app/src/main/java/app/ark/llm/ArkTools.kt。
+ * 目前 App 里默认不开（108 题盲评收益不明显、危险回答更多，见 docs/HANDOFF.md 4d）；
+ * 电脑端评测（tools/embed 的 gen / calc 命令）会用。
+ * 设计：小模型心算常错、也常漏单位换算，所以把“量纲 + SI 数值”的计算放在这里，模型只需把数字连单位写进算式。
+ * 本文件与 App 的 app/src/main/java/app/ark/llm/ArkTools.kt 内容相同（仅 package 行不同），改一处必须同步另一处。
+ */
+
 import com.google.ai.edge.litertlm.Tool
 import com.google.ai.edge.litertlm.ToolParam
 import com.google.ai.edge.litertlm.ToolSet
@@ -7,6 +15,7 @@ import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
+/** 暴露给模型的工具集：只有一个 calculate。线程：由引擎在工具调用时同步调用。 */
 class ArkTools : ToolSet {
     val calls = ArrayList<Pair<String, String>>() // 调用记录（算式 → 结果），评测和日志用
 
@@ -14,6 +23,7 @@ class ArkTools : ToolSet {
         "数字后面直接写单位，结尾用 to 指定想要的单位，例如：3e8 m/s / 146 MHz / 4 to cm；100 N*m to lbf*ft；32 psi to bar；" +
         "15 mg/kg * 18 kg；40 degC to degF；234 / 146（无单位的经验公式直接写数字）。" +
         "支持 + - * / ^ 括号、sqrt、sin/cos/tan（角度制）、pi、c（光速）。")
+    /** 工具入口。永远返回字符串（出错时返回给模型看的中文提示，不抛异常，好让模型改写后重试）。 */
     fun calculate(@ToolParam(description = "带单位的算式，可以用 to 指定结果单位，例如 3e8 m/s / 7.1 MHz / 2 to m") expression: String): String {
         val r = runCatching { Calc.eval(expression) }.getOrElse {
             "算式有误（${it.message}）。请改写后再调用：只写数字、单位和运算符，例如 234 / 146 或 3e8 m/s / 146 MHz / 4 to cm；改不好就自己按资料公式算，照常回答。"
@@ -24,6 +34,7 @@ class ArkTools : ToolSet {
 }
 
 /** 带量纲的数：v 是国际单位制下的数值，d 是 [米, 千克, 秒, 安培] 的幂次。 */
+// 量纲固定为 4 维 [m, kg, s, A]；牛、帕、焦、瓦、伏、欧等都能由这 4 个基本量推出
 class Q(val v: Double, val d: IntArray = IntArray(4)) {
     val dimless get() = d.all { it == 0 }
     operator fun times(o: Q) = Q(v * o.v, IntArray(4) { d[it] + o.d[it] })
@@ -32,10 +43,14 @@ class Q(val v: Double, val d: IntArray = IntArray(4)) {
     fun same(o: Q) = d.contentEquals(o.d)
 }
 
+/**
+ * 带单位的递归下降表达式解析器。入口 [Calc.eval]；每个实例解析一个字符串（i 是游标，非线程安全，不要共享）。
+ * 文法：expr = term (+|- term)*；term = power (*|/ power)*；power = unary (^ power)?；atom = 数字[单位] | 单位 | 函数(...) | (expr)。
+ */
 class Calc private constructor(src: String) {
     companion object {
         private fun u(v: Double, m: Int = 0, kg: Int = 0, s: Int = 0, a: Int = 0) = Q(v, intArrayOf(m, kg, s, a))
-        private val L = u(1e-3, m = 3)
+        private val L = u(1e-3, m = 3) // 1 升 = 1e-3 立方米
         private val UNITS: Map<String, Q> = linkedMapOf<String, Q>().apply {
             fun def(names: String, q: Q) { for (n in names.split(' ')) this[n] = q }
             def("m 米 公尺", u(1.0, m = 1)); def("cm 厘米", u(0.01, m = 1)); def("mm 毫米", u(1e-3, m = 1))
@@ -71,6 +86,7 @@ class Calc private constructor(src: String) {
             def("drop drops 滴", u(5e-8, m = 3)) // 约 0.05 mL
             def("percent", u(0.01))
         }
+        // 大小写不敏感的兜底表：先精确匹配（MHz 与 mHz、M 与 m 要分大小写），找不到再忽略大小写
         private val LOWER: Map<String, Q> = HashMap<String, Q>().apply { UNITS.forEach { (k, v) -> putIfAbsent(k.lowercase(), v) } }
         private fun unit(name: String) = UNITS[name] ?: LOWER[name.lowercase()]
 
@@ -79,6 +95,10 @@ class Calc private constructor(src: String) {
         private val TO = Regex("""\s+to\s+|->|=>|→|换算成|换算为|换成""", RegexOption.IGNORE_CASE)
         private val TEMP = Regex("""^\s*(-?[\d.]+)\s*(°C|℃|degC|摄氏度|C|°F|℉|degF|华氏度|F|K)\s*$""", RegexOption.IGNORE_CASE)
 
+        /**
+         * 计算 [src0] 并返回带单位的结果字符串，如 "2.055 m"。支持 `算式 to 目标单位`。
+         * @throws IllegalArgumentException / IllegalStateException 语法错、单位不一致、未知单位（消息是中文，给模型看）
+         */
         fun eval(src0: String): String {
             val src = src0.trim().removeSuffix("。").replace(Regex("""^\s*[^=]{1,12}=(?!=)\s*"""), "") // “λ = 300/146” 只算等号右边
             val parts = src.split(TO)
@@ -91,6 +111,7 @@ class Calc private constructor(src: String) {
                     val alt = target.replace(Regex("""\blbs?\b"""), "lbf").replace(Regex("""\bkg\b"""), "kgf").replace(Regex("磅(?!力)"), "磅力").replace(Regex("(?:公斤|千克)(?!力)"), "kgf")
                     runCatching { Calc(alt).parse() }.getOrNull()?.takeIf { q.same(it) }?.let { t = it }
                 }
+                // 算式无量纲却要求换算：无法判断单位，原样给数并提示
                 if (q.dimless) return "${fmt(q.v)}（算式里没写单位，结果按 $target 理解前请确认单位换算）"
                 require(q.same(t)) { "单位对不上：结果的单位不能换算成 $target" }
                 return "${fmt(q.v / t.v)} $target"
@@ -101,6 +122,7 @@ class Calc private constructor(src: String) {
             return fmt(q.v) + " " + q.d.withIndex().filter { it.value != 0 }.joinToString("·") { names[it.index] + if (it.value != 1) "^${it.value}" else "" }
         }
 
+        /** 温度不是纯比例换算（有偏移），单独处理：只支持 “数字+温标 to 温标” 这一种形式 */
         private fun temperature(expr: String, target: String?): String? {
             val m = TEMP.find(expr) ?: return null
             val v = m.groupValues[1].toDouble()
@@ -112,6 +134,7 @@ class Calc private constructor(src: String) {
             return "${fmt(r)} ${mapOf('C' to "°C", 'F' to "°F", 'K' to "K")[to]}"
         }
 
+        /** 4 位有效数字；1e-4 ≤ |v| < 1e9 用普通写法，否则科学计数法 */
         fun fmt(v: Double): String {
             if (v.isNaN() || v.isInfinite()) return "无法计算：结果不是有限数"
             if (v == 0.0) return "0"
@@ -168,6 +191,7 @@ class Calc private constructor(src: String) {
 
     private fun isNameChar(c: Char) = c.isLetter() || c == 'µ' || c == 'Ω' || c == '°'
 
+    // 单位名里允许出现数字的特例：m3、cm3（立方米/立方厘米），其余字母+数字不当作一个名字
     private fun name(): String {
         val st = i
         while (isNameChar(peek()) || (i > st && peek().isDigit() && s.substring(st, i) in setOf("m", "cm"))) i++

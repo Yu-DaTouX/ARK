@@ -1,3 +1,7 @@
+/*
+ * Root.kt —— 应用骨架：底部 5 个标签页（问答/资料/地图/工具/书签）+ 全局提示条 + 全局阅读器弹窗。
+ * 由 MainActivity 调用；各页面见同目录 *Screen.kt。ViewModel 的 message 在这里统一用 Snackbar 显示。
+ */
 package app.ark.ui
 
 import androidx.compose.foundation.layout.Box
@@ -29,6 +33,7 @@ private val tabs = listOf(
     "书签" to ArkIcons.Bookmark,
 )
 
+/** 根界面。标签页序号用 rememberSaveable，旋转屏幕后保持；阅读器弹窗放在这一层，任何页面点出处都能打开。 */
 @Composable
 fun ArkRoot(vm: AppViewModel) {
     var tab by rememberSaveable { mutableIntStateOf(0) }

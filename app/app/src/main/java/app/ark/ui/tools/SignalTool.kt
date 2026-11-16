@@ -1,3 +1,7 @@
+/*
+ * SignalTool.kt —— “信号”工具：闪光灯 SOS / 文字摩尔斯闪光（由前台服务 TorchService 执行，关屏也继续）+ 全屏屏幕信号灯。
+ * 设计：没有闪光灯或被占用（TorchService.failed）时退而用屏幕按同样的摩尔斯时序闪；离开页面即停止，避免忘记关而耗电。
+ */
 package app.ark.ui.tools
 
 import android.app.Activity
@@ -31,6 +35,7 @@ import kotlinx.coroutines.delay
 
 private fun Context.activity(): Activity? = when (this) { is Activity -> this; is ContextWrapper -> baseContext.activity(); else -> null }
 
+/** 信号页 */
 @Composable
 fun SignalTool(onBack: () -> Unit) {
     val ctx = LocalContext.current
@@ -109,6 +114,7 @@ fun SignalTool(onBack: () -> Unit) {
     if (screenLight != "") ScreenLight(red = screenLight == "red", blink = blink, steps = if (screenSos) steps.ifEmpty { Morse.steps("SOS") } else null, onClose = { screenLight = ""; screenSos = false })
 }
 
+// 全屏纯色对话框：亮度拉到最大并保持亮屏；steps 非空时按摩尔斯闪，否则 blink 决定是否每 0.5 秒闪
 @Composable
 private fun ScreenLight(red: Boolean, blink: Boolean, steps: List<Morse.Step>?, onClose: () -> Unit) {
     var on by remember { mutableStateOf(true) }

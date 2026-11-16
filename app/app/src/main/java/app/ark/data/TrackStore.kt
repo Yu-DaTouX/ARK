@@ -1,3 +1,9 @@
+/*
+ * TrackStore.kt —— GPS 轨迹的内存状态 + filesDir/track.csv 持久化。
+ * 写入方：sensors/TrackService（后台前台服务）；读取方：地图页画线、Gpx 导出。
+ * 设计：追加写 CSV（崩溃/没电不丢已记的点）；上限 5 万点，满了抽稀而不是丢新点；
+ * 写盘失败的点不进内存，保证界面看到的就是盘上有的。
+ */
 package app.ark.data
 
 import android.content.Context
@@ -16,8 +22,9 @@ object TrackStore {
     private val _points = MutableStateFlow<List<TrackPoint>>(emptyList())
     val points: StateFlow<List<TrackPoint>> = _points
     val recording = MutableStateFlow(false)
-    private const val MAX = 50_000
+    private const val MAX = 50_000 // TrackService 约 45 秒 / 8 米记一点，5 万点够记数百小时
 
+    /** 首次调用时读入已有轨迹，之后重复调用无效；Application/Service 均可调用（读文件，建议后台线程） */
     @Synchronized fun init(ctx: Context) {
         if (file != null) return
         val f = File(ctx.applicationContext.filesDir, "track.csv")
@@ -52,6 +59,7 @@ object TrackStore {
         return true
     }
 
+    // AtomicFile：写到临时文件再替换，中途失败旧文件完好
     private fun rewrite(l: List<TrackPoint>): Boolean {
         val f = file ?: return true
         val af = android.util.AtomicFile(f)
@@ -68,6 +76,7 @@ object TrackStore {
         }
     }
 
+    /** 清空内存和磁盘上的轨迹 */
     @Synchronized fun clear() {
         _points.value = emptyList()
         runCatching { file?.delete() }

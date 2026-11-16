@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -46,6 +45,7 @@ import java.util.Locale
 @Composable
 fun AcousticTab() {
     val ctx = LocalContext.current
+    if (ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) AcousticLink.dumpDir = ctx.getExternalFilesDir(null)
     val cfg by AcousticLink.cfg.collectAsState()
     val listening by AcousticLink.listening.collectAsState()
     val sending by AcousticLink.sending.collectAsState()
@@ -79,15 +79,11 @@ fun AcousticTab() {
     val bytes = text.toByteArray(Charsets.UTF_8).size
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = GAP) {
         Text(
-            "手机扬声器发出一串音调，另一台手机的麦克风听到并解码。蓝牙坏了、两台手机型号不同、距离近（几米）安静时都能用。" +
-                "约 9 字节/秒，一条最多 140 字节（约 46 个汉字），有纠错和校验，校验失败的会被丢弃。",
+            "用人耳几乎听不见的近超声（17–19.5 kHz）在两台手机之间传短消息：发送方扬声器播放，接收方麦克风解码。" +
+                "不需要蓝牙和配对，适合蓝牙坏了或两台手机互相找不到时，近距离（约 1 米内，扬声器对着麦克风）安静处使用。" +
+                "约 9 字节/秒，一条最多 140 字节（约 46 个汉字），有纠错和校验，校验失败的会被丢弃。部分手机扬声器发不出这么高的音，请先点“单机自测”。",
             fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = cfg === ModemConfig.AUDIBLE, onClick = { setMode(ModemConfig.AUDIBLE) }, label = { Text("可闻 1.5–4.5 kHz") })
-            FilterChip(selected = cfg === ModemConfig.NEAR_ULTRA, onClick = { setMode(ModemConfig.NEAR_ULTRA) }, label = { Text("近超声 17–19.5 kHz") })
-        }
-        if (cfg === ModemConfig.NEAR_ULTRA) Text("近超声几乎听不见，但多数手机扬声器/麦克风在 17 kHz 以上很弱，距离会明显变短；双方必须都选这个模式。请先用“单机自测”确认。", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
 
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -100,7 +96,7 @@ fun AcousticTab() {
                 if (listening) {
                     Text("环境声音", fontSize = 12.sp)
                     LinearProgressIndicator(progress = { level }, modifier = Modifier.fillMaxWidth())
-                    Text(if (score > 0.7f) "听到同步信号，正在接收…" else "等待信号（${(score * 100).toInt()}%）", fontSize = 12.sp)
+                    Text(if (score > 0.4f) "听到同步信号，正在接收…" else "等待信号（${(score * 100).toInt()}%）", fontSize = 12.sp)
                 }
                 msg?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
             }

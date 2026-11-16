@@ -120,6 +120,18 @@ fun main(args: Array<String>) {
             eng.close()
         }
         "gen" -> gen(args[1], args[2], args[3], args.getOrNull(4)?.toInt() ?: 900)
+        "rxfile" -> { // 复盘手机录下的原始音频：rxfile <pcm> <audible|ultra>。先把 app 的 comm/AcousticModem.kt、Rs.kt、ModemSim.kt 拷到 src/main/kotlin/modem/（不入库）
+            val b = java.io.File(args[1]).readBytes()
+            val pcm = ShortArray(b.size / 2) { ((b[2 * it + 1].toInt() shl 8) or (b[2 * it].toInt() and 0xFF)).toShort() }
+            val c = if (args[2] == "ultra") app.ark.comm.ModemConfig.NEAR_ULTRA else app.ark.comm.ModemConfig.AUDIBLE
+            var best = 0f
+            val d = app.ark.comm.AcousticModem.Decoder(c) { f -> println("解出：${String(f.payload, Charsets.UTF_8)}  纠正 ${f.corrected}  质量 ${f.quality}") }
+            var i = 0
+            while (i < pcm.size) { val n = minOf(2048, pcm.size - i); d.feed(pcm.copyOfRange(i, i + n), n); best = maxOf(best, d.lastScore); i += n }
+            println("最大前导得分 $best")
+        }
+        "modemsim" -> app.ark.comm.ModemSim.main(args.drop(1).toTypedArray())
+        "calc" -> java.io.File(args[1]).readLines().filter { it.isNotBlank() }.forEach { println("$it  =>  ${runCatching { Calc.eval(it) }.getOrElse { e -> "无法计算：${e.message}" }}") }
         else -> error("未知模式 $mode")
     }
 }

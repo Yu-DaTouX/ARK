@@ -61,3 +61,4 @@ data/zh/out_c/
 data/maps/dl/*.pmtiles
 data/maps/dl/*.part
 data/maps/dl/*.log
+tools/embed/src/main/kotlin/modem/

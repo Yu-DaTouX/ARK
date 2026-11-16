@@ -47,7 +47,7 @@ object AcousticModem {
     val PRE = intArrayOf(15, 15, 15, 15, 15, 0, 0, 15, 15, 0, 15, 0, 15) // Barker-13：+→音15，−→音0
     private const val HEAD_SYMS = 12
     private const val RING = 4096 // 保存最近 4096 个 5 ms 的能量行 ≈ 20 秒
-    private const val THRESH = 0.7f
+    private const val THRESH = 0.5f // 两台手机实测：真峰 0.97，前导进来一半时约 0.45；误同步会被头部 RS、版本号和 CRC 拒掉
 
     fun crc16(b: ByteArray, len: Int = b.size): Int {
         var crc = 0xFFFF
@@ -123,7 +123,7 @@ object AcousticModem {
         private val ring = FloatArray(RING * 16)
         private val sums = FloatArray(RING)
         private var n = -1L // 最近一个步进的绝对序号
-        private var scanFrom = 0L
+        private var scanned = -1L // 已经扫过前导的最后一步；假同步失败后会退回去，用环形缓冲里的能量补扫
         private var cand = false
         private var bestS = 0f
         private var bestN = 0L
@@ -133,12 +133,15 @@ object AcousticModem {
         private var bodyLen = 0
         private var bodySyms = 0
 
+        /** 调试日志（锁定、头部/正文失败），默认不输出 */
+        var log: ((String) -> Unit)? = null
+
         /** 最近一次的前导得分（0..1），界面可显示“听到信号”。 */
         @Volatile var lastScore = 0f
         /** 最近一步的总能量（粗略的“音量”）。 */
         @Volatile var level = 0f
 
-        fun reset() { state = 0; cand = false; scanFrom = n + 1 }
+        fun reset() { state = 0; cand = false; scanned = n }
 
         fun feed(pcm: ShortArray, count: Int) {
             for (i in 0 until count) {
@@ -167,11 +170,15 @@ object AcousticModem {
             }
             sums[row] = sum
             level = sum
-            if (n < PRE.size * 8 || n < scanFrom) return
-            when (state) {
-                0 -> scanSync()
-                1 -> if (n >= lockN + 8 * HEAD_SYMS) decodeHead()
-                2 -> if (n >= lockN + 8L * (HEAD_SYMS + bodySyms)) decodeBody()
+            if (n < PRE.size * 8) return
+            while (true) when (state) {
+                0 -> {
+                    val oldest = n - RING + 8L * PRE.size + 8 // 再早的能量行已经被覆盖
+                    while (state == 0 && scanned < n) { scanned++; if (scanned >= maxOf(oldest, 8L * PRE.size)) scanSync(scanned) }
+                    if (state == 0) return
+                }
+                1 -> if (n >= lockN + 8 * HEAD_SYMS) decodeHead() else return
+                2 -> if (n >= lockN + 8L * (HEAD_SYMS + bodySyms)) decodeBody() else return
             }
         }
 
@@ -180,16 +187,17 @@ object AcousticModem {
             return ring[r * 16 + tone] / (sums[r] + 1e-2f)
         }
 
-        private fun scanSync() {
+        private fun scanSync(m: Long) {
             var sc = 0f
-            for (i in PRE.indices) sc += peakness(n - 8L * (PRE.size - 1 - i), PRE[i])
+            for (i in PRE.indices) sc += peakness(m - 8L * (PRE.size - 1 - i), PRE[i])
             sc /= PRE.size
-            lastScore = sc
+            if (m == n) lastScore = sc
             if (!cand) {
-                if (sc > THRESH) { cand = true; bestS = sc; bestN = n; candStart = n }
+                if (sc > THRESH) { cand = true; bestS = sc; bestN = m; candStart = m }
             } else {
-                if (sc > bestS) { bestS = sc; bestN = n }
-                if (n - candStart >= 10) { cand = false; lockN = bestN; state = 1 }
+                if (sc > bestS) { bestS = sc; bestN = m }
+                // 一直跟踪到得分过峰后 8 步（1 个符号）再锁定：真实房间里前导刚进来时得分就会越过门限，过早锁定会错位
+                if (m - bestN >= 8 || m - candStart >= 8 * PRE.size) { cand = false; lockN = bestN; state = 1; log?.invoke("lock n=$lockN score=$bestS now=$n") }
             }
         }
 
@@ -205,7 +213,8 @@ object AcousticModem {
             for (b in 0 until 6) cw[b] = ((symAt(lockN + 8L * (2 * b + 1)) shl 4) or symAt(lockN + 8L * (2 * b + 2))).toByte()
             val ok = Rs.correct(cw, HEAD_PARITY)
             val len = cw[0].toInt() and 0xFF
-            if (ok < 0 || cw[1].toInt() != VERSION || len > MAX_BYTES) { fail(); return }
+            if (ok < 0 || cw[1].toInt() != VERSION || len > MAX_BYTES) { log?.invoke("head fail rs=$ok ver=${cw[1]} len=$len"); fail(); return }
+            log?.invoke("head ok len=$len")
             bodyLen = len
             val total = len + 2
             val nb = blockSizes(total).size
@@ -231,20 +240,20 @@ object AcousticModem {
             var off = 0; var errs = 0
             for (cw in cws) {
                 val e = Rs.correct(cw, BLOCK_PARITY)
-                if (e < 0) { fail(); return }
+                if (e < 0) { log?.invoke("body rs fail"); fail(); return }
                 errs += e
                 System.arraycopy(cw, 0, data, off, cw.size - BLOCK_PARITY)
                 off += cw.size - BLOCK_PARITY
             }
             val crc = ((data[bodyLen].toInt() and 0xFF) shl 8) or (data[bodyLen + 1].toInt() and 0xFF)
-            if (crc != crc16(data, bodyLen)) { fail(); return }
-            state = 0; scanFrom = n + 1
+            if (crc != crc16(data, bodyLen)) { log?.invoke("body crc fail"); fail(); return }
+            state = 0; scanned = n
             onFrame(Frame(data.copyOf(bodyLen), errs, qsum / bodySyms))
         }
 
         private fun fail() {
-            state = 0
-            scanFrom = lockN + 8L * PRE.size
+            state = 0; cand = false
+            scanned = lockN + 3 // 只跳过这个假峰，从它后面补扫（期间错过的真前导还能找回来）
         }
     }
 }

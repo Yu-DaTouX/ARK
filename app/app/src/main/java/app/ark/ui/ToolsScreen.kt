@@ -29,7 +29,7 @@ private val items = listOf(
     ToolItem("aidcards", "急救步骤卡", "心肺复苏、出血、窒息、烧伤、蛇咬……一步一屏，零耗电"),
     ToolItem("aid", "急救计时", "CPR 节拍器 · 止血带计时"),
     ToolItem("signal", "信号", "闪光灯 SOS · 摩尔斯闪光 · 屏幕信号灯"),
-    ToolItem("comm", "通讯", "蓝牙消息（不配对、可接力）· 声音传信 · 警报声"),
+    ToolItem("comm", "通讯", "蓝牙消息（不配对、可接力）· 超声传信 · 警报声"),
     ToolItem("info", "应急信息卡", "血型、过敏、用药、联系人，全屏给救援人员看"),
     ToolItem("compass", "指南针", "真北 / 磁北 · 锁定方位找回方向"),
     ToolItem("astro", "天体定向", "用太阳、月亮、星星校准方向，不受磁干扰"),

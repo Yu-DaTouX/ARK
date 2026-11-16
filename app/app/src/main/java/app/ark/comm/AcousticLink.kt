@@ -15,7 +15,7 @@ import kotlin.math.sqrt
 object AcousticLink {
     class Rx(val text: String, val time: Long, val corrected: Int, val quality: Float, val self: Boolean)
 
-    val cfg = MutableStateFlow(ModemConfig.AUDIBLE)
+    val cfg = MutableStateFlow(ModemConfig.NEAR_ULTRA) // 可闻模式太吵，界面只留近超声（12S→Fold6 实测可用）
     val listening = MutableStateFlow(false)
     val sending = MutableStateFlow(false)
     /** 麦克风当前音量 0..1（粗略）与前导得分 0..1（>0.7 说明听到了同步信号）。 */
@@ -25,6 +25,9 @@ object AcousticLink {
     val message = MutableStateFlow<String?>(null)
     val selfTest = MutableStateFlow<String?>(null)
     val txSeconds = MutableStateFlow(0.0)
+
+    /** 调试：接收时保留最近 30 秒原始录音，停止监听时写到这个目录的 acoustic_rx.pcm（16 bit 单声道），电脑上复盘解码。 */
+    @Volatile var dumpDir: java.io.File? = null
 
     @Volatile private var stopFlag = false
     @Volatile private var reader: Thread? = null
@@ -70,8 +73,11 @@ object AcousticLink {
             r?.release()
         }
         if (rec == null) { message.value = "无法打开麦克风（权限被拒或被别的程序占用）"; return }
-        val dec = AcousticModem.Decoder(c) { f -> onFrame(f) }
+        val dec = AcousticModem.Decoder(c) { f -> android.util.Log.i("ark", "acoustic frame ${f.payload.size} B"); onFrame(f) }
+        dec.log = { android.util.Log.i("ark", "acoustic $it") }
         val buf = ShortArray(2048)
+        val keep = if (dumpDir != null) ShortArray(c.sampleRate * 30) else null
+        var kpos = 0L
         try {
             rec.startRecording()
             listening.value = true; message.value = null
@@ -80,6 +86,7 @@ object AcousticLink {
                 val n = rec.read(buf, 0, buf.size)
                 if (n <= 0) { if (n < 0) { message.value = "麦克风读取出错"; break }; continue }
                 dec.feed(buf, n)
+                if (keep != null) for (i in 0 until n) { keep[(kpos % keep.size).toInt()] = buf[i]; kpos++ }
                 if (++tick % 2 == 0) {
                     var e = 0.0
                     for (i in 0 until n) e += buf[i] * buf[i].toDouble()
@@ -88,6 +95,12 @@ object AcousticLink {
                 }
             }
         } finally {
+            if (keep != null) runCatching {
+                val len = minOf(kpos, keep.size.toLong()).toInt()
+                val bb = java.nio.ByteBuffer.allocate(len * 2).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                for (j in 0 until len) bb.putShort(keep[((kpos - len + j) % keep.size).toInt()])
+                java.io.File(dumpDir, "acoustic_rx.pcm").writeBytes(bb.array())
+            }
             runCatching { rec.stop() }; rec.release()
             listening.value = false; level.value = 0f; score.value = 0f
         }
@@ -161,7 +174,7 @@ object AcousticLink {
             val r = selfResult
             selfPayload = null
             selfTest.value = if (r != null) "通：本机扬声器→麦克风解码成功（RS 纠正 ${r.corrected} 字节，信号质量 ${(r.quality * 100).toInt()}%）"
-            else "不通：没解出来。把音量调大、手机离桌面远一点或换到安静处再试；近超声模式很多手机扬声器发不出来，请先用可闻模式"
+            else "不通：没解出来。把媒体音量调大、换到安静处再试；有些手机扬声器发不出 17 kHz 以上的声音，这种手机只能接收，不能发送"
             if (!wasListening) stopListening()
         }, "ark-acoustic-selftest").start()
         return true

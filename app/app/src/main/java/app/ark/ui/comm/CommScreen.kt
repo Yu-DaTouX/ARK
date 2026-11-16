@@ -36,7 +36,7 @@ fun CommScreen(onBack: () -> Unit) {
             Text("通讯", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
         TabRow(selectedTabIndex = tab) {
-            listOf("蓝牙消息", "声音传信", "警报声").forEachIndexed { i, t ->
+            listOf("蓝牙消息", "超声传信", "警报声").forEachIndexed { i, t ->
                 Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t, fontSize = 16.sp) })
             }
         }

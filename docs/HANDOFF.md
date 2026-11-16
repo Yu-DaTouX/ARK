@@ -76,8 +76,16 @@
 - 计算器：`llm/ArkTools.kt`（与 `tools/embed/.../ArkTools.kt` 同一份，认单位），`LlmManager.generate(calc=true)` 才挂上，**App 里不开**：108 题 Opus 盲评（计算器真正可用的那轮）总体 38 胜 33 负 37 平，计算类题 6 胜 8 负，危险回答 4 比 1（换提示词后回答变长、混用资料）。评测 `eval/calc_set.py`、`prompt_ab.py judge 2 g_tool g_plain`，结果 `eval/ab/jres2_*.txt`、key `key_gtool2.json`。
 - 答非所问保护：回答像“请提供您的问题”（`Prompts.lostQuestion`）时，把问题挪到资料前再问一次。
 
+## 4e. v0.3.0 发布（11-17 凌晨）
+
+- 内容：通讯（蓝牙消息 / 超声传信 / 求救信标 / 警报声）、安全弹窗与免责、急救卡 25 张、求生工具、省电优化（地图 15 fps、退后台停传感器、三短声静音期关音频、流式限流）、可靠性修复 29 条（Astra 审查）、全代码注释 + `docs/ARCHITECTURE.md`。
+- 构建：versionCode 3 / 0.3.0；`python data/build_public.py` 后的公开包换进 `assets/packs`，`ARK_KEYSTORE_PROPS=F:/ARK-keys/keystore.properties gradle assembleRelease`，编完拷回自用包并 `cmp` 核对（已做）。APK 约 200 MB，签名 `CN=ARK Offline`。
+- 公开仓库历史：作者统一改成 `Yu-DaTouX <174885674+Yu-DaTouX@users.noreply.github.com>`（commit-tree 重写，内容和时间不变，force push；旧分支备份 `public-bak`，本地 main 未动）。`publish.sh` 已不再写死 ARK 身份。
+
 ## 5. 待用户决定
 
 - 中文资料包：替换还是中英并存（第 3 节第 2 条）。
 - 是否从 archive.org 收民国旧译本。
+- 局域网分享是否加随机口令认证（现在同一网络内谁都能下载公开文件）。
+- 12S 上遗留的 e2b-ft2i、e2b-ft3 两个模型要不要删。
 - zimgit 里在版权期的书（Foxfire 1–3、Richard Graves 等）随开源 App 分发前要确认。

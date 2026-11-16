@@ -22,11 +22,17 @@
 - **数字核对**：回答里的数字在出处原文中找不到就标红。
 - **书签**：重要的回答连同出处原文一起保存。
 - **离线地图**：地球仪视图 + NASA 卫星底图 + OpenStreetMap 矢量地图；GPS 定位不需要网络；屏幕中心坐标可复制。
+- **求生工具**：指南针（真北/磁北）、天体定向（相机对准太阳月亮星星）、气压海拔与天气趋势、日出日落、单位换算、物资计算、饮水消毒、闪光灯 SOS。
+- **急救步骤卡**：25 张一步一屏的抢救卡（心肺复苏、出血、窒息、烧伤、蛇咬、一氧化碳中毒等），零耗电；另有 CPR 节拍器和止血带计时。
+- **不联网也能互通消息**：蓝牙低功耗短消息（不配对，三台以上自动接力）、近超声传信（17–19.5 kHz，听不见）、蓝牙求救信标（地图上显示附近的人和距离）、警报声。
+- **省电**：黑色主题、息屏停传感器、推理只在需要时跑；一次问答整机约 90 焦耳。
 - **导入自己的资料**：任何书、手册、网页都能做成资料包导入，见 [docs/DATA.md](docs/DATA.md)。
+
+> 当前版本 0.3.0。未完成的已知问题见 [docs/HANDOFF.md](docs/HANDOFF.md)，代码结构与维护方式见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## 下载
 
-在 [Releases](../../releases) 下载 APK（约 180 MB，含核心资料和全球地图）。AI 模型在 App 的「资料」页下载：Gemma 4 E2B（2.4 GB，默认）或 E4B（3.4 GB），语义检索模型 EmbeddingGemma（165 MB，推荐）。
+在 [Releases](../../releases) 下载 APK（约 200 MB，含核心资料和全球地图）。AI 模型在 App 的「资料」页下载：Gemma 4 E2B（2.4 GB，默认）或 E4B（3.4 GB），语义检索模型 EmbeddingGemma（165 MB，推荐）。
 
 实测（Gemma 4 E2B，GPU）：小米 12S Ultra 和三星 Fold6 上一个问题约 15–25 秒，整机每问约 90–120 J。
 
@@ -40,7 +46,7 @@
 | `eval/` | 检索与回答评测脚本 |
 | `bench/` | 手机端测速与功耗脚本 |
 | `train/` | 微调实验（未上线） |
-| `docs/` | [DATA.md](docs/DATA.md) 导入资料与检索架构；[PLAN.md](docs/PLAN.md) 实测数据与决策记录 |
+| `docs/` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) 代码结构与模块说明；[DATA.md](docs/DATA.md) 导入资料与检索架构；[PLAN.md](docs/PLAN.md) 实测数据与决策记录 |
 
 ## 构建
 

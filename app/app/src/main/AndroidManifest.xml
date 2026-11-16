@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- 工具页：CPR 节拍器振动（普通权限）；闪光灯 setTorchMode 不需要 CAMERA 权限 -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 天体定向的相机对准模式：只做取景预览，不拍照不存储 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <application

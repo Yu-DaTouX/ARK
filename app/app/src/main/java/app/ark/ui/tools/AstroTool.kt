@@ -86,6 +86,11 @@ fun AstroTool(onBack: () -> Unit) {
         if (pos == null) return@ToolPage
         val lat = pos.first
 
+        var camOpen by rememberSaveable { mutableStateOf(false) }
+        BigButton("用相机对准", { camOpen = true })
+        Note("打开相机取景，把天体放到十字准星中心再点“对准了”，比对着星图更精准。")
+        if (camOpen) AstroCameraDialog(pos.first, pos.second) { camOpen = false }
+
         // ---- 星图 ----
         val aimAz: Float? = pointing?.azimuth ?: compass?.heading
         val aimEl = pointing?.elevation

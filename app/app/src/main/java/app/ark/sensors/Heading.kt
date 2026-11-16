@@ -40,6 +40,9 @@ object Heading {
     val state: StateFlow<Compass?> = _state
     private val _pointing = MutableStateFlow<Pointing?>(null)
     val pointing: StateFlow<Pointing?> = _pointing
+    private val _camera = MutableStateFlow<Pointing?>(null)
+    /** 摄像头光轴（设备 −Z）指向：真北方位（offset 未知时 null）、仰角。相机对准模式用。 */
+    val camera: StateFlow<Pointing?> = _camera
 
     @Volatile var lat: Double? = null; private set
     @Volatile var lon: Double? = null; private set
@@ -60,6 +63,8 @@ object Heading {
     private var magHeading = Float.NaN // 磁力计算出的真北方位（已加磁偏角）
     private var gyroHeading = Float.NaN
     private var gyroPointAz = Float.NaN; private var pointEl = 0f
+    private var gyroCamAz = Float.NaN; private var camEl = 0f // 摄像头（−Z）的陀螺方位 / 仰角
+    private val rotCopy = FloatArray(9) // 当前陀螺旋转矩阵（回调线程写，rotation() 读）
     private var smooth = Float.NaN
 
     const val CELESTIAL_HOLD_MS = 30 * 60_000L
@@ -81,6 +86,28 @@ object Heading {
         smooth = Float.NaN
         return true
     }
+
+    /** 同 calibrate，但此刻是摄像头光轴（手机背面）正对真北方位 trueAzimuth 的天体。 */
+    fun calibrateCamera(trueAzimuth: Float): Boolean {
+        if (!gyroOk || gyroCamAz.isNaN()) return false
+        offset = wrap(trueAzimuth - gyroCamAz)
+        celestialAt = System.currentTimeMillis()
+        smooth = Float.NaN
+        return true
+    }
+
+    /** 当前陀螺旋转矩阵（3x3 行主序，设备 → 陀螺世界坐标）的副本；没有陀螺仪或还没读数时 null。 */
+    fun rotation(): FloatArray? = if (gyroOk && !gyroHeading.isNaN()) rotCopy.copyOf() else null
+
+    /** 不分配对象的版本：把旋转矩阵写进 out（长度 ≥ 9），返回是否可用。 */
+    fun rotationInto(out: FloatArray): Boolean {
+        if (!gyroOk || gyroHeading.isNaN()) return false
+        System.arraycopy(rotCopy, 0, out, 0, 9)
+        return true
+    }
+
+    /** 方位偏移量（真北 − 陀螺方位，度）；还没有时 NaN。陀螺世界方位 = 真方位 − offsetDeg()。 */
+    fun offsetDeg(): Float = offset
 
     /** 清除天体校准，回到磁力计。 */
     fun clearCalibration() { celestialAt = 0L }
@@ -117,6 +144,9 @@ object Heading {
                     gyroHeading = az
                     val (paz, pel) = topEdge(r)
                     gyroPointAz = paz; pointEl = pel
+                    System.arraycopy(r, 0, rotCopy, 0, 9)
+                    gyroCamAz = wrap(Math.toDegrees(atan2(-r[2].toDouble(), -r[5].toDouble())).toFloat())
+                    camEl = Math.toDegrees(asin((-r[8]).coerceIn(-1f, 1f).toDouble())).toFloat()
                     update()
                 }
                 Sensor.TYPE_ROTATION_VECTOR -> {
@@ -173,9 +203,10 @@ object Heading {
                 clean -> Source.MAG
                 else -> Source.HOLD
             }
-            if (offset.isNaN()) { _pointing.value = Pointing(null, pointEl); publish(Float.NaN, src, !clean, now); return } // 还没有方位偏移也要给仰角，天体校准需要
+            if (offset.isNaN()) { _pointing.value = Pointing(null, pointEl); _camera.value = Pointing(null, camEl); publish(Float.NaN, src, !clean, now); return } // 还没有方位偏移也要给仰角，天体校准需要
             h = wrap(gyroHeading + offset)
             _pointing.value = Pointing(wrap(gyroPointAz + offset), pointEl)
+            _camera.value = Pointing(wrap(gyroCamAz + offset), camEl)
             publish(h, src, !clean, now)
             return
         } else {

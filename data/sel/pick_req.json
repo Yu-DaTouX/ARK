@@ -1,0 +1,1 @@
+{"task": "只读任务。请完整阅读 F:/ARK/data/sel/pick_task.md，按开头的规则逐条筛选，最终回答只输出要保留的标题（按文件要求的格式），不要输出其他内容。", "title": "资料包条目筛选", "model": "anthropic/claude-opus-5-5", "thinkingLevel": "high", "readOnly": true, "brief": {"goal": "从三份维基标题清单里挑出离网实用条目", "deliverables": ["三段标题清单"], "sources": ["F:/ARK/data/sel/pick_task.md"], "boundary": "只读"}}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ark_bg">#0E3B43</color>
+    <color name="ark_fg">#F2E6C9</color>
+    <color name="ark_wave">#7FC4D0</color>
+    <style name="Theme.Ark" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FAF8F3</item>
+    </style>
+</resources>

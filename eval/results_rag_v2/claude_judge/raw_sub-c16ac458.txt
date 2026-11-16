@@ -1,0 +1,31 @@
+```jsonl
+{"q":25,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["hallucination","bad_citation","hospital_only"],"reason":"有冲洗和狂犬病发病即无救的要点，但青霉素过敏替代药把甲硝唑写成美罗培南，[10][11]是原文内部注号；没提观察狗的状况","ideal":"立即用肥皂和大量流水冲洗伤口约15分钟；伤口不宜自行缝合，盖干净敷料观察感染；狂犬病发病几乎必死，破皮应尽快接种疫苗，能则观察狗10天；考虑破伤风"}
+{"q":25,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["bad_citation","hallucination","off_topic","too_long","hospital_only"],"reason":"药名乱译（二甲双曲霉素、トキ索イド），大量引用原文内部注号；资料里有“确认狗是否接种疫苗”却漏了，还掺了抗组胺、缝合争议"}
+{"q":25,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","hospital_only"],"reason":"忠实于资料，药名正确，提到要确认狗的疫苗情况；但没讲狂犬病发病致命、须尽快打疫苗，偏重医院用药，夹了北美北欧之类无关信息"}
+{"q":26,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","too_long"],"reason":"清洗和包扎要点正确，出处准确；后半段整张急救包清单（气道、CPR面罩）与问题无关，耗电"}
+{"q":26,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["bad_citation","off_topic"],"reason":"步骤实用，自制无菌敷料一条很好；但多处出处标错（[2]其实是急救包清单），掺入气性坏疽用双氧水冲洗"}
+{"q":26,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["hallucination","off_topic","too_long","bad_citation"],"reason":"清洗细节好（翻开皮瓣、不往伤口里倒酒精碘酒）；但把Neosporin写成莫西沙星，蝶形胶布的使用条件被曲解，热敷是感染伤口用的，被混进来"}
+{"q":27,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer","bad_citation"],"reason":"答了能否自己复位、风险和牵引法，也说了怎么判断对位；漏了复位后夹板固定和检查远端血运，[16]是内部注号"}
+{"q":27,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["hospital_only","missed_answer","off_topic","bad_citation"],"reason":"没给野外复位方法，也没讲复位后固定；混入肩关节康复、急诊麻醉复位等内容；“复位不了要尽快就医”有用"}
+{"q":27,"label":"C","answerable":true,"score":1,"dangerous":false,"issues":["missed_answer"],"reason":"资料[4]有手法牵引复位和固定，资料[2]有“无训练复位可能加重”，回答却说资料中没有"}
+{"q":28,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer"],"reason":"只给尿量标准，没给饮水量；资料里有“凉爽时每天3品脱”“炎热时4–5夸脱”等数字，都漏了，容易把0.5升尿量误读成饮水量"}
+{"q":28,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","too_long"],"reason":"给出每天至少2夸脱（半加仑），但没换算成升；掺了水质分级、挖井、寒冷天气等无关内容，漏了生存最低量和炎热天气需水量"}
+{"q":28,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["too_long"],"reason":"先给2夸脱，各情境数字较全；但把“进食少”译成“没有食物”，6–8升和3品脱两个说法并列却没解释，未换算单位"}
+{"q":29,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["bad_citation","off_topic","too_long","missed_answer"],"reason":"多处出处错位，混入每日饮水量、过滤器等内容；检测法普通人不可行，漏了资料里“清澈山泉也含贾第虫”的关键提醒"}
+{"q":29,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer"],"reason":"如实转述余氯试剂和大肠杆菌平板判读，但都要试剂盒才行；漏了“清水不等于安全、应一律消毒”的提醒"}
+{"q":29,"label":"C","answerable":true,"score":4,"dangerous":false,"issues":["off_topic","too_long","missed_answer"],"reason":"用植物判断地下水的矿化程度，被当成水是否安全的依据，可能误导；雨水一条有用；漏了“清水也可能含病原、需消毒”"}
+{"q":30,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":["off_topic"],"reason":"要点齐：污水粪便管理、煮沸加氯、洗手、病人衣物消毒；末尾掺了一句流感资料，政府层面内容对个人用处小"}
+{"q":30,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"简洁正确，涵盖水、粪便、洗手；漏了资料[4]的病人衣物床单和手的消毒，疫苗和监测对个人不太可行"}
+{"q":30,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"简洁忠实，水处理、粪便、洗手都有；资料[3]有病人衣物热水或漂白剂消毒这一要点，没有写进去"}
+{"q":31,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["too_long","off_topic"],"reason":"全是雪地庇护所却没说明适用场景，混入核掩体出口罩，超长被截断；通用选址要点被截在最后"}
+{"q":31,"label":"B","answerable":true,"score":2,"dangerous":false,"issues":["contradiction","hallucination","too_long"],"reason":"雪洞步骤里错混雪墙做法，后半段“简易结构”重复了6次，输出退化，几乎不可用"}
+{"q":31,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["off_topic"],"reason":"通用原则较好：隔地、空间小、封入口、通风防一氧化碳；但混入核沉降掩体的去污、屋顶内容，没说明主要是雪地场景"}
+{"q":32,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":["bad_citation"],"reason":"透镜、火石、电池、火药、弓钻、火犁都有，简洁实用；个别出处编号标错，没讲火绒准备"}
+{"q":32,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer","off_topic","contradiction"],"reason":"资料里有凸透镜却漏了；第3条说“用一根火柴点燃”，和“没有火柴”的前提矛盾"}
+{"q":32,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"电池、火药、火石、火犁、透镜正确；资料里有弓钻却漏了，“火柴防水使用”与题意不符"}
+```
+- 第25题三条都照抄了“感染风险低可缝合”。野外普通人不该缝狗咬伤，但回答没说“自己缝”，所以没标危险；三条都没强调用肥皂流水长时间冲洗。
+- 第27C、28A 是资料里有答案却答“没有”或答偏的典型；第31B 输出退化成重复内容。
+- 第29题检索偏向试剂盒和植物指示，“清水也可能有病原、应一律消毒”这个核心提醒三条都没写。
+- 第31题检索几乎只取到雪地和核掩体资料，我仍按“部分可答”打分（answerable 全标 true）。
+- 只读了 part4.md 这一个文件。

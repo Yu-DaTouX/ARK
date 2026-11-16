@@ -1,0 +1,4 @@
+{"q":"怎么做便携指南针","system":"把用户的中文问题改写成用于搜索英文百科和急救手册的英文关键词。只输出 3 到 6 个英文关键词，用空格分隔，不要输出任何其他内容。","user":"怎么做便携指南针","answer":"portable compass how to make compass DIY","seconds":0.8078441,"total_tokens":68}
+{"q":"没有指南针怎么辨别方向","system":"把用户的中文问题改写成用于搜索英文百科和急救手册的英文关键词。只输出 3 到 6 个英文关键词，用空格分隔，不要输出任何其他内容。","user":"没有指南针怎么辨别方向","answer":"How to determine direction without a compass, Navigation without compass, Natural navigation techniques","seconds":1.1190915,"total_tokens":77}
+{"q":"怎么用镜子或者火堆发求救信号","system":"把用户的中文问题改写成用于搜索英文百科和急救手册的英文关键词。只输出 3 到 6 个英文关键词，用空格分隔，不要输出任何其他内容。","user":"怎么用镜子或者火堆发求救信号","answer":"emergency signal mirror fire distress","seconds":0.5481672,"total_tokens":71}
+{"q":"没有火柴和打火机怎么生火","system":"把用户的中文问题改写成用于搜索英文百科和急救手册的英文关键词。只输出 3 到 6 个英文关键词，用空格分隔，不要输出任何其他内容。","user":"没有火柴和打火机怎么生火","answer":"fire starting without matches or lighter, improvised fire methods, friction fire starting, emergency fire starting","seconds":1.9129881,"total_tokens":83}

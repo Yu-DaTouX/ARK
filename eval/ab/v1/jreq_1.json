@@ -1,0 +1,1 @@
+{"task": "只读任务。完整阅读 F:/ARK/eval/ab/judge_1.md，按开头规则逐题评判，最终回答只输出评判行（共 54 行）。", "title": "提示词盲评 1", "model": "anthropic/claude-opus-5-5", "thinkingLevel": "high", "readOnly": true}

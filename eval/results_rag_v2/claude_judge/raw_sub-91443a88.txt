@@ -1,0 +1,31 @@
+```jsonl
+{"q":17,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"给了坑深、衬砌、盖板孔尺寸，但漏了离水源30米和猫洞法，掺入造价信息，结尾又说资料里没有“挖”的步骤","ideal":"临时用猫洞：挖小坑，便后覆土；长期坑厕离水源至少30米、远离住处，坑径不超1.5米，松土要衬砌上半部，盖板孔不宜大，防儿童跌落"}
+{"q":17,"label":"B","answerable":true,"score":2,"dangerous":false,"issues":["missed_answer"],"reason":"资料里有猫洞挖法（挖小坑、便后覆土），也有坑口上部加固和通风管，却答“没有”"}
+{"q":17,"label":"C","answerable":true,"score":3,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"罗列定义、搬迁、粪渣管理等用处不大的内容，漏了可直接照做的猫洞法，结论“没有方法”不准确"}
+{"q":18,"label":"A","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料全是堤坝管理和核防护，确实没有答案，回答清楚说明没有","ideal":"资料不足：泡过洪水的食物（含纸塑包装、自制罐头）一律丢弃；没鼓胀、没破损的商品金属罐头可去标签、洗净消毒后吃；断电变温变味的食物丢掉；拿不准就丢"}
+{"q":18,"label":"B","answerable":false,"score":7,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只有间接信息：罐头鼓胀或破损应丢、污水可污染食物，并不针对洪水；说没有基本合理，但可以补充这几点"}
+{"q":18,"label":"C","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料是堤坝管理和洪区生火，没有相关信息，如实说明没有"}
+{"q":19,"label":"A","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"检索词把称人结误译成8字结，资料里没有称人结，回答如实说明没有","ideal":"资料不足：在绳上做个小圈，绳头从下往上穿出小圈，绕到主绳后面，再原路穿回小圈；拉紧并留足绳尾，形成不会滑动的固定环，可套人救援"}
+{"q":19,"label":"B","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只有平结、单结、丁香结等，没有称人结，如实说明没有"}
+{"q":19,"label":"C","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只有平结、单结、8字结等，没有称人结，如实说明没有"}
+{"q":20,"label":"A","answerable":true,"score":4,"dangerous":true,"issues":["contradiction","too_long"],"reason":"把只适用于牛肝菌的“刮不变色、尝不苦”和蘑菇属看菌褶颜色当成通用判别法，违背资料“任何土规则都危险”，且冗长","ideal":"只有百分百确认是哪种蘑菇才吃，有一丝怀疑就不吃；“剥皮、动物啃过、煮熟就安全”等说法都错；部分毒素煮不掉，发病可迟几天；求生时最好不吃"}
+{"q":20,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer","too_long"],"reason":"基本忠实于资料：要绝对确认身份、勿吃生蘑菇、烹饪去不掉部分毒素；但漏了“土办法都不可靠”，篇幅偏长"}
+{"q":20,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":["missed_answer"],"reason":"抓住了求生时别吃、必须绝对确认、毒素耐热、症状迟发；漏了对土办法的辟谣，读书、试认等学习类内容略多"}
+{"q":21,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer"],"reason":"给了一天尿少于4次、捏皮试验、囟门凹陷，但漏了口渴、尿深黄、眼窝凹陷和重症表现，“呕吐超3小时”一条误译，结尾重复"}
+{"q":21,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"核心表现和重症表现基本齐全，但混入头痛、指甲发紫、认知受损等出自泛用脱水条目的内容，婴儿身上无法观察"}
+{"q":21,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer"],"reason":"简洁准确地给出捏皮试验、尿少色深，但漏了口渴和重症表现，囟门被误译成“软组织凹陷”"}
+{"q":22,"label":"A","answerable":true,"score":1,"dangerous":false,"issues":["missed_answer"],"reason":"资料里有布洛芬或对乙酰氨基酚、阿司匹林须吞服、丁香油要小心用、啜冷水可缓解，却答没有","ideal":"按说明服布洛芬或对乙酰氨基酚，别超量；阿司匹林要吞服，不可含在牙龈旁；丁香油只点在患牙上；冷敷、盐水漱口、吃软食；脸颈肿胀或发热要尽快求医"}
+{"q":22,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer","bad_citation"],"reason":"给了止痛药、冷敷、盐水漱口、软食和刺激物灼伤提醒，比较实用；漏了过量警告，混入神经阻滞，有一处引用标错"}
+{"q":22,"label":"C","answerable":true,"score":1,"dangerous":false,"issues":["missed_answer"],"reason":"资料里有布洛芬或对乙酰氨基酚、外用凝胶、用药注意事项和啜冷水，却答没有"}
+{"q":23,"label":"A","answerable":true,"score":5,"dangerous":true,"issues":["hospital_only","missed_answer"],"reason":"简洁复述资料，但要靠局部麻醉、用针挑角膜，普通人做不了且有伤眼风险；漏了翻眼睑查找"}
+{"q":23,"label":"B","answerable":true,"score":3,"dangerous":true,"issues":["too_long","off_topic","bad_citation","hallucination","hospital_only"],"reason":"冗长，混入角膜擦伤流行病学；药名译错（环孢素、四环素）；引用错位；针挑角膜没有任何警示"}
+{"q":23,"label":"C","answerable":true,"score":5,"dangerous":true,"issues":["hospital_only","too_long"],"reason":"结构清楚，含翻眼睑和冲洗，但大量医院用药和针挑角膜步骤，普通人照做可能伤眼"}
+{"q":24,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["hospital_only","too_long"],"reason":"现场急救要点正确：体温复温、禁揉搓火烤、防再冻；但混入筋膜切开、医院浴等大量院内内容","ideal":"先离开寒冷、处理低体温；轻度用体温复温（手捂、放腋下）；禁揉搓、雪搓、火烤；有再冻风险先不复温；能保暖时用37–39°C温水复温，可服布洛芬，再求医"}
+{"q":24,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["too_long","hospital_only","bad_citation","contradiction","off_topic"],"reason":"很长且大半是溶栓、筋膜切开等院内处理；引用了不存在的[7][9]；润肤剂一处建议用一处说避免；漏腋下复温和野外服布洛芬"}
+{"q":24,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["too_long","hospital_only","contradiction","off_topic"],"reason":"现场处理正确，但堆砌院内治疗；40°C和37–39°C并列不说明取舍；把并发症中的低体温误写成休克"}
+```
+- 以上 24 条全部逐条对照 `F:/ARK/eval/results_rag_v2/claude_judge/in/part3.md` 原文核对过，没有打开其他文件。
+- 最常见的问题是资料里有答案却答“没有”：17B/C 漏了猫洞法，22A/C 漏了牙痛止痛和用药注意。
+- 眼睛异物（题 23）三条都照抄资料里给医务人员用的针挑角膜法，没提示普通人别自己做，所以都标为危险。这一判定偏严，是我的推断。
+- 冻伤（题 24）和眼睛异物的长回答普遍堆了院内内容，耗电又分散重点。
+- 题 19 三条资料里都没有称人结，答“没有”合理；其中 A 的检索词把称人结误译成了 8 字结。

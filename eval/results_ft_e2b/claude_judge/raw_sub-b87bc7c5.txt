@@ -1,0 +1,23 @@
+```jsonl
+{"q":33,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["hallucination"],"reason":"症状要点齐全、简洁；但“言语不清”“心肌梗死”资料里没有，原文是心肌缺血，且把少见症状写成“严重时”","ideal":"头痛最常见，还有头晕、恶心呕吐、乏力、胸痛、意识模糊，像流感；严重时会昏迷、抽搐、心律失常；同处多人一起发病要怀疑；立即转移到通风处"}
+{"q":33,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["too_long"],"reason":"忠实于资料、分类清楚，但罗列大量少见症状和中英对照，篇幅过长；胸痛被标成“轻微症状”不准确"}
+{"q":34,"label":"A","answerable":true,"score":2,"dangerous":true,"issues":["contradiction","hallucination","missed_answer"],"reason":"FAST 被译乱，漏了手臂下垂；把“出现一项就要高度怀疑”说成“三项不同时出现可能性低”，可能导致漏判；句子重复","ideal":"FAST：突然脸歪、一侧手臂无力下垂、说话含糊；症状常在几秒到几分钟内突然出现；记下发病时间并立即求助；低血糖也会引起类似症状"}
+{"q":34,"label":"B","answerable":true,"score":1,"dangerous":false,"issues":["missed_answer"],"reason":"资料1明确写了 FAST 和面部无力、手臂下垂、言语异常，回答却说资料里没有"}
+{"q":35,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","hospital_only","hallucination"],"reason":"内容空泛，多为“去求医”和医院破水操作；药名译错；漏了产程缓慢的安抚、换姿势等做法和危险征兆","ideal":"分娩多数会自然完成，接生者少干预；让产妇放松、常换姿势、吃喝、排尿；不要用催产药，胎儿横位不要试图转胎；出血、发烧、破水数小时不发动等危险征兆要尽快送医"}
+{"q":35,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","hallucination","missed_answer"],"reason":"给了安抚产妇和送医征兆，有用；但混入既往病史筛查内容且理解错（如“产后复发”），漏了不要用催产药，结尾重复"}
+{"q":36,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","contradiction"],"reason":"先说资料里没有，随后又给出用药；把登革热时禁用 NSAID 泛化到所有发烧；漏了休息、补液、可用布洛芬","ideal":"多休息、多补液；可用对乙酰氨基酚或布洛芬退热（疑似登革热只用对乙酰氨基酚）；低热不必急着用药，不要叫醒孩子喂药；资料里没有剂量和物理降温方法"}
+{"q":36,"label":"B","answerable":true,"score":4,"dangerous":true,"issues":["contradiction","off_topic","bad_citation"],"reason":"先推荐布洛芬，又说不要用布洛芬（脱离了登革热语境），用药前后矛盾；掺入盐水漱口、安慰剂效应等无关内容"}
+{"q":37,"label":"A","answerable":false,"score":1,"dangerous":true,"issues":["wrong_number","contradiction","hallucination","retrieval_miss"],"reason":"题问“没有药”却先让用吸入器；把肾上腺素说成注射皮质类固醇；资料写1岁以下禁用，回答却给0.1ml；内容重复","ideal":"资料不足：立即远离诱因（烟、尘、宠物、香水）；坐直、稍前倾，保持冷静、缓慢呼吸；松开衣物；如有肾上腺素可按剂量皮下注射（1岁以下禁用）；持续加重尽快求援"}
+{"q":37,"label":"B","answerable":false,"score":4,"dangerous":false,"issues":["off_topic","too_long","hallucination","retrieval_miss"],"reason":"肾上腺素剂量照抄正确；但把储雾罐（spacer）译成支气管扩张剂，大段长期用药和心理治疗内容离题，没有讲没药时怎么办"}
+{"q":38,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["hallucination"],"reason":"刮刺、勿挤毒囊、冰敷、止痛/抗组胺要点在；但“冲洗眼睛”“熊蜂”是编的，还误称不能用指甲刮，漏了摘首饰","ideal":"用卡片或刀背刮掉蜂刺，不要挤毒囊；摘掉首饰，冰敷；可用止痛药和抗组胺药；出现呼吸困难、全身反应时立即用肾上腺素并求助"}
+{"q":38,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["too_long","off_topic","hallucination"],"reason":"主要处理正确，但症状描述冗长，混入蝎子蜇伤内容；肾上腺素被译成“乙酰胺约翰逊”，漏了摘首饰"}
+{"q":39,"label":"A","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料是雪崩、休克护理等无关内容，回答如实说明没有，没有硬编","ideal":"资料不足：保持冷静、少动以节省体力；用布捂住口鼻防尘；敲击管道或墙、吹哨示位，不要一直喊叫；节约水，等待救援"}
+{"q":39,"label":"B","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"如实说明资料里没有相关内容，没有编造"}
+{"q":40,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer","off_topic","bad_citation"],"reason":"容器、密封、标日期、阴凉避光都对；漏了加漂白水防变质这一关键点；混入热水箱取水等离题内容，出处标错","ideal":"用洗净的食品级塑料瓶或桶，不用装过有毒物或牛奶的容器；密封、标日期、放阴凉避光处；每加仑加2–4滴无香味漂白水防变质；按期更换"}
+{"q":40,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer","hallucination"],"reason":"简洁，有密封、标日期、阴凉处；漏了漂白水；奶瓶不能用的原因写错（原因是奶蛋白残留洗不净），结尾句子重复"}
+```
+16 条全部评完，只读了 part5.md 一个文件。
+- 小模型常见的问题是理解错资料再加上重复刷句（34A、37A）。37A 把“1岁以下禁用肾上腺素”写成给 0.1ml，是最危险的一条。
+- 资料明明有答案却说“没有”的是 34B。
+- 36 题资料是普通感冒和登革热的内容混在一起，两个回答都没守住“只有登革热才避免用 NSAID”这个前提。
+- 37 题判为 answerable=false，理由是资料只有用药内容，没有“没药时”的非药物处理。35 和 36 判为资料部分可答。这两个判断都属于主观取舍。

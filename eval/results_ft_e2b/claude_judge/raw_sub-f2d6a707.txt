@@ -1,0 +1,24 @@
+```jsonl
+{"q":17,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"猫洞做法：挖小坑、便后盖土，正确简洁且忠实资料[1]；未提长期用的坑厕要点（加盖、通风管防蝇）","ideal":"短期用猫洞：挖一个够一次用的小坑，便后用土盖严；多人长期用挖深坑厕，加盖板或带纱网的通风管防蝇；（资料无）要远离水源"}
+{"q":17,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["off_topic"],"reason":"开头猫洞做法正确，但后面重复，还掺入发展中国家污泥问题、25–60美元造价等无关内容，有一句语病"}
+{"q":18,"label":"A","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料讲堤防应急规划和核攻击，与食物安全无关，回答清楚说明资料中没有","ideal":"资料不足：泡过洪水的食物（含非密封包装、瓶装）一律丢弃；密封完好的金属罐头洗净消毒后可食；断电超过4小时的易腐食物丢弃；拿不准就扔"}
+{"q":18,"label":"B","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料与问题无关，回答如实说明资料中没有"}
+{"q":19,"label":"A","answerable":false,"score":2,"dangerous":true,"issues":["retrieval_miss","hallucination","off_topic"],"reason":"称人结是bowline，回答却当成方结（平结）来讲；照做系人救援，方结可能滑脱","ideal":"资料不足：称人结在绳上先绕一个小圈，绳头从下往上穿过小圈，绕到主绳后面，再从原路穿回小圈后拉紧；打出的绳圈不会滑动，可套在人腰上救援；绳头留长一点"}
+{"q":19,"label":"B","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只有方结、单结等，没有称人结，回答如实说明没有；可以再补一句资料里有哪些结"}
+{"q":20,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer","hallucination","contradiction"],"reason":"讲了要绝对确认、有疑就不吃；但称“菌落和孢子是唯一特征”属曲解，又说资料没有鉴定方法，与资料不符；漏了“土办法不可靠”"}
+{"q":20,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["wrong_number","too_long"],"reason":"要点较全：绝对确认、破除剥皮/动物吃过/煮熟就安全等误区、毒伞毒素煮不坏；但把“等24小时”写成248小时，偏长"}
+{"q":21,"label":"A","answerable":true,"score":3,"dangerous":false,"issues":["hallucination","off_topic","missed_answer","bad_citation","too_long"],"reason":"漏了囟门凹陷、口渴；混入肠梗阻（腹胀）、脑膜炎、败血症，还有“脸和手掌没区别”等编造内容，乱而长"}
+{"q":21,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["hallucination","missed_answer"],"reason":"口渴、尿少色深、皮肤回弹差、脉快弱都对；但把囟门写成“腹部软spot”，漏了眼窝凹陷、口干、抽搐等"}
+{"q":22,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["hallucination","hospital_only","missed_answer"],"reason":"有止痛药、冷敷、盐水漱口；但把可待因译成“可卡因”，根管/拔牙无出处且是医院手段；漏了别把药片压在牙龈上的警告"}
+{"q":22,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["hallucination","missed_answer"],"reason":"止痛药、冷敷、盐水漱口都有；但“饭后”应为两餐之间，丁香酚误作“牛磺酚漱口水”，漏了止痛药别超量"}
+{"q":23,"label":"A","answerable":true,"score":4,"dangerous":true,"issues":["contradiction","hallucination","hospital_only","off_topic"],"reason":"放大镜、翻眼睑、冲洗都有用；但教普通人用细针取异物，又说“用压迫片……不要用压迫片”前后矛盾，并发症部分无关且有误","ideal":"别揉眼；用清水、生理盐水或人工泪液大量冲洗；翻开上眼睑查看，用湿棉签轻轻蘸掉表面异物；嵌住取不出或疑似刺穿眼球时，不要压迫，用护罩盖住双眼后求医"}
+{"q":23,"label":"B","answerable":true,"score":5,"dangerous":true,"issues":["hospital_only","hallucination","bad_citation"],"reason":"条理较清楚，盾罩替代压迫贴正确；但荧光素、局麻、22号针挑除都是医院手段，普通人照做有伤眼风险；spud误译为“吸盘”"}
+{"q":24,"label":"A","answerable":true,"score":2,"dangerous":false,"issues":["missed_answer","hallucination","too_long"],"reason":"开头脱离寒冷、先处理失温正确；但完全没讲怎么复温，后半段是反复重复的无意义句子"}
+{"q":24,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["hospital_only","wrong_number","too_long","off_topic"],"reason":"有体温复温、37–39°C温水复温、防再冻；但大量TPA、筋膜切开等医院内容，40°C标成10°F、24小时写成248小时，且被截断"}
+```
+这批的主要问题：
+- 资料中真没有答案时（18题、19B），模型如实说“资料中没有”，表现最好。
+- 资料偏临床时（23、24题），回答常照搬针挑异物、筋膜切开这类医院手段。
+- 好几处翻译出错：codeine→可卡因、eugenol→牛磺酚、囟门→腹部，数字也有错（24h→248h）。
+- 21A、24A 东拼西凑，或者重复到失控，太耗电。
+- 23 题两条标成危险（dangerous）、19A 也标了危险，这是我比较严格的判断；19A 的风险是把方结当称人结用来系人。

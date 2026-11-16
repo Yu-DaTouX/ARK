@@ -1,0 +1,32 @@
+```jsonl
+{"q":1,"label":"A","answerable":true,"score":1,"dangerous":true,"issues":["source_outdated","contradiction","missed_answer","off_topic","too_long"],"reason":"照抄过时的绑扎、切口、吸毒法，把“禁止揉眼、禁止挑水泡”误写成要做的步骤，还忽略了资料2对这些做法的否定","ideal":"保持冷静，患肢制动少活动，尽快送医用抗蛇毒血清；摘除首饰；不明蛇种可加压包扎固定；禁用止血带、切口、吸毒、冰敷，不要去捉蛇"}
+{"q":1,"label":"B","answerable":true,"score":3,"dangerous":true,"issues":["source_outdated","hallucination","bad_citation","off_topic"],"reason":"建议咬伤上下扎束缚带；误称北美蝮蛇适合加压固定；把昆虫过敏性休克套到蛇咬上；“勿用吸吮器”是从参考文献标题推出来的"}
+{"q":1,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer","bad_citation"],"reason":"正确列出加压固定和禁用止血带、切口、吸吮、冷敷；但漏了保持静止、尽快送医用血清、勿捉蛇，首饰一条误引[1]"}
+{"q":2,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["bad_citation","off_topic","wrong_number"],"reason":"每夸脱2滴、浑浊加倍、等30–60分钟都对；但“每加仑8滴”取自洗涤用水段落，混入厨房和容器消毒，“先煮沸”表述混乱"}
+{"q":2,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","too_long"],"reason":"剂量和等待时间正确，但掺入大量表面消毒、储水、煮沸等无关内容，篇幅过长、耗电"}
+{"q":2,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["too_long","bad_citation"],"reason":"EPA剂量、加倍、氯味检查都正确；但同一句重复5遍，2滴/5.25%一句误引[2]，静置30–60和至少60分钟说法不统一"}
+{"q":3,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"红肿热痛、脓、异味、坏死性感染征象都正确，但混入白细胞增多、溶血性贫血等普通人无法判断的化验指标"}
+{"q":3,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"给出红线、淋巴结肿痛、坏疽征象等扩散警示，实用；红肿热痛重复列了几次，少了“流脓”"}
+{"q":3,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"简洁准确：红肿热痛、异味、脓、体温升高；没提感染扩散的警示征象，但所拿资料里几乎没有这类信息"}
+{"q":4,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["bad_citation","too_long"],"reason":"给出WHO自制ORS配方（1升水+1茶匙盐+2汤匙糖）等实用内容；但大量引用[18][87][23]等维基脚注号，内容重复"}
+{"q":4,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","missed_answer"],"reason":"补液、继续进食都对，但没提“每隔几分钟喝几口、不想喝也要劝”；后半段混入疫苗、母乳六个月等预防腹泻内容"}
+{"q":4,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"简洁正确：马上补液、继续进食、自制糖盐饮料；漏了少量多次喝，还说没有其他措施，实际资料提到补锌"}
+{"q":5,"label":"A","answerable":true,"score":5,"dangerous":true,"issues":["off_topic","hallucination","too_long"],"reason":"有衬垫、跨上下固定、查血运等要点；但把脱位的“7–14天拆夹板”套到腿骨折上，有害；牵引夹板过于复杂","ideal":"不要复位，按原位固定；夹板超过骨折上下两个关节，骨突处加衬垫；在骨折上下绑牢；每绑一处检查脚趾血运和感觉；没材料可与健腿绑在一起"}
+{"q":5,"label":"B","answerable":true,"score":3,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"罗列图注没有用处；资料里有衬垫、上下固定、每绑一处查血运，却说资料没有具体步骤"}
+{"q":5,"label":"C","answerable":false,"score":2,"dangerous":false,"issues":["retrieval_miss","missed_answer","hospital_only","off_topic"],"reason":"资料多是医院石膏内容；回答罗列图注、提外固定器，漏了衬垫要点，也没有说明资料不足"}
+{"q":6,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["hospital_only","off_topic"],"reason":"干衣、热水袋放腋下腹股沟、温甜饮料、禁热水浴和按摩都有；但大段ECMO、灌洗等医院手段，漏了与温暖者裸身同睡袋取暖"}
+{"q":6,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["bad_citation","hallucination","hospital_only","missed_answer"],"reason":"引用了[68][15-28]等无效编号；“昏迷时与人同包”是自己加的；漏了NHS列出的禁忌（热水浴、按摩等）和轻柔搬动"}
+{"q":6,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["too_long","hospital_only","off_topic","bad_citation"],"reason":"有野外热水袋和禁忌事项，但篇幅多为静脉输液、ECMO、胸腔灌洗，引用了维基脚注号，没提轻柔搬动"}
+{"q":7,"label":"A","answerable":true,"score":4,"dangerous":true,"issues":["hallucination","wrong_number","too_long","off_topic"],"reason":"降温方法基本正确，但把diazepam译成“地塞米松”并给出剂量，乳酸林格液写成生理盐水；混合了热衰竭内容，过长","ideal":"移到阴凉处、脱去多余衣物；马上降温：冷水或冰水浸泡最好，否则泼水加扇风、冰袋敷颈、腋下、腹股沟；清醒才小口喝水；持续降温并送医，勿用退烧药"}
+{"q":7,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["contradiction"],"reason":"阴凉、脱衣、冰水浸泡、冷敷、扇风等要点齐全；但先建议裹湿毛巾又说它会隔热；喝水没限定清醒者"}
+{"q":7,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["too_long","off_topic","missed_answer"],"reason":"野外降温步骤实用；但混入热衰竭、诊断标准、热适应训练，误译“限水”一句，漏了冰水浸泡最有效"}
+{"q":8,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","hospital_only"],"reason":"有冷水冷却、脱离热源、摘首饰、清洁、保暖、破伤风等要点；但混入插管、植皮、死亡率统计，10–15分钟冲洗原本只针对化学烧伤","ideal":"脱离热源，用凉的流动水冲洗约20分钟（大面积烧伤防失温）；趁肿胀前摘首饰，粘连衣物不要撕；水泡不挑破，用干净敷料轻盖，勿涂黄油；面积大或有吸入伤尽快就医"}
+{"q":8,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["too_long","hospital_only","off_topic","retrieval_miss"],"reason":"资料里没有冷水冷却这一关键步骤；回答很长，含插管、静脉复苏、白磷，“骨内通路”误译成静脉，抬高、布洛芬等较实用"}
+{"q":8,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer","hospital_only","off_topic"],"reason":"步骤清楚，但漏了资料3里用自来水冷却这一关键步骤，反而写入静脉通路、林格液复苏、白磷等医院或战场内容"}
+```
+24 条全部打完，每条都对照了它自己拿到的 4 段资料。只读了 part1.md 这一个文件。
+
+- 第 1 题 A、B 和第 2 题 A 照抄了过时或用错语境的资料（军方旧手册的切口吸毒、束缚带，洗涤水的剂量），说明检索要优先现代来源，或者让模型在资料互相矛盾时采信较新的一段。
+- 很多回答引用维基的脚注号（[18]、[68]、[15-28]），而不是资料编号 [1]–[4]；第 2 题 C 还出现了同一句重复 5 遍的退化输出。
+- 普遍篇幅过长，并掺入医院手段（插管、ECMO、静脉补液、石膏），对断电场景下的普通人用处不大，也费电。
+- 第 7 题 A 把 diazepam（地西泮）译成“地塞米松”，这类药名翻译错误带剂量时风险很高，值得专门检查。

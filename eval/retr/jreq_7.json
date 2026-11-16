@@ -1,0 +1,13 @@
+{
+ "task": "只读任务。请完整阅读 F:/ARK/eval/retr/jt_7.md，按文件开头的规则给其中每一条打分，最终回答只输出 `key 分数` 行（共 95 行），不要输出其他内容。",
+ "title": "检索相关性评分 7",
+ "model": "anthropic/claude-opus-5-5",
+ "thinkingLevel": "high",
+ "readOnly": true,
+ "brief": {
+  "goal": "给检索段落打相关性分",
+  "deliverables": [
+   "95 行 key 分数"
+  ]
+ }
+}

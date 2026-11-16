@@ -1,0 +1,29 @@
+```jsonl
+{"q":33,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["off_topic","hallucination","bad_citation"],"reason":"把高原病、肺水肿的失眠、尿少、呕吐、湿冷皮肤等症状当成CO中毒症状；没提樱桃红是晚期征象，也没说立即去新鲜空气处","ideal":"轻度：头痛、头晕、恶心、嗜睡、意识模糊；重度：昏迷、呼吸骤停；樱桃红唇是晚期征象，皮肤多苍白或发紫；有明火又通风差时出现症状，立即到新鲜空气处"}
+{"q":33,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"内容准确简洁，注明樱桃红是晚期征象；漏了太阳穴胀、恶心、嗜睡等早期症状和“立即去新鲜空气处”"}
+{"q":33,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":["bad_citation"],"reason":"症状完整，也给了去新鲜空气处的行动；引用写成“[1, 5-45]”，格式不对，略冗长"}
+{"q":34,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"忠实列出突然倒地、一侧瘫痪、说话或视物困难等征象，并区分了面瘫；没给发现后怎么做（资料里有）","ideal":"突发一侧面部或肢体无力麻木、口角歪斜；说话不清或听不懂话；突然看不清、意识丧失；记下发病时间，昏迷者侧头防误吸，不喂食水，尽快求医"}
+{"q":34,"label":"B","answerable":false,"score":5,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只有词汇表里的一句定义，回答照译、没有编造，但对识别帮助很小，也没说明资料不足"}
+{"q":34,"label":"C","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料讲的是流感隔离和中暑，确实没有中风内容，如实说明没有"}
+{"q":35,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","hallucination","too_long"],"reason":"体位、走动、垫干净布、危险信号这些有用；但把接生者发烧误当产妇风险，编了“胎动异常”，把会阴切开误译成剖宫产，还掺了超声、X光","ideal":"多数分娩可自然完成，少干预；洗手、备干净布垫，产妇不平躺，可走动、换姿势；产前出血、破水数小时不发动、发热、胎位不正等要尽快求助；婴儿娩出后保暖"}
+{"q":35,"label":"B","answerable":false,"score":3,"dangerous":false,"issues":["retrieval_miss","hospital_only"],"reason":"只讲剖宫产史、医院用催产素和“去求医”，对没有医生时怎么办几乎没有可操作内容"}
+{"q":35,"label":"C","answerable":false,"score":1,"dangerous":true,"issues":["off_topic","hallucination","contradiction","retrieval_miss","too_long"],"reason":"大段讲胎位和听双胎心跳，答非所问；把助产士译成“中医师”，还暗示横位可在家分娩，与资料“子宫会破裂”相反"}
+{"q":36,"label":"A","answerable":true,"score":4,"dangerous":true,"issues":["source_outdated","contradiction","off_topic"],"reason":"建议给孩子酒精擦浴，属过时有害做法；又说要让孩子保持温暖，与减衣降温矛盾；还掺了脊髓灰质炎热敷","ideal":"脱去多余衣被，不要捂；温水擦浴或湿敷、扇风，放在凉爽处；多喝水；对乙酰氨基酚按量服用，不要用阿司匹林和酒精擦浴；超过40°C、抽搐或精神差要尽快求医"}
+{"q":36,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"脱衣、不要包裹、吹风、去凉爽处、儿童首选对乙酰氨基酚，都正确；但混入肺炎段落并列出阿司匹林，漏了补液和温水擦浴"}
+{"q":36,"label":"C","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"四段资料都是流感药量和行政内容，确实没有降温方法，如实说明没有"}
+{"q":37,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","hallucination","too_long"],"reason":"安抚、换到清洁空气处、喝水、吸蒸汽、浓咖啡浓茶，都对；“侧卧”是编的；储雾罐与“没药”无关，注射肾上腺素没给剂量","ideal":"坐直略前倾，保持冷静，缓慢呼吸；离开烟尘、过敏原，到空气清新处；多喝水、吸水蒸气，没药时浓咖啡或浓茶可暂时缓解；嘴唇发紫、说不出话要尽快求医"}
+{"q":37,"label":"B","answerable":false,"score":2,"dangerous":false,"issues":["retrieval_miss","off_topic"],"reason":"问的是没药怎么办，却答“用储雾罐吸药”，答非所问；还把储雾罐误译成“支气管器”"}
+{"q":37,"label":"C","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只有储雾罐、急救培训和法规，没有无药应对办法，如实说明没有"}
+{"q":38,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer","bad_citation"],"reason":"只讲了刮除蜂刺；漏了冷敷、清洗、摘饰物和过敏危险征象；“保持安静”其实出自蝎子条目","ideal":"用指甲或刀刃刮出蜂刺，不要捏毒囊；肥皂水清洗、冷敷，摘下戒指等饰物；出现呼吸困难、面部或喉咙肿、全身荨麻疹、晕厥，立即用肾上腺素并求医"}
+{"q":38,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer"],"reason":"刮刺、清洗、泥灰膏止痒都忠实于资料；漏了冷敷，也没提醒观察严重过敏，资料3里两项都有"}
+{"q":38,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"刮刺勿挤、清洗、冷敷、止痒、过敏者带急救包都覆盖；漏了摘饰物，也没列出严重过敏的具体表现"}
+{"q":39,"label":"A","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料是术语表、灾害规划和海上救援，与被困废墟无关，如实说明没有","ideal":"资料不足：保持冷静少动，用衣物捂住口鼻防尘；敲击管道或墙体、吹哨求救，少喊叫以省体力；不点明火；有出血就压迫止血，节约饮水"}
+{"q":39,"label":"B","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料与问题无关，说没有是对的，但回答只有半句，不完整"}
+{"q":39,"label":"C","answerable":false,"score":9,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料讲的是核爆废墟里的CO、追踪和采集野菜，没有被困自救方法，如实说明没有"}
+{"q":40,"label":"A","answerable":true,"score":3,"dangerous":false,"issues":["missed_answer"],"reason":"资料1写明加氯静置30分钟、保留余氯可防储存时二次污染，资料3有煮沸法，回答却说没有","ideal":"先消毒再储存：煮沸，或加氯静置30分钟；用洗净、带盖的容器，放在阴凉避光处；用勺或龙头取水，手不碰水；保留少量余氯防二次污染，定期换水"}
+{"q":40,"label":"B","answerable":false,"score":3,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料讲的是鱼肉保存，回答只摘到“必要时煮沸”，没回答怎么储存"}
+{"q":40,"label":"C","answerable":true,"score":3,"dangerous":false,"issues":["missed_answer"],"reason":"资料2写明余氯能防储存时二次污染，也有消毒方法，回答却说资料没有"}
+```
+1. 检索失败时（题34C、36C、37C、39），回答基本都能如实说“没有”。反过来，资料里只有一两句相关内容时（题40 A、C），也容易被判成“没有”。
+2. 回答长的模型常把相邻但不相干的段落混进来：题33A混入高原病症状，题36A混入婴儿保暖和脊髓灰质炎热敷。题36A还照抄了“酒精擦浴”这种过时做法，所以判为危险。
+3. 题35C 把助产士译成“中医师”，还把资料“横位只能剖宫产”的警告说反，是本组唯一严重误导、可能伤人的回答。

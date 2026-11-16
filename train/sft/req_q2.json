@@ -1,0 +1,20 @@
+{
+ "task": "为离线求生 App 的模型微调补写一批训练问题。背景：全世界断网断电后，普通人（不是医生）用手机上的离线 AI 提问，AI 根据内置资料包检索到的 4 段原文作答。\n\n上一批 600 道题（F:/ARK/train/sft/questions.jsonl）问得太具体、太刁钻，检索到的资料常常只沾边，结果学生模型学成了“动不动就说资料中没有”。真实用户更常问的是宽泛、常见的求生问题，比如 F:/ARK/train/sft/eval_questions.txt 里那样的（“被蛇咬了怎么急救”“怎么净化饮用水”）。\n\n请再写 200 道中文问题，写到 F:/ARK/train/sft/questions2.jsonl，每行 {\"q\": \"问题\", \"cat\": \"类别\", \"covered\": true}：\n- 全部是资料包大概率能直接回答的常见问题（covered 都为 true）。主题见 F:/ARK/train/sft/topics.txt：急救与创伤、环境伤害、灾后传染病与卫生、妇幼、常用药、饮水、食物保存与加工、野外采集与狩猎、庇护所与生火、绳结、核与化学应急、心理急救，按这个比例大致铺开。\n- 问法宽泛、常见，像普通人第一次遇到这件事时会问的：“烧伤了怎么处理”“小孩拉肚子怎么办”“怎么生火”“野外怎么找水”。可以有一部分带简单情境，但不要刁钻细节。\n- 不能和 eval_questions.txt 的 40 道题重复或只是换个说法；也不要和 questions.jsonl 里已有的题重复。\n- 同一主题最多 3 题；不要都以“怎么”开头。\n\n写完检查行数和 JSON 是否合法，最后回复一句话说明写了多少条、各类别多少。",
+ "title": "补写宽泛问题",
+ "model": "anthropic/claude-opus-5-5",
+ "thinkingLevel": "medium",
+ "isolation": "none",
+ "brief": {
+  "goal": "写 200 道宽泛常见的训练问题到 questions2.jsonl",
+  "deliverables": [
+   "F:/ARK/train/sft/questions2.jsonl"
+  ],
+  "sources": [
+   "F:/ARK/train/sft/topics.txt",
+   "F:/ARK/train/sft/eval_questions.txt",
+   "F:/ARK/train/sft/questions.jsonl"
+  ],
+  "boundary": "只写 F:/ARK/train/sft/questions2.jsonl，不改其他文件",
+  "timeoutMinutes": 30
+ }
+}

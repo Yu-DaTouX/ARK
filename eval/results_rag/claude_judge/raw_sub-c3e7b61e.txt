@@ -1,0 +1,30 @@
+```jsonl
+{"q":25,"label":"A","answerable":true,"score":4,"dangerous":true,"issues":["off_topic","missed_answer","bad_citation","source_outdated"],"reason":"把蛇咬条目（伤肢低于心脏、禁食禁药、摘首饰）套到狗咬上；照抄每5分钟松止血带的过时做法；漏了“发病前必须治疗、尽快就医”","ideal":"立即用肥皂和大量流水彻底冲洗伤口（约15分钟）；不要缝合，保持开放，盖干净敷料；狂犬病一发病几乎必死，要在发病前尽快打疫苗或免疫球蛋白；把咬人的狗拴住或关起来观察"}
+{"q":25,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","bad_citation"],"reason":"清洗、冲洗、敷料、深伤口不缝合、狂犬病风险判断和潜伏期都对；混入蛇咬的摘首饰、不涂药膏；没写要立即就医"}
+{"q":25,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":["off_topic"],"reason":"用肥皂水清洗、不缝合、打4针疫苗、关养动物一周、打免疫球蛋白、发病前治疗，要点齐全；后面的预防段落与本题无关"}
+{"q":26,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"大量清水冲洗、不必用消毒剂、盖干净干燥绷带，都正确；漏了压迫止血和戴手套自护；有一处重复，还混入腹部伤的塑料包装用法"}
+{"q":26,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["off_topic","too_long"],"reason":"清洗只有一句，大段写腹部、胸部、脑组织外露、子弹或异物嵌入，普通伤口的包扎要点被淹没"}
+{"q":26,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","too_long"],"reason":"洗手、凉开水冲洗、无菌纱布、每天或湿了就换药，这些核心正确；混入内脏外露、胸部伤口和医用皮肤胶DERMABOND，篇幅过长"}
+{"q":27,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","bad_citation"],"reason":"只说用牵引复位，没提复位后固定、与健侧对比、复位失败应求医，也没有任何谨慎提示；出处标成[4-61]，格式错误","ideal":"远离救援时可试一次轻柔、持续的牵引复位，不要猛拉；与健侧对比判断是否已复位，复位后用夹板或吊带固定并检查远端血运；疑似骨折或复位失败就原位固定，尽快求医"}
+{"q":27,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["missed_answer"],"reason":"给出了牵引复位和失败后求医，但“失败就求医”说了两遍；漏了复位后固定、对比健侧，以及资料里“按闭合骨折处理”这一点"}
+{"q":27,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer"],"reason":"简洁正确：可试牵引复位，失败立即求医；但漏了复位后夹板固定、检查血运、对比健侧"}
+{"q":28,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer"],"reason":"只给“每天排尿至少一品脱”的标准，漏了资料里的具体量：凉爽时每天3品脱可撑数周，炎热时需4–5夸脱","ideal":"凉爽、少动、少吃蛋白时，每天约3品脱（约1.4L）可撑数周；炎热天每天需4–5夸脱（约4–5L）；以每天排尿至少约0.5L为底线；忌酒、少吃高盐和高蛋白食物"}
+{"q":28,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer"],"reason":"同样只给排尿标准，还换算成“约473毫升”，容易被误读为每天喝473毫升就够；漏了3品脱和4–5夸脱"}
+{"q":28,"label":"C","answerable":true,"score":3,"dangerous":false,"issues":["missed_answer","hallucination"],"reason":"第二句把排尿一品脱错说成炎热条件下的标准，与资料（炎热需4–5夸脱）不符；具体饮水量也漏了"}
+{"q":29,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","missed_answer"],"reason":"讲了煮沸和化学消毒，但没点出资料里“看起来清澈的水也有贾第虫”，无法凭外观判断；还混入冰雪、接触时间等无关内容","ideal":"无法凭肉眼判断，清澈的水也可能有病菌，一律当不安全处理；颜色深、有异味、有浮油或疑似化学污染的水不要喝（煮沸去不掉化学物）；浑浊水先过滤，再滚沸至少1分钟或按量加漂白剂静置30–60分钟"}
+{"q":29,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"有看颜色、异味、固体物，以及化学污染不可喝、过滤后煮沸，实用；但混入实验室检测和家用蒸馏器，还漏了滚沸时长和漂白剂静置时间"}
+{"q":29,"label":"C","answerable":false,"score":3,"dangerous":false,"issues":["retrieval_miss","off_topic","hallucination"],"reason":"资料只有试剂盒、实验室检测和蒸馏器，普通人用不上；把余氯试剂显浅蓝误当成判断水源安全的方法；“感官判断”一条是编的"}
+{"q":30,"label":"A","answerable":false,"score":5,"dangerous":false,"issues":["retrieval_miss","off_topic"],"reason":"洗手、做饭卫生、餐具清洁合理；漏了饮水消毒和粪便处理；四环素“上述剂量”在回答里没有交代，是治疗不是预防，对用户没用","ideal":"只喝煮沸或氯消毒过的水，并安全储存；便后和做饭、进食前用肥皂洗手；粪便远离水源、安全处理，食物煮熟、餐具消毒；有腹泻的人及时口服补液"}
+{"q":30,"label":"B","answerable":true,"score":2,"dangerous":false,"issues":["missed_answer"],"reason":"资料明明有肥皂洗手、粪便安全处理、粪口传播、饮水消毒并安全储存，回答却说“没有”"}
+{"q":30,"label":"C","answerable":false,"score":7,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料基本不相关，说明没有是合理的；但资料[1]提到霍乱经脏水传播、[2]有餐具消毒，可以简要提一下"}
+{"q":31,"label":"A","answerable":false,"score":2,"dangerous":false,"issues":["retrieval_miss","off_topic","too_long"],"reason":"大段搬核辐射掩体的出口罩、挖房屋地基下空间、船上避难，不适合普通临时避难；资料里唯一相关的“垃圾袋可做临时庇护”却没提","ideal":"资料不足：选干燥避风、远离落石、洪水和枯树的地点；用防水布、垃圾袋或树枝搭单坡或A字棚，背风；地面铺干草树叶隔潮防失温；空间够用即可，小一点更保暖"}
+{"q":31,"label":"B","answerable":false,"score":4,"dangerous":false,"issues":["retrieval_miss"],"reason":"只说垃圾袋可做临时庇护所，忠实但没有具体做法，也没说明资料缺乏搭建方法"}
+{"q":31,"label":"C","answerable":false,"score":2,"dangerous":false,"issues":["retrieval_miss","off_topic","hallucination","too_long"],"reason":"套用核掩体挖掘和木杆框架的施工步骤；第1点“优先使用地下室”在资料[1]里找不到；把杆径规定（不超过最小直径的1.5倍）说反了"}
+{"q":32,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","too_long","bad_citation"],"reason":"凸透镜、打火石、电池、弓钻、火犁等方法齐全；但近一半在讲气味掩盖、潜行、找人；引用写成[2, 29]；取火药时省略了“底火仍敏感”的警告","ideal":"先备好干燥引火物（干草、树皮丝、棉絮）和细柴；晴天用放大镜或凸透镜聚光；用打火石或镁棒配碳钢刮出火花，或电池接导线打火花；原始方法有弓钻和火犁，火星落进引火物团后轻吹成火"}
+{"q":32,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","hallucination"],"reason":"凸透镜、打火石、弓钻三法正确；第4条“雪水冷凝法”与生火无关，“可用于后续生火”是编的；资料[4]里弓钻的排错要点没用上"}
+{"q":32,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"凸透镜、打火石、弓钻，忠实简洁；但没有说明弓钻的具体操作，也没强调要先备好干燥引火物"}
+```
+24 条全部评完。
+共性问题主要有三类：一是把其他资料硬套进来（25A 用了蛇咬条目，31A/31C 用了核掩体，32A 用了潜行内容）；二是资料有答案却说“没有”（30B）；三是数字题只答一半（28 三个回答都没给出每天要喝多少水）。
+25A 被判为危险，是因为它照抄了“每 5 分钟松一次止血带”这种过时做法。
+27 题三个回答都没提复位后要固定、复位失败要按骨折原位固定，A 也没有任何谨慎提示，对普通人有一定风险，但资料本身支持在野外复位，所以没有判为危险。

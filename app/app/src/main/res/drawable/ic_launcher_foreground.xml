@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 方舟：船身 + 船舱 + 屋顶 + 水波。画在 108×108 的自适应图标画布中间 66×66 的安全区内 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 屋顶 -->
+    <path android:fillColor="@color/ark_fg" android:pathData="M36,48 L54,35 L72,48 Z" />
+    <!-- 船舱 -->
+    <path android:fillColor="@color/ark_fg" android:pathData="M40,48 L68,48 L68,58 L40,58 Z" />
+    <!-- 舱窗 -->
+    <path android:fillColor="@color/ark_bg" android:pathData="M46,51 L51,51 L51,55 L46,55 Z M57,51 L62,51 L62,55 L57,55 Z" />
+    <!-- 船身 -->
+    <path android:fillColor="@color/ark_fg" android:pathData="M27,59 L81,59 L74,71 Q54,76 34,71 Z" />
+    <!-- 水波 -->
+    <path android:strokeColor="@color/ark_wave" android:strokeWidth="3" android:strokeLineCap="round"
+        android:pathData="M30,79 Q36,75 42,79 T54,79 T66,79 T78,79" />
+</vector>

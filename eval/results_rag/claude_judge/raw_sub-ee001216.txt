@@ -1,0 +1,29 @@
+```jsonl
+{"q":17,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","too_long"],"reason":"忠实复述单坑厕所要点，选址、尺寸、衬砌、盖板都有；但照抄了学校男女分厕等无关内容，像清单而非操作步骤","ideal":"选址：离水源至少20–30米、远离住处，在下风处；坑挖深且窄，越深蝇臭越少，松土要加固上半部；上面盖板只留小孔，每次用后撒土、草木灰或石灰；坑满后填土封埋，另挖新坑"}
+{"q":17,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":["too_long"],"reason":"综合两段资料，补上撒灰土除臭驱蝇，要点完整正确；但篇幅偏长，20米和30米两个距离并列未加说明"}
+{"q":17,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"按选址、挖掘、加固、盖板分步给出，简洁准确；第3、5步重复，也缺少满坑后怎么处理"}
+{"q":18,"label":"A","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料是贝类、核应急、食品保存，与洪水后食物无关，如实说没有；但只有一句话，没有任何安全提示"}
+{"q":18,"label":"B","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料全是堤防应急与民防，确实没有答案，回答如实说没有，没有硬编"}
+{"q":18,"label":"C","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料仅提到洪水后伤寒和水要清洁，没有食物取舍的标准，如实说没有"}
+{"q":19,"label":"A","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只在书目里提到bowline，没有打法步骤，说没有是正确的；检索词没改写成bowline"}
+{"q":19,"label":"B","answerable":false,"score":7,"dangerous":false,"issues":["retrieval_miss","missed_answer"],"reason":"检索词误写成八字结；资料2其实写了称人结的用途和尾端用单结固定，回答只说“没有提到”，过于简略"}
+{"q":19,"label":"C","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料讲的是平结、普鲁士结，确实没有称人结的打法，说没有是正确的"}
+{"q":20,"label":"A","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"要点都抓到了：百分百确认、破除土办法、看生境季节、首次少量熟食后等24小时，有疑就扔；简洁准确","ideal":"唯一可靠办法是百分百确认种类，有一丝怀疑就不吃；剥皮、动物吃过、煮熟就安全等土办法都不可靠；求生时最好不吃，剧毒菇症状可迟发数天；确认后也只先吃少量熟的，等24小时"}
+{"q":20,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["hallucination","bad_citation"],"reason":"总体正确；但把羊肚菌误译成牛肝菌，“只有少数特征不符”被曲解成“一两个特征相符”，丢弃变质菇一条没标出处"}
+{"q":20,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":["off_topic"],"reason":"给出了求生状态下不吃蘑菇这一关键结论，鉴定原则正确；后面列装备清单，偏离了问题"}
+{"q":21,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"征象正确简洁；但把“囟门凹陷”误译成“软组织凹陷”，也漏了口渴这一早期征象"}
+{"q":21,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"正确，并写出了捏皮试验；同样把囟门误译成软组织，漏了口渴"}
+{"q":21,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","bad_citation"],"reason":"征象最全，囟门也说对了；但从战伤手册里加了“喂养不耐受”，原文讲的是肠梗阻和败血症，不是脱水征象"}
+{"q":22,"label":"A","answerable":true,"score":3,"dangerous":true,"issues":["hallucination","contradiction","hospital_only","off_topic","too_long"],"reason":"把替硝唑错译成替诺福韦；把“无肿胀则无脓肿”说反；建议有脓肿就拔牙、钢丝固定；冗长而且离题","ideal":"温盐水漱口，清除患牙食物残渣；用止痛药（布洛芬或对乙酰氨基酚）；蛀洞可塞丁香油棉球，或用氧化锌丁香油糊临时填补；脸肿、发热提示脓肿，需要抗生素，尽快找牙医"}
+{"q":22,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","too_long"],"reason":"只有温盐水漱口一条有用（原文针对的是长牙时的牙龈）；其余全是营养说教，还照抄了“她”和页码"}
+{"q":22,"label":"C","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只泛谈家庭疗法，没有牙痛内容，如实说没有"}
+{"q":23,"label":"A","answerable":true,"score":4,"dangerous":true,"issues":["hospital_only","too_long"],"reason":"照搬医院流程：荧光素、表面麻醉、用22号针头剔角膜异物，普通人照做会伤眼；冲洗和湿棉签两条有用，但被埋没","ideal":"不要揉眼；用大量清水从内眼角向外冲洗；翻开眼睑，用湿棉签轻轻蘸出表面异物；嵌进角膜或刺入的异物不要取，遮盖双眼，尽快就医"}
+{"q":23,"label":"B","answerable":false,"score":2,"dangerous":false,"issues":["retrieval_miss","off_topic","bad_citation","contradiction"],"reason":"把雪盲的处理（深色布盖眼）套到眼睛异物上，又说资料中没有，前后矛盾"}
+{"q":23,"label":"C","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料是气道、头部、腹部外伤，没有眼睛异物，如实说没有"}
+{"q":24,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["hallucination","contradiction","hospital_only","too_long"],"reason":"浅表复温和禁忌都正确；但把“不起水疱是危险信号”说反了，混入筋膜切开术，“避免踩伤脚”和“用冻脚行走”并列，征象部分杂乱","ideal":"离开寒冷环境、换掉湿衣；轻度冻伤用体温复温（腋下、腹部、手掌）；禁止搓雪、按摩、火烤；有再冻风险时先不解冻，能保暖时用约40°C温水浸泡复温，然后干燥包扎、抬高，不要挑破水疱"}
+{"q":24,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["contradiction","off_topic","hospital_only","too_long"],"reason":"先说重度冻伤“不要复温，等待救援”，又说可用40°C水快速复温；掺入浸泡足、饮酒等内容和筋膜切开术，篇幅过长"}
+{"q":24,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","too_long"],"reason":"分级处理正确、没有矛盾；但先大段讲预防，又抄了浸泡足、失温，回答被截断，也没提温水快速复温"}
+```
+- 第18、19题三个回答的检索都没命中；第23题B、C及第22题C也是检索没命中。改写环节的问题（称人结没译成bowline、改写成了figure eight）比生成环节更大。
+- 照搬战伤或医院手册（针头剔异物、筋膜切开术、拔牙）是本批最主要的扣分原因；第22题A还有错误药名，是唯一明确可能伤人的“编造”。
+- 资料里有现成答案的题（17、20、21），各模型表现都不错，差距主要在长度和翻译准确性（囟门、羊肚菌）。

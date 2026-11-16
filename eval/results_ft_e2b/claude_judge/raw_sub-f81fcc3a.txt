@@ -1,0 +1,22 @@
+```jsonl
+{"q":9,"label":"A","answerable":true,"score":2,"dangerous":true,"issues":["off_topic","hallucination","missed_answer","source_outdated","too_long","retrieval_miss"],"reason":"没讲直接按压伤口；推荐压动脉点却不提时限风险；把产后压宫底错写成“压膀胱”当成通用止血法，还有大量重复","ideal":"直接用布或纱布用力按压、填塞伤口，持续不松手；四肢大出血按压无效时，在伤口上方扎止血带并记下时间；平躺、保暖防休克，尽快求援"}
+{"q":9,"label":"B","answerable":true,"score":3,"dangerous":false,"issues":["off_topic","too_long","hospital_only","hallucination","missed_answer","retrieval_miss"],"reason":"把鼻腔填塞材料、产后出血、凝血病混在一起；四肢出血没给清楚做法；“按压耻骨下方”和血友病的翻译是错的"}
+{"q":10,"label":"A","answerable":true,"score":3,"dangerous":true,"issues":["wrong_number","contradiction","off_topic","missed_answer"],"reason":"频率写成10–120次；先说30:2又说按30次吹1次，自相矛盾；把窒息CPR的抠异物步骤当通用步骤；漏了按压位置"}
+{"q":10,"label":"B","answerable":true,"score":2,"dangerous":true,"issues":["wrong_number","off_topic","missed_answer","too_long","bad_citation"],"reason":"频率写成每分钟10.0到1.2次；漏了30:2；夹杂中暑、低体温（333.7°C）；最后却说资料里没有步骤"}
+{"q":11,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["hallucination","hospital_only","off_topic"],"reason":"“发绀”误成“潮红”，还有“唾液泡发绀”“胸腔积液撑破胸膜”等乱译；混入静脉补液；没说让伤者仰卧","ideal":"识别：皮肤苍白或发青、湿冷，脉快、呼吸快，出汗、口渴、烦躁或意识模糊；处理：让伤者平躺（怀疑骨折不要搬动），止住外出血，保持气道通畅，保暖，尽快求援"}
+{"q":11,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["too_long","off_topic","hospital_only"],"reason":"识别要点和平躺、止血、气道、保暖都对；但大段讲机制和分型，里面有误译，又混入静脉输液，回答还被截断"}
+{"q":12,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"镊子贴近口器、稳定拉出、不扭不挤、消毒、清理残留、记录时间都有，基本忠实；“出疹后才记录”的顺序稍有偏差","ideal":"细尖镊子贴近皮肤夹住口器，稳定地垂直拉出，不扭、不挤压虫体；没有镊子就用纸巾或手套隔着手指；取下后用酒精或肥皂水清洗伤口和手；记下时间地点，数周内出疹或发热要就医"}
+{"q":12,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["hallucination","contradiction","bad_citation"],"reason":"“顺着身体方向轻轻拉”与资料的“垂直、稳定用力”不符；先说别用手指又说可以；“就医用抗生素”是资料没有的"}
+{"q":13,"label":"A","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"大滚1分钟、海拔2000米以上煮3分钟，准确简洁；没提“任何海拔煮2分钟即可”，问题不大","ideal":"水烧到大滚后保持1分钟；海拔超过2000米要煮3分钟（或任何海拔一律煮2分钟）；煮好后盖好放凉，防止再被污染"}
+{"q":13,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["wrong_number","bad_citation"],"reason":"海拔门槛错成“零下10000英尺/3000米”（应为2000米），而且出处标成[1]；其余内容正确"}
+{"q":14,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["hallucination"],"reason":"晾干、烟熏、盐渍、寒区冷冻都有；但把晾干写成“腌制”，熏一夜可存约1周这一点表述不清","ideal":"把肉顺纹切成约6毫米薄条；挂在通风向阳处彻底晒干，防苍蝇和动物；或用硬木冒烟（不要明火）熏制，熏一夜可存约1周，连续熏两天可存2–4周；或用盐水完全浸没腌制，吃前洗掉盐"}
+{"q":14,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","missed_answer","contradiction"],"reason":"在“没冰箱”的问题下推荐0–4°C冷藏；烟熏没给做法和时长；结尾却说资料没讲无冰箱情境"}
+{"q":15,"label":"A","answerable":true,"score":1,"dangerous":true,"issues":["hallucination","wrong_number","off_topic","missed_answer"],"reason":"说“罐头要保持湿”，正好反了；把冷冻、冷藏步骤硬套到罐头上；温度换算错；漏了压力锅和食用前煮沸10分钟","ideal":"肉和低酸蔬菜必须用压力锅加热到约116°C（240°F），水浴只适合水果、番茄等酸性食物；罐头鼓胀、漏气、有锈孔一律扔掉；自制罐头吃前煮沸10分钟"}
+{"q":15,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["wrong_number","too_long","missed_answer"],"reason":"煮沸10分钟、鼓罐丢弃、低酸食物需240°F都有；但写成240°C、210°C，内容大量重复，也没明说肉必须用压力锅"}
+{"q":16,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":["hallucination"],"reason":"步骤、6小时、浑浊水预处理、不除化学物都对；“WHO推荐”和“盐分”是资料外的说法，也漏了瓶子不超过3升","ideal":"用透明、无色、无划痕的PET瓶（不超过3升），洗净后装水拧紧；水浑浊（隔瓶看不清报纸字）要先沉淀或过滤；全日照下晒至少6小时；只能杀菌，去不掉化学污染"}
+{"q":16,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"瓶子要求、密封、晒6小时、只杀菌不除化学物都准确；但漏了浑浊水先预处理这一关键前提，也没提不超过3升"}
+```
+这 8 题检索到的资料都够用，但题 9 的资料以鼻出血和产后出血为主，伤口直接按压只是附带提到，压动脉点和不鼓励止血带的说法也已过时。
+两个模型都有中文误译的问题，会把数字改坏，比如每分钟按压 10 次、240°C、3000 米。
+共同的毛病是把不同话题的资料混在一起，或把某一特殊情境的步骤当成通用方法（窒息 CPR、产后压宫底、冷冻步骤套到罐头上）。
+B 系回答普遍更长、照搬资料更多，费电也带出更多无关内容；A 系更简洁，但编造和错译更严重，题 9、15 尤其明显。

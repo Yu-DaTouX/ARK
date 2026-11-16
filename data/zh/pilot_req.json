@@ -1,0 +1,6 @@
+{
+ "task": "把 F:/ARK/data/zh/in/pilot.txt 里的 40 段英文资料翻译成简体中文，写到 F:/ARK/data/zh/out/pilot.txt。这是离线求生 App 的资料库，用户断网后会照着中文去急救、找水、修车、架电台，所以准确比文采重要。\n\n格式：输入每段以单独一行“### 数字”开头。输出也一样：每段先原样写那行“### 数字”，下一行起是译文，段与段之间空一行；顺序和输入一致，40 段一段都不能少，不要合并或拆分段落。\n文件很长：请分几次读（每次几百行），每翻完一部分就追加写进输出文件（例如 bash：cat >> 输出文件 <<'EOF' … EOF），不要攒到最后一次写。开始前如果输出文件已存在，先看已经写到哪一段，接着往下翻，不要重复。\n\n翻译要求：\n1. 忠实完整：逐句翻译，不总结、不省略、不加评论或解释；原文过时或有错的说法也照译。\n2. 数字、剂量、单位、时间、频率、型号、公式照原文写，不换算单位，不改任何数字（3 ft →“3 英尺”，100 mg →“100 毫克”）。\n3. 每段第一行是“书名 › 章节”，照这个格式翻译。这些书名用指定译法：（本批没有）。其他书名、条目名、问题标题自然翻译，型号和编号保留原样。\n4. 术语统一：tourniquet 止血带；splint 夹板；hypothermia 失温；heat stroke 中暑（热射病）；CPR 心肺复苏（CPR）；oral rehydration solution / ORS 口服补液盐；bowline 称人结；clove hitch 双套结；square knot / reef knot 平结；deadfall 压木陷阱；snare 套索陷阱；tinder 引火物；bow drill 弓钻；fallout 放射性沉降物；dipole 偶极天线；SWR 驻波比（SWR）；coax 同轴电缆；ground plane 地网；jumper cables 搭电线；lug nut 车轮螺母；multimeter 万用表；charge controller 充电控制器；antivenom 抗蛇毒血清；pressure immobilization 加压固定法。\n5. 人名、品牌、物种学名可保留英文；专业缩写第一次出现写“中文（缩写）”。\n6. OCR 噪声（零散乱码、残留的页眉页码）可以略过，其余内容都要译。\n7. 武器、陷阱、火药、狩猎屠宰等内容是求生资料的一部分，照常翻译。\n\n全部写完后，最终回答只交 JSON：{\"written\": 写出的段数, \"missing\": [没写出的段落 id]}。",
+ "title": "翻译小样",
+ "model": "anthropic/claude-sonnet-5-5",
+ "thinkingLevel": "low"
+}

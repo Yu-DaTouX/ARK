@@ -1,0 +1,1071 @@
+[
+{
+"name": "b_000",
+"n": 310,
+"words": 70014,
+"first": 1,
+"last": 310,
+"titles": {}
+},
+{
+"name": "b_001",
+"n": 300,
+"words": 70134,
+"first": 311,
+"last": 610,
+"titles": {}
+},
+{
+"name": "b_002",
+"n": 303,
+"words": 70242,
+"first": 611,
+"last": 913,
+"titles": {}
+},
+{
+"name": "b_003",
+"n": 310,
+"words": 70109,
+"first": 914,
+"last": 1223,
+"titles": {}
+},
+{
+"name": "b_004",
+"n": 309,
+"words": 70356,
+"first": 1224,
+"last": 1532,
+"titles": {}
+},
+{
+"name": "b_005",
+"n": 294,
+"words": 70174,
+"first": 1533,
+"last": 1826,
+"titles": {}
+},
+{
+"name": "b_006",
+"n": 296,
+"words": 70186,
+"first": 1827,
+"last": 2122,
+"titles": {}
+},
+{
+"name": "b_007",
+"n": 297,
+"words": 70049,
+"first": 2123,
+"last": 2419,
+"titles": {}
+},
+{
+"name": "b_008",
+"n": 313,
+"words": 70139,
+"first": 2420,
+"last": 2732,
+"titles": {}
+},
+{
+"name": "b_009",
+"n": 303,
+"words": 70100,
+"first": 2733,
+"last": 3035,
+"titles": {}
+},
+{
+"name": "b_010",
+"n": 304,
+"words": 70136,
+"first": 3036,
+"last": 3339,
+"titles": {}
+},
+{
+"name": "b_011",
+"n": 280,
+"words": 70022,
+"first": 3340,
+"last": 3619,
+"titles": {}
+},
+{
+"name": "b_012",
+"n": 296,
+"words": 70255,
+"first": 3620,
+"last": 3915,
+"titles": {
+"Where There Is No Doctor 2025": "没有医生的地方（2025 版）"
+}
+},
+{
+"name": "b_013",
+"n": 263,
+"words": 70244,
+"first": 3916,
+"last": 4178,
+"titles": {
+"Where There Is No Doctor 2025": "没有医生的地方（2025 版）"
+}
+},
+{
+"name": "b_014",
+"n": 238,
+"words": 70329,
+"first": 4179,
+"last": 4416,
+"titles": {
+"Where There Is No Doctor 2025": "没有医生的地方（2025 版）",
+"Where Women Have No Doctor (Hesperian)": "没有医生时的妇女健康（Hesperian）"
+}
+},
+{
+"name": "b_015",
+"n": 193,
+"words": 70114,
+"first": 4417,
+"last": 4609,
+"titles": {
+"Where Women Have No Doctor (Hesperian)": "没有医生时的妇女健康（Hesperian）"
+}
+},
+{
+"name": "b_016",
+"n": 198,
+"words": 70105,
+"first": 4610,
+"last": 4807,
+"titles": {
+"Where Women Have No Doctor (Hesperian)": "没有医生时的妇女健康（Hesperian）"
+}
+},
+{
+"name": "b_017",
+"n": 202,
+"words": 70206,
+"first": 4808,
+"last": 5009,
+"titles": {
+"A Community Guide to Environmental Health (Hesperian)": "社区环境卫生指南（Hesperian）",
+"Where Women Have No Doctor (Hesperian)": "没有医生时的妇女健康（Hesperian）"
+}
+},
+{
+"name": "b_018",
+"n": 197,
+"words": 70143,
+"first": 5010,
+"last": 5206,
+"titles": {
+"A Community Guide to Environmental Health (Hesperian)": "社区环境卫生指南（Hesperian）"
+}
+},
+{
+"name": "b_019",
+"n": 195,
+"words": 70012,
+"first": 5207,
+"last": 5401,
+"titles": {
+"A Community Guide to Environmental Health (Hesperian)": "社区环境卫生指南（Hesperian）"
+}
+},
+{
+"name": "b_020",
+"n": 217,
+"words": 70069,
+"first": 5402,
+"last": 5618,
+"titles": {
+"A Community Guide to Environmental Health (Hesperian)": "社区环境卫生指南（Hesperian）",
+"Emergency War Surgery": "战地急救外科"
+}
+},
+{
+"name": "b_021",
+"n": 221,
+"words": 70032,
+"first": 5619,
+"last": 5839,
+"titles": {
+"Emergency War Surgery": "战地急救外科",
+"Where There is No Dentist": "没有牙医的地方"
+}
+},
+{
+"name": "b_022",
+"n": 241,
+"words": 70320,
+"first": 5840,
+"last": 6080,
+"titles": {
+"Where There Is No Doctor (old edition)": "没有医生的地方（旧版）",
+"Where There is No Dentist": "没有牙医的地方"
+}
+},
+{
+"name": "b_023",
+"n": 237,
+"words": 70004,
+"first": 6081,
+"last": 6317,
+"titles": {
+"USMC Wilderness Survival & Medicine Course": "美国海军陆战队野外求生与医疗课程",
+"Where There Is No Doctor (old edition)": "没有医生的地方（旧版）"
+}
+},
+{
+"name": "b_024",
+"n": 248,
+"words": 70016,
+"first": 6318,
+"last": 6565,
+"titles": {
+"A Book for Midwives": "助产士手册",
+"USMC Wilderness Survival & Medicine Course": "美国海军陆战队野外求生与医疗课程"
+}
+},
+{
+"name": "b_025",
+"n": 197,
+"words": 70087,
+"first": 6566,
+"last": 6762,
+"titles": {
+"A Book for Midwives": "助产士手册"
+}
+},
+{
+"name": "b_026",
+"n": 199,
+"words": 70141,
+"first": 6763,
+"last": 6961,
+"titles": {
+"A Book for Midwives": "助产士手册"
+}
+},
+{
+"name": "b_027",
+"n": 208,
+"words": 70286,
+"first": 6962,
+"last": 7169,
+"titles": {
+"A Book for Midwives": "助产士手册",
+"HHS Pandemic Influenza Plan": "美国卫生部大流行性流感应对计划",
+"US Army First Aid Manual FM 21-11": "美军急救手册 FM 21-11"
+}
+},
+{
+"name": "b_028",
+"n": 211,
+"words": 70331,
+"first": 7170,
+"last": 7380,
+"titles": {
+"HHS Pandemic Influenza Plan": "美国卫生部大流行性流感应对计划"
+}
+},
+{
+"name": "b_029",
+"n": 242,
+"words": 70134,
+"first": 7381,
+"last": 7622,
+"titles": {
+"HHS Pandemic Influenza Plan": "美国卫生部大流行性流感应对计划",
+"Wound Closure Manual": "伤口缝合手册"
+}
+},
+{
+"name": "b_030",
+"n": 255,
+"words": 70210,
+"first": 7623,
+"last": 7877,
+"titles": {
+"Survival and Austere Medicine": "求生与资源匮乏条件下的医学",
+"Wound Closure Manual": "伤口缝合手册"
+}
+},
+{
+"name": "b_031",
+"n": 207,
+"words": 70184,
+"first": 7878,
+"last": 8084,
+"titles": {
+"Encyclopedia of Knots": "绳结百科",
+"Personal Wilderness Medical Kit": "个人野外医疗包",
+"ST 31-91B Special Forces Medical Handbook (US Army)": "美军特种部队医疗手册 ST 31-91B",
+"Survival and Austere Medicine": "求生与资源匮乏条件下的医学",
+"Tongue Diagnosis in Chinese Medicine": "中医舌诊"
+}
+},
+{
+"name": "b_032",
+"n": 206,
+"words": 70076,
+"first": 8085,
+"last": 8290,
+"titles": {
+"ST 31-91B Special Forces Medical Handbook (US Army)": "美军特种部队医疗手册 ST 31-91B"
+}
+},
+{
+"name": "b_033",
+"n": 229,
+"words": 70234,
+"first": 8291,
+"last": 8519,
+"titles": {
+"Plants as Indicator of Ground Water": "以植物指示地下水",
+"ST 31-91B Special Forces Medical Handbook (US Army)": "美军特种部队医疗手册 ST 31-91B"
+}
+},
+{
+"name": "b_034",
+"n": 236,
+"words": 70073,
+"first": 8520,
+"last": 8755,
+"titles": {
+"Canning Food": "食品罐藏",
+"Philmont Trail Cookbook": "菲尔蒙特野营食谱",
+"Plants as Indicator of Ground Water": "以植物指示地下水",
+"Safe Water School": "安全饮水学校",
+"Survival Water Purification": "求生净水",
+"Water Treatment": "水处理手册"
+}
+},
+{
+"name": "b_035",
+"n": 219,
+"words": 70186,
+"first": 8756,
+"last": 8974,
+"titles": {
+"Canning Food": "食品罐藏",
+"Complete Guide to Home Canning": "家庭罐藏完全指南",
+"Preservation of Fish and Meat": "鱼和肉的保存",
+"Preserving Food: Drying Fruits and Vegetables-": "食物保存：果蔬干制",
+"Traditional fermented food and beverages for improved livelihoods": "传统发酵食品与饮料"
+}
+},
+{
+"name": "b_036",
+"n": 238,
+"words": 70087,
+"first": 8975,
+"last": 9212,
+"titles": {
+"Camping Recipes": "野营菜谱",
+"Colonial New England Recipes": "殖民时期新英格兰菜谱",
+"Dutch oven cookbook": "荷兰锅菜谱",
+"Fermenting Guide and Recipe Book": "发酵指南与食谱",
+"Preserving Food: Drying Fruits and Vegetables-": "食物保存：果蔬干制"
+}
+},
+{
+"name": "b_037",
+"n": 279,
+"words": 70011,
+"first": 9213,
+"last": 9491,
+"titles": {
+"Dutch Oven Grill BBQ recipes": "荷兰锅与烧烤菜谱",
+"Dutch oven cookbook": "荷兰锅菜谱",
+"Famous Recipes from Old Virginia": "老弗吉尼亚名菜谱"
+}
+},
+{
+"name": "b_038",
+"n": 349,
+"words": 70275,
+"first": 9492,
+"last": 9840,
+"titles": {
+"60 Gift Mixes in a Jar Recipes": "60 种瓶装礼品预拌粉食谱",
+"Famous Recipes from Old Virginia": "老弗吉尼亚名菜谱",
+"How to Find Your Way (US Army map reading)": "怎样辨认方向（美军读图）",
+"Three Days Emergency Preparedness": "三天应急准备",
+"Unusual Old World and American Recipes (Nordic Ware, 1972)": "旧大陆与美国特色菜谱（Nordic Ware，1972）"
+}
+},
+{
+"name": "b_039",
+"n": 256,
+"words": 70058,
+"first": 9841,
+"last": 10096,
+"titles": {
+"How to Find Your Way (US Army map reading)": "怎样辨认方向（美军读图）",
+"US Army Survival Manual FM 3-05.70": "美军求生手册 FM 3-05.70"
+}
+},
+{
+"name": "b_040",
+"n": 237,
+"words": 70064,
+"first": 10097,
+"last": 10333,
+"titles": {
+"US Army Survival Manual FM 3-05.70": "美军求生手册 FM 3-05.70",
+"USMC Summer Survival Course": "美国海军陆战队夏季求生课程"
+}
+},
+{
+"name": "b_041",
+"n": 252,
+"words": 70166,
+"first": 10334,
+"last": 10585,
+"titles": {
+"3-Month Food Supply": "三个月食物储备",
+"72-Hour Kit Checklist": "72 小时应急包清单",
+"Colonial Garden Plants": "殖民时期园艺植物",
+"Ethicon Wound Closure Manual": "Ethicon 伤口缝合手册",
+"FEMA Emergency Preparedness Guidelines for Levees (2018)": "FEMA 堤防应急准备指南（2018）",
+"Family Emergency Checklist": "家庭应急清单",
+"GSA Child Care Emergency Preparedness Toolbox (2014)": "美国总务署托儿机构应急准备工具包（2014）",
+"Surviving the Unexpected Emergency": "应对突发紧急情况",
+"The Prepper Phone": "备灾手机",
+"USMC Summer Survival Course": "美国海军陆战队夏季求生课程",
+"USMC Winter Survival Course": "美国海军陆战队冬季求生课程",
+"Water Purification (Quick Guide)": "净水速查"
+}
+},
+{
+"name": "b_042",
+"n": 208,
+"words": 70348,
+"first": 10586,
+"last": 10793,
+"titles": {
+"Backyard Composting Basics": "后院堆肥基础",
+"Colonial Garden Plants": "殖民时期园艺植物",
+"Complete Guide to Home Composting": "家庭堆肥完全指南",
+"Seed Saving Guide": "留种指南",
+"Start a Garden (Almanac)": "开辟菜园（年鉴）",
+"Worm Factory 360 Manual (Worm Composting)": "Worm Factory 360 蚯蚓堆肥手册"
+}
+},
+{
+"name": "b_043",
+"n": 210,
+"words": 70309,
+"first": 10794,
+"last": 11003,
+"titles": {
+"Riverside Foraging Guide (Wild Food School)": "河边采集指南（Wild Food School）",
+"Shellfish Foraging Guide": "贝类采集指南",
+"Urban Foraging": "城市野外采集",
+"Wild Edible Plants Directory": "野生可食植物目录",
+"Worm Factory 360 Manual (Worm Composting)": "Worm Factory 360 蚯蚓堆肥手册"
+}
+},
+{
+"name": "b_044",
+"n": 237,
+"words": 70174,
+"first": 11004,
+"last": 11240,
+"titles": {
+"Basic Hunting Booklet": "狩猎基础手册",
+"Field Guide to Mushrooms": "蘑菇野外图鉴",
+"Forage Guide": "野外采集指南",
+"Forest Foraging Guide (Ontario Nature)": "森林采集指南（安大略自然协会）",
+"Mushroom Guide": "蘑菇指南",
+"Mushrooms from Forest to Plate": "从森林到餐桌的蘑菇",
+"Pocket Guide to Urban Foraging": "城市采集口袋指南",
+"Urban Foraging": "城市野外采集"
+}
+},
+{
+"name": "b_045",
+"n": 240,
+"words": 70010,
+"first": 11241,
+"last": 11480,
+"titles": {
+"Basic Hunting Booklet": "狩猎基础手册",
+"Tricks of Trapping": "诱捕技巧"
+}
+},
+{
+"name": "b_046",
+"n": 223,
+"words": 70243,
+"first": 11481,
+"last": 11703,
+"titles": {
+"Basics of Elk Hunting": "驼鹿狩猎基础",
+"Basics of Turkey Hunting": "火鸡狩猎基础",
+"Tricks of Trapping": "诱捕技巧",
+"Whitetail Deer Hunting": "白尾鹿狩猎"
+}
+},
+{
+"name": "b_047",
+"n": 209,
+"words": 70277,
+"first": 11704,
+"last": 11912,
+"titles": {
+"Basics of Waterfowling": "水禽狩猎基础",
+"Deer Hunting Basics": "猎鹿基础",
+"Dove Hunting for Beginners": "猎鸽入门",
+"Duck Hunting Tips for Beginners": "猎鸭入门技巧",
+"Trapper Education Student Manual": "诱捕教育学员手册",
+"Whitetail Deer Hunting": "白尾鹿狩猎"
+}
+},
+{
+"name": "b_048",
+"n": 219,
+"words": 70368,
+"first": 11913,
+"last": 12131,
+"titles": {
+"Essential Fishing Knots": "常用钓鱼结",
+"Handbook of Knots and Splices": "绳结与插接手册",
+"Knots and String": "绳结与细绳",
+"Knots for Mountaineering, Camping, Climbing and Rescue": "登山、野营、攀岩与救援绳结",
+"Knots, Splices and Attachments (USMC)": "绳结、插接与固定（美国海军陆战队）",
+"Knots, Splices and Rope Work": "绳结、插接与绳索作业",
+"Trapper Education Student Manual": "诱捕教育学员手册",
+"Trapping History and Basics": "诱捕的历史与基础",
+"Traps and Snares": "陷阱与套索"
+}
+},
+{
+"name": "b_049",
+"n": 263,
+"words": 70130,
+"first": 12132,
+"last": 12394,
+"titles": {
+"FEMA Radiological Emergency Preparedness Program Manual (2019)": "FEMA 放射性应急准备项目手册（2019）",
+"Knots, Splices and Attachments (USMC)": "绳结、插接与固定（美国海军陆战队）",
+"Nuclear Winter: The Anthropology of Human Survival (Los Alamos, 1985)": "核冬天：人类生存的人类学（洛斯阿拉莫斯，1985）",
+"Sea Scout Knots": "海洋童子军绳结",
+"Tying Farm Knots": "农用绳结"
+}
+},
+{
+"name": "b_050",
+"n": 237,
+"words": 70296,
+"first": 12395,
+"last": 12631,
+"titles": {
+"FEMA Radiological Emergency Preparedness Program Manual (2019)": "FEMA 放射性应急准备项目手册（2019）"
+}
+},
+{
+"name": "b_051",
+"n": 229,
+"words": 70008,
+"first": 12632,
+"last": 12860,
+"titles": {
+"FEMA Nuclear Survival": "FEMA 核生存指南",
+"FEMA Radiological Emergency Preparedness Program Manual (2019)": "FEMA 放射性应急准备项目手册（2019）",
+"Nuclear War Survival Skills (Cresson Kearny)": "核战争生存技能（Cresson Kearny）",
+"The Family Fallout Shelter (1959)": "家庭防辐射掩体（1959）"
+}
+},
+{
+"name": "b_052",
+"n": 238,
+"words": 70272,
+"first": 12861,
+"last": 13098,
+"titles": {
+"Nuclear War Survival Skills (Cresson Kearny)": "核战争生存技能（Cresson Kearny）"
+}
+},
+{
+"name": "b_053",
+"n": 229,
+"words": 70125,
+"first": 13099,
+"last": 13327,
+"titles": {
+"Bushcraft Leatherwork": "丛林皮具制作",
+"How to Build a Debris Hut": "怎么搭落叶棚",
+"Nuclear War Survival Skills (Cresson Kearny)": "核战争生存技能（Cresson Kearny）",
+"Taking Shelter: Building a Safe Room": "避难：建造安全屋"
+}
+},
+{
+"name": "b_054",
+"n": 229,
+"words": 70098,
+"first": 13328,
+"last": 13556,
+"titles": {
+"Bushcraft Leatherwork": "丛林皮具制作",
+"Foxfire 1": "Foxfire 第 1 卷（美国山区传统技艺）"
+}
+},
+{
+"name": "b_055",
+"n": 238,
+"words": 70003,
+"first": 13557,
+"last": 13794,
+"titles": {
+"Foxfire 1": "Foxfire 第 1 卷（美国山区传统技艺）",
+"Foxfire 3": "Foxfire 第 3 卷（美国山区传统技艺）"
+}
+},
+{
+"name": "b_056",
+"n": 227,
+"words": 70222,
+"first": 13795,
+"last": 14021,
+"titles": {
+"Foxfire 3": "Foxfire 第 3 卷（美国山区传统技艺）"
+}
+},
+{
+"name": "b_057",
+"n": 214,
+"words": 70318,
+"first": 14022,
+"last": 14235,
+"titles": {
+"Foxfire 2": "Foxfire 第 2 卷（美国山区传统技艺）",
+"Foxfire 3": "Foxfire 第 3 卷（美国山区传统技艺）"
+}
+},
+{
+"name": "b_058",
+"n": 210,
+"words": 70068,
+"first": 14236,
+"last": 14445,
+"titles": {
+"Foxfire 2": "Foxfire 第 2 卷（美国山区传统技艺）"
+}
+},
+{
+"name": "b_059",
+"n": 210,
+"words": 70255,
+"first": 14446,
+"last": 14655,
+"titles": {
+"Ancient Beer Brewing (Samuel, 1995)": "古代啤酒酿造（Samuel，1995）",
+"Foxfire 2": "Foxfire 第 2 卷（美国山区传统技艺）",
+"How to Make Black Powder": "怎么做黑火药",
+"The Ten Bushcraft Books (Richard Graves)": "丛林技艺十书（Richard Graves）"
+}
+},
+{
+"name": "b_060",
+"n": 205,
+"words": 70355,
+"first": 14656,
+"last": 14860,
+"titles": {
+"Are You Ready - An In-depth Guide to Citizen Preparedness (FEMA)": "你准备好了吗？公民应急准备指南（FEMA）",
+"FM 3-25.26 Map Reading and Land Navigation (US Army)": "美军 FM 3-25.26 地图判读与陆地导航",
+"The Ten Bushcraft Books (Richard Graves)": "丛林技艺十书（Richard Graves）"
+}
+},
+{
+"name": "b_061",
+"n": 239,
+"words": 70391,
+"first": 14861,
+"last": 15099,
+"titles": {
+"Deadfalls and Snares (A. R. Harding, 1907)": "压木陷阱与套索（A. R. Harding，1907）",
+"FM 3-25.26 Map Reading and Land Navigation (US Army)": "美军 FM 3-25.26 地图判读与陆地导航",
+"Steel Traps (A. R. Harding, 1907)": "钢夹陷阱（A. R. Harding，1907）"
+}
+},
+{
+"name": "b_062",
+"n": 236,
+"words": 70374,
+"first": 15100,
+"last": 15335,
+"titles": {
+"Camp Life in the Woods and the Tricks of Trapping (W. H. Gibson, 1881)": "林中营地生活与诱捕技巧（W. H. Gibson，1881）",
+"Steel Traps (A. R. Harding, 1907)": "钢夹陷阱（A. R. Harding，1907）",
+"Woodcraft and Camping (Nessmuk, 1920)": "山林技艺与野营（Nessmuk，1920）"
+}
+},
+{
+"name": "b_063",
+"n": 256,
+"words": 70272,
+"first": 15336,
+"last": 15591,
+"titles": {
+"Freshwater Fish Pond Culture and Management (Peace Corps)": "淡水鱼塘养殖与管理（美国和平队）",
+"Shelters, Shacks and Shanties (D. C. Beard, 1914)": "窝棚、小屋与简易房（D. C. Beard，1914）",
+"Woodcraft and Camping (Nessmuk, 1920)": "山林技艺与野营（Nessmuk，1920）"
+}
+},
+{
+"name": "b_064",
+"n": 234,
+"words": 70379,
+"first": 15592,
+"last": 15825,
+"titles": {
+"Freshwater Fish Pond Culture and Management (Peace Corps)": "淡水鱼塘养殖与管理（美国和平队）",
+"NEETS Module 1 - Matter, Energy, and Direct Current (US Navy)": "美国海军电子基础教材 NEETS 第 1 册：物质、能量与直流电"
+}
+},
+{
+"name": "b_065",
+"n": 230,
+"words": 70361,
+"first": 15826,
+"last": 16055,
+"titles": {
+"NEETS Module 1 - Matter, Energy, and Direct Current (US Navy)": "美国海军电子基础教材 NEETS 第 1 册：物质、能量与直流电",
+"NEETS Module 2 - Alternating Current and Transformers (US Navy)": "美国海军电子基础教材 NEETS 第 2 册：交流电与变压器",
+"NEETS Module 5 - Generators and Motors (US Navy)": "美国海军电子基础教材 NEETS 第 5 册：发电机与电动机"
+}
+},
+{
+"name": "b_066",
+"n": 225,
+"words": 70049,
+"first": 16056,
+"last": 16280,
+"titles": {
+"NEETS Module 10 - Wave Propagation, Transmission Lines, and Antennas (US Navy)": "美国海军电子基础教材 NEETS 第 10 册：电波传播、传输线与天线",
+"NEETS Module 5 - Generators and Motors (US Navy)": "美国海军电子基础教材 NEETS 第 5 册：发电机与电动机"
+}
+},
+{
+"name": "b_067",
+"n": 217,
+"words": 70102,
+"first": 16281,
+"last": 16497,
+"titles": {
+"NEETS Module 10 - Wave Propagation, Transmission Lines, and Antennas (US Navy)": "美国海军电子基础教材 NEETS 第 10 册：电波传播、传输线与天线",
+"NEETS Module 17 - Radio-Frequency Communications Principles (US Navy)": "美国海军电子基础教材 NEETS 第 17 册：射频通信原理"
+}
+},
+{
+"name": "b_068",
+"n": 209,
+"words": 70343,
+"first": 16498,
+"last": 16706,
+"titles": {
+"FM 24-18 Tactical Single-Channel Radio Communications Techniques (US Army)": "美军 FM 24-18 战术单信道无线电通信技术",
+"NEETS Module 17 - Radio-Frequency Communications Principles (US Navy)": "美国海军电子基础教材 NEETS 第 17 册：射频通信原理",
+"TM 9-8000 Principles of Automotive Vehicles (US Army)": "美军 TM 9-8000 汽车原理"
+}
+},
+{
+"name": "b_069",
+"n": 201,
+"words": 70331,
+"first": 16707,
+"last": 16907,
+"titles": {
+"TM 9-8000 Principles of Automotive Vehicles (US Army)": "美军 TM 9-8000 汽车原理"
+}
+},
+{
+"name": "b_070",
+"n": 207,
+"words": 70170,
+"first": 16908,
+"last": 17114,
+"titles": {
+"TM 9-8000 Principles of Automotive Vehicles (US Army)": "美军 TM 9-8000 汽车原理"
+}
+},
+{
+"name": "b_071",
+"n": 233,
+"words": 70184,
+"first": 17115,
+"last": 17347,
+"titles": {
+"Construction Mechanic 3 & 2 (US Navy)": "美国海军建筑机械技工手册（3 级与 2 级）",
+"TM 9-8000 Principles of Automotive Vehicles (US Army)": "美军 TM 9-8000 汽车原理"
+}
+},
+{
+"name": "b_072",
+"n": 261,
+"words": 70019,
+"first": 17348,
+"last": 17608,
+"titles": {
+"Construction Mechanic 3 & 2 (US Navy)": "美国海军建筑机械技工手册（3 级与 2 级）"
+}
+},
+{
+"name": "b_073",
+"n": 248,
+"words": 70125,
+"first": 17609,
+"last": 17856,
+"titles": {
+"Construction Mechanic 3 & 2 (US Navy)": "美国海军建筑机械技工手册（3 级与 2 级）"
+}
+},
+{
+"name": "b_074",
+"n": 296,
+"words": 70000,
+"first": 17857,
+"last": 18152,
+"titles": {
+"Construction Mechanic 3 & 2 (US Navy)": "美国海军建筑机械技工手册（3 级与 2 级）"
+}
+},
+{
+"name": "b_075",
+"n": 282,
+"words": 70126,
+"first": 18153,
+"last": 18434,
+"titles": {}
+},
+{
+"name": "b_076",
+"n": 281,
+"words": 70229,
+"first": 18435,
+"last": 18715,
+"titles": {}
+},
+{
+"name": "b_077",
+"n": 311,
+"words": 70069,
+"first": 18716,
+"last": 19026,
+"titles": {}
+},
+{
+"name": "b_078",
+"n": 410,
+"words": 70001,
+"first": 19027,
+"last": 19436,
+"titles": {}
+},
+{
+"name": "b_079",
+"n": 370,
+"words": 70211,
+"first": 19437,
+"last": 19806,
+"titles": {}
+},
+{
+"name": "b_080",
+"n": 301,
+"words": 70258,
+"first": 19807,
+"last": 20107,
+"titles": {}
+},
+{
+"name": "b_081",
+"n": 315,
+"words": 70003,
+"first": 20108,
+"last": 20422,
+"titles": {}
+},
+{
+"name": "b_082",
+"n": 300,
+"words": 70057,
+"first": 20423,
+"last": 20722,
+"titles": {}
+},
+{
+"name": "b_083",
+"n": 317,
+"words": 70294,
+"first": 20723,
+"last": 21039,
+"titles": {}
+},
+{
+"name": "b_084",
+"n": 309,
+"words": 70041,
+"first": 21040,
+"last": 21348,
+"titles": {}
+},
+{
+"name": "b_085",
+"n": 341,
+"words": 70168,
+"first": 21349,
+"last": 21689,
+"titles": {}
+},
+{
+"name": "b_086",
+"n": 300,
+"words": 70218,
+"first": 21690,
+"last": 21989,
+"titles": {
+"Ham Radio Stack Exchange": "业余无线电问答（Stack Exchange）"
+}
+},
+{
+"name": "b_087",
+"n": 268,
+"words": 70042,
+"first": 21990,
+"last": 22257,
+"titles": {
+"Ham Radio Stack Exchange": "业余无线电问答（Stack Exchange）"
+}
+},
+{
+"name": "b_088",
+"n": 266,
+"words": 70098,
+"first": 22258,
+"last": 22523,
+"titles": {
+"Ham Radio Stack Exchange": "业余无线电问答（Stack Exchange）"
+}
+},
+{
+"name": "b_089",
+"n": 271,
+"words": 70067,
+"first": 22524,
+"last": 22794,
+"titles": {
+"Ham Radio Stack Exchange": "业余无线电问答（Stack Exchange）"
+}
+},
+{
+"name": "b_090",
+"n": 267,
+"words": 70071,
+"first": 22795,
+"last": 23061,
+"titles": {
+"Ham Radio Stack Exchange": "业余无线电问答（Stack Exchange）"
+}
+},
+{
+"name": "b_091",
+"n": 273,
+"words": 70152,
+"first": 23062,
+"last": 23334,
+"titles": {
+"Ham Radio Stack Exchange": "业余无线电问答（Stack Exchange）",
+"Outdoors Stack Exchange": "户外问答（Stack Exchange）"
+}
+},
+{
+"name": "b_092",
+"n": 262,
+"words": 70163,
+"first": 23335,
+"last": 23596,
+"titles": {
+"Outdoors Stack Exchange": "户外问答（Stack Exchange）"
+}
+},
+{
+"name": "b_093",
+"n": 281,
+"words": 70057,
+"first": 23597,
+"last": 23877,
+"titles": {
+"Outdoors Stack Exchange": "户外问答（Stack Exchange）"
+}
+},
+{
+"name": "b_094",
+"n": 281,
+"words": 70111,
+"first": 23878,
+"last": 24158,
+"titles": {
+"Motor Vehicle Maintenance & Repair Stack Exchange": "汽车保养维修问答（Stack Exchange）",
+"Outdoors Stack Exchange": "户外问答（Stack Exchange）"
+}
+},
+{
+"name": "b_095",
+"n": 271,
+"words": 70320,
+"first": 24159,
+"last": 24429,
+"titles": {
+"Motor Vehicle Maintenance & Repair Stack Exchange": "汽车保养维修问答（Stack Exchange）"
+}
+},
+{
+"name": "b_096",
+"n": 273,
+"words": 70146,
+"first": 24430,
+"last": 24702,
+"titles": {
+"Motor Vehicle Maintenance & Repair Stack Exchange": "汽车保养维修问答（Stack Exchange）"
+}
+},
+{
+"name": "b_097",
+"n": 273,
+"words": 70285,
+"first": 24703,
+"last": 24975,
+"titles": {
+"Motor Vehicle Maintenance & Repair Stack Exchange": "汽车保养维修问答（Stack Exchange）"
+}
+},
+{
+"name": "b_098",
+"n": 274,
+"words": 70255,
+"first": 24976,
+"last": 25249,
+"titles": {
+"Motor Vehicle Maintenance & Repair Stack Exchange": "汽车保养维修问答（Stack Exchange）"
+}
+},
+{
+"name": "b_099",
+"n": 33,
+"words": 8627,
+"first": 25250,
+"last": 25282,
+"titles": {
+"Motor Vehicle Maintenance & Repair Stack Exchange": "汽车保养维修问答（Stack Exchange）"
+}
+}
+]

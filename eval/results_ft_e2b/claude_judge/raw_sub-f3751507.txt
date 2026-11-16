@@ -1,0 +1,24 @@
+```jsonl
+{"q":25,"label":"A","answerable":true,"score":2,"dangerous":true,"issues":["hallucination","missed_answer","too_long"],"reason":"药名编错（“氯沙星霉素”“多头”），还编了“木质纤维虫害”；破伤风写成“破伤寒”，内容重复；没讲狂犬病一旦发病就救不回、要趁早打疫苗","ideal":"立即用大量清水（加肥皂）冲洗伤口；狂犬病发病后无药可救，须在发病前尽快接种疫苗；伤口刺破皮肤且破伤风免疫不全时打破伤风针；手部咬伤可用阿莫西林克拉维酸预防感染"}
+{"q":25,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"讲了洗伤口和狂犬病风险，但没说要尽快打狂犬疫苗、发病前必须开始治疗；混进了脐带破伤风和抗组胺药等无关内容"}
+{"q":26,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["wrong_number","hallucination","too_long"],"reason":"大量冲洗、不涂酒精碘酒、每天换敷料检查感染都对；但把24–48小时写成“248小时”，编了“池肉芽肿”，“绷带扎紧”有误，内容重复"}
+{"q":26,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["too_long","off_topic","hallucination"],"reason":"清洗和包扎要点基本齐全；但内容过长、被截断，掺了急救包清单和乱码，Neosporin 被译成“牛皮葡萄糖苷”"}
+{"q":27,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer","hospital_only"],"reason":"说明了未经训练自行复位会加重损伤，简洁且没错；但只让人去医院，没提野外的固定/悬吊、尽早处理和检查血运"}
+{"q":27,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["hospital_only","contradiction","missed_answer"],"reason":"大多是X光、体检等医院流程；先说“不能自己复位”又说“要尽快复位”；称资料没提复位后怎么活动，其实[1]写了"}
+{"q":28,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"给出了每天至少2夸脱；但热天的数字套错，漏了酷热时要4–5夸脱，冷环境只说一句空话，盐的内容有歪曲"}
+{"q":28,"label":"B","answerable":true,"score":3,"dangerous":true,"issues":["wrong_number","hallucination","contradiction"],"reason":"编出“70公斤的人每天约42升”这种荒谬数字，和后面“不超过12升”矛盾；热天仍写至少2夸脱，与资料不符"}
+{"q":29,"label":"A","answerable":true,"score":3,"dangerous":true,"issues":["contradiction","hallucination","missed_answer"],"reason":"把余氯的意思说反了（资料是有余氯才防再污染）；暗示水清就安全；先说资料没有检测方法，后面又引用了检测方法"}
+{"q":29,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["bad_citation","off_topic","too_long","missed_answer"],"reason":"提到了大肠杆菌检测、贾第虫和各类水源，但多处出处标错；没给普通人能用的判断法，也没讲默认煮沸消毒"}
+{"q":30,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","off_topic","hallucination"],"reason":"漏了最关键的饮用水煮沸/加氯消毒；把漂白剂写成“氯仿”；混进流感的防护措施"}
+{"q":30,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","too_long"],"reason":"水消毒、粪便管理、洗手、衣物消毒等要点齐全；但掺了政府监测、疫苗、流感防护等普通人用不上的内容"}
+{"q":31,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["bad_citation","wrong_number","off_topic","retrieval_miss"],"reason":"选址和雪墙、雪洞的要点大致对；出处出现[150]这类编号，雨披/降落伞误译为“风筝”，把融雪架当成生火；资料偏重雪地"}
+{"q":31,"label":"B","answerable":true,"score":2,"dangerous":false,"issues":["hallucination","wrong_number","off_topic","too_long"],"reason":"六项标准是编的；3英尺写成“91米”，尺寸混乱；后半段反复讲融雪取水，与搭建避难所无关"}
+{"q":32,"label":"A","answerable":true,"score":1,"dangerous":false,"issues":["hallucination","missed_answer"],"reason":"答成“用火柴制造火花”，与问题相反；把电池法和火药法改编成胡话，透镜、打火石、弓钻都没提"}
+{"q":32,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","bad_citation","too_long","contradiction"],"reason":"列出了电池、打火石、火犁、弓钻、凸透镜；但先说资料没有，又掺了火柴、无烟火、劈火柴，出处标错，火绒误译为火柴"}
+```
+这批 16 条回答我都评完了，只读了 part4.md 一个文件。
+
+- 普遍问题是把英文资料译错后又写成要点：Merthiolate 译成“梅毒”，tinder 译成“火柴”，parachute 译成“风筝”，还有“破伤寒”“氯仿”。
+- 风格大致分两类。一类是短条目，容易出现数字错、意思说反和重复复读（题 25A、28B、29A、31B、32A）。另一类是长篇加粗，通常更忠实，但会把无关资料整段塞进来，过长或被截断（题 26B、30B、32B）。
+- 4 条标了 dangerous，都是编造或歪曲资料造成的，不是资料本身过时：题 25A（药名编错），题 28B（每天约 42 升），题 29A（余氯含义说反）。
+- 有两个判断属于我的取舍，可能有争议。题 31 的资料偏重雪地，我仍判为 answerable，同时标了 retrieval_miss。题 30A 把漂白剂写成“氯仿”，我判为不危险，因为普通人一般拿不到氯仿。

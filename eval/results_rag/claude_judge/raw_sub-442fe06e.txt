@@ -1,0 +1,31 @@
+```jsonl
+{"q":9,"label":"A","answerable":true,"score":5,"dangerous":true,"issues":["source_outdated","off_topic","bad_citation","too_long"],"reason":"直接按压、按压5分钟、异物不拔都抓到了；但把止血带每10-15分钟松开一次当作建议给出（过时做法），指压止血的解释也写错了，还混入蛇咬、止血粉等内容","ideal":"立即用布垫直接用力按压伤口，至少压5分钟再查看；危及生命的四肢出血压不住时，在伤口上方5-10cm扎止血带并记下时间，不要自行松开；插入物不拔；抬高伤肢、防休克"}
+{"q":9,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","bad_citation"],"reason":"按压、抬高、压迫点、加压敷料、止血带、断肢上止血带都正确；漏了按压至少5分钟、异物不拔；敷料作用、检查循环两条被错标成指压内容"}
+{"q":9,"label":"C","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"没有把直接按压作为第一步讲清，只讲其他办法都无效之后的指压和止血带；还掺进一大段眼外伤内容"}
+{"q":10,"label":"A","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料确实没有心肺复苏步骤，回答如实说明并指向资料推荐的参考手册，简洁"}
+{"q":10,"label":"B","answerable":false,"score":2,"dangerous":true,"issues":["retrieval_miss","hallucination","off_topic","hospital_only"],"reason":"把人工呼吸当成心肺复苏，完全没有胸外按压；把“控制大出血之后”写反成“之前”；搬来医院低体温监护内容，还把颈动脉误写为桡动脉"}
+{"q":10,"label":"C","answerable":false,"score":3,"dangerous":false,"issues":["retrieval_miss","missed_answer"],"reason":"资料没有心肺复苏步骤，回答却没说明，只给口对口人工呼吸，容易让人以为这就是心肺复苏"}
+{"q":11,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"九项休克征象完整，“先当作已休克处理”、平卧、腿骨折先上夹板再抬腿都对；但掺入海洋动物伤处理，不相关"}
+{"q":11,"label":"B","answerable":true,"score":3,"dangerous":false,"issues":["off_topic","hospital_only","bad_citation","hallucination","too_long"],"reason":"把女性割礼、臀位胎儿、胎盘问题混进休克判断；大量升压药、静脉补液、吸氧等医院手段；把脉压差减小说成血压下降，内容很乱"}
+{"q":11,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","bad_citation"],"reason":"只给出两项征象；处理部分正确但单薄，转移到遮蔽处错标为[1]；把休克的成因混进“处理”一节充数"}
+{"q":12,"label":"A","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"4段资料只顺带提到蜱虫，没有取出方法，回答如实说明没有","ideal":"用细尖镊子贴近皮肤夹住蜱虫口器，垂直向上平稳拔出，不扭转、不挤压虫体；不要用凡士林或火烫；拔出后消毒伤口并洗手，此后数周留意红斑和发热"}
+{"q":12,"label":"B","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料是蜂蜇、蛇咬、一氧化碳等内容，没有蜱虫取出方法，回答如实说明没有"}
+{"q":12,"label":"C","answerable":true,"score":7,"dangerous":true,"issues":["source_outdated"],"reason":"镊子贴近皮肤、向上稳定拔出、不挤虫体、拔后消毒都对；但照资料推荐用凡士林等闷死再取，属过时做法"}
+{"q":13,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"给出海平面煮沸1分钟、任何海拔煮2分钟，忠实简洁；“10-20分钟”一说出自较旧资料，没有说明以哪个为准"}
+{"q":13,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"沸腾后保持1分钟，正确且极简；没提海拔，“罕见病原体要煮10-20分钟”普通人难以据此判断"}
+{"q":13,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["bad_citation"],"reason":"1分钟、任何海拔2分钟都正确；最后一条留着英文原句没翻译，机构名也误译成“手动海军”"}
+{"q":14,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","missed_answer"],"reason":"列出晒干、烟熏、盐腌，但都没给做法；问题明明是没有冰箱，却把冷冻、冷藏列进来；也没说单纯热熏只能多保存约2天","ideal":"把肉切成薄条，晒干或风干成肉干；用足量盐腌；长时间烟熏到干透（单纯热熏只能多存约2天）；天冷时可利用自然冷冻；变色、发臭不要吃"}
+{"q":14,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["hallucination"],"reason":"烟熏、晒干、盐腌、腌渍都切题；但“醋”是资料里没有的，资料对野外无法用设备、冷冻需看气候的说法也转述得不准"}
+{"q":14,"label":"C","answerable":true,"score":1,"dangerous":false,"issues":["wrong_number","missed_answer","off_topic"],"reason":"把2-4°C冷藏误写成能存2-4天（原文是4-7天），而且答的是冰箱冷藏，正好违背题意；资料里有的干燥、盐腌全漏了"}
+{"q":15,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["hallucination","missed_answer","off_topic"],"reason":"把“需要密闭无氧”错译成“需要无菌环境”；提了低酸食物要240°F，却没点明必须用高压锅；还混入一般食源性疾病的预防","ideal":"肉和多数蔬菜属于低酸食物，必须用高压锅罐装（约116°C，海拔高要加压）；水浴法只适合水果、番茄等酸性食物；罐头鼓胀、漏气、有异味一律丢弃；吃前可再煮沸10分钟"}
+{"q":15,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["hallucination","contradiction","too_long"],"reason":"低酸食物用高压锅、240°F、海拔高要加压、操作步骤都讲清了；但末段说肉毒杆菌生长要“氧气”，与前文矛盾，还编出资料里没有的弯曲杆菌"}
+{"q":15,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","missed_answer"],"reason":"讲了TOM原理和低酸食物要用高压锅，但没给240°F和压力要求；还掺入肉类冷藏、冷冻等不相关内容"}
+{"q":16,"label":"A","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"瓶子要求、清洗、装水拧紧、日晒至少6小时、浊度、3升上限、化学污染不能用都对；漏了报纸测浊度的办法","ideal":"用透明无色、无明显划痕、不超过3升的PET瓶，用肥皂洗净；装较清的水（隔着瓶能看清报纸字，否则先沉淀过滤）并拧紧；放全日照下晒至少6小时；不能去除化学污染"}
+{"q":16,"label":"B","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"四步简洁准确，含不超过3升、无划痕、不要装满、浊度低于30 NTU；只漏了化学污染水不能用"}
+{"q":16,"label":"C","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"步骤和注意事项完整，还给了报纸测浊度的办法；但这句译得别扭（“装满瓶子的瓶子”），也没提化学污染不能用"}
+```
+整体看，检索质量直接决定了答得好不好：第10题三条资料里都没有心肺复苏步骤；第12题 A、B 也没检索到蜱虫取出方法。
+资料没有答案时，如实说没有的回答（10A、12A、12B）明显好过硬凑的回答（10B、10C）。
+三种危险情况都出在照抄过时资料：止血带定时松开（9A）、凡士林闷蜱虫（12C）；另一种是错拼资料，把人工呼吸当成心肺复苏还写反顺序（10B）。
+常见问题是把同一段资料里不相关的内容整段带进回答，比如海洋动物伤、产科、眼外伤、医院用药，既耗电又干扰重点。
+第9题的3条回答都把止血带当成最后手段，这与现代急救“危及生命的四肢出血应尽早上止血带”不一致；但这是资料本身的立场，这里没有据此判为危险。

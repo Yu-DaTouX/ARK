@@ -1,0 +1,32 @@
+```jsonl
+{"q":33,"label":"A","answerable":true,"score":8,"dangerous":false,"issues":["too_long"],"reason":"症状全面准确，忠实于资料；罕见症状列得过多，四个出处堆在句末，没有逐条标注","ideal":"头痛最常见，另有头晕、恶心呕吐、乏力、胸痛、意识混乱，像流感但同屋多人同时发病；重者昏迷、抽搐、心律失常；樱桃红皮肤少见；可在2–40天后迟发记忆障碍"}
+{"q":33,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["bad_citation","too_long"],"reason":"内容正确，分类清楚，含迟发神经症状；出处用了原文参考编号[26]等，不是[1-4]，篇幅偏长"}
+{"q":33,"label":"C","answerable":true,"score":4,"dangerous":false,"issues":["contradiction","bad_citation"],"reason":"前面列对了症状，结尾却说资料中没有提到症状，自相矛盾；出处用了原文编号"}
+{"q":34,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["hospital_only","off_topic","too_long","bad_citation"],"reason":"FAST和突发症状讲对了，但大量篇幅是CT、NIHSS、敏感度等医院诊断内容；CT排除出血一句误标为[4]"}
+{"q":34,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","too_long"],"reason":"FAST、手臂下垂、一侧无力讲清楚；把起病方式误译成持续数秒到数分钟；掺入量表、影像、无声中风"}
+{"q":34,"label":"C","answerable":true,"score":4,"dangerous":false,"issues":["too_long","off_topic","bad_citation","hospital_only"],"reason":"极长，堆了脑干/皮层分型、风险因素、晕厥资料；把小脑受累误解为包括昏迷；出处用了原文编号"}
+{"q":35,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["retrieval_miss"],"reason":"危险信号清单准确有用，但没有接生步骤（资料也没有），也没说明这一点；只提到少干预"}
+{"q":35,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["hallucination","off_topic","too_long","hospital_only"],"reason":"有禁用催产药、产程慢的处理等实用点，但把doula误译为双胞胎，把胎位不正误译成头向下；掺入医院手段"}
+{"q":35,"label":"C","answerable":false,"score":4,"dangerous":false,"issues":["off_topic","retrieval_miss","too_long","hospital_only"],"reason":"大段讲社区筹款和交通计划，与眼前分娩无关；只有求医时机、禁用催产素少数有用"}
+{"q":36,"label":"A","answerable":true,"score":5,"dangerous":true,"issues":["contradiction","missed_answer","too_long"],"reason":"给了温水擦身、风扇、补水、布洛芬；但前文建议浸冰水，后文又说避免冰浴，前后矛盾；漏了儿童禁用阿司匹林","ideal":"减衣散热、多喝水；温水（不是冷水）擦身并扇风；按年龄剂量用对乙酰氨基酚或布洛芬，儿童禁用阿司匹林；勿用冰水；抽搐、精神差、尿少即求医"}
+{"q":36,"label":"B","answerable":false,"score":4,"dangerous":false,"issues":["retrieval_miss","off_topic","bad_citation"],"reason":"资料是感冒和登革热；掺入盐水漱口、止咳药等无关内容；出处用原文编号；虽然最后说明了没有降温方法"}
+{"q":36,"label":"C","answerable":true,"score":6,"dangerous":true,"issues":["hallucination","missed_answer","too_long"],"reason":"物理降温要点齐全；但把hyperpyrexia误释为高热惊厥并建议浸冰水，有害；漏了按年龄的退烧药剂量表"}
+{"q":37,"label":"A","answerable":false,"score":2,"dangerous":true,"issues":["off_topic","missed_answer"],"reason":"没药时却建议用储雾罐；给了注射剂量却没写药名（肾上腺素）和注射途径，容易误用；没有任何非药物措施","ideal":"资料不足：让患者坐直略前倾，保持冷静，缓慢呼吸；离开烟尘或过敏原，到空气流通处；有肾上腺素可按剂量皮下注射；说不出话、嘴唇发紫要尽快求医"}
+{"q":37,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer"],"reason":"只有一句皮下注射肾上腺素，没给剂量；漏了资料里的坐起呼吸、远离诱因、换到干净空气、无好转求医"}
+{"q":37,"label":"C","answerable":true,"score":3,"dangerous":true,"issues":["missed_answer","hallucination"],"reason":"把资料里“紧急且无其他药时”的条件改成“立即注射”，也没给剂量；漏了坐起、远离诱因、求医等要点"}
+{"q":38,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["hallucination"],"reason":"去刺、冷敷、止痒、严重反应用肾上腺素讲得正确；但称捏除会注入更多毒液，与资料（两种方法无差别，越快越好）相反","ideal":"尽快刮掉或拔出蜂刺，越快越好；摘下戒指等饰物；冰敷，可用止痛药和抗组胺药；出现呼吸困难、面喉肿胀、全身荨麻疹即为过敏性休克，用肾上腺素笔并求医"}
+{"q":38,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":[],"reason":"简洁正确：刮刺、不挤毒囊、冰敷、止痛药和抗组胺药、严重时用肾上腺素；漏了摘饰物和过敏征象说明"}
+{"q":38,"label":"C","answerable":false,"score":2,"dangerous":true,"issues":["source_outdated","hallucination"],"reason":"照抄严重反应时按蛇咬伤在上下扎束带的过时做法；把calamine误译为金鸡纳霜；去刺放在最后"}
+{"q":39,"label":"A","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料是雪崩、术语表、休克护理，完全不相关；回答清楚说明没有，没有硬编","ideal":"资料不足：保持冷静、节省体力，不要点火（防燃气泄漏）；用衣物捂住口鼻防尘；敲击管道或墙壁、吹哨求救，少喊叫；节约饮水，不要乱动不稳的支撑物"}
+{"q":39,"label":"B","answerable":false,"score":1,"dangerous":true,"issues":["retrieval_miss","off_topic","hallucination"],"reason":"硬套休克护理和核辐射去污，答非所问；把俯卧误译为仰卧；废墟中建议在两侧生火取暖，有危险"}
+{"q":39,"label":"C","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料无关，回答清楚说明资料中没有，没有硬编"}
+{"q":40,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["hallucination"],"reason":"容器消毒、分开存放、阴凉离地、倒取不舀、每加仑加4滴漂白水都讲到；把radiators误译为热水浴缸；漏了牛奶壶不宜装饮用水","ideal":"用洗净消毒的食品级塑料桶或饮料瓶，不用牛奶壶和装过化学品的容器；密封并标注日期；每加仑加2–4滴无香漂白水；放阴凉避光离地处，倒取不舀，定期更换"}
+{"q":40,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"密封、标日期、阴凉避光、勿用有毒容器和牛奶壶都对；漏了资料里加漂白水防腐这一关键点；掺入家中水源"}
+{"q":40,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"密封、阴凉避光、每加仑4滴漂白水防腐、能存一年都有；掺了“存到第二天再喝”的儿童课程和疫情背景"}
+```
+24 条已全部评完，只依据 part5.md。
+- 第 39 题三份资料都不相关。A、C 如实说资料里没有，B 硬套了休克和辐射内容，还写了在两侧生火，有危险。
+- 资料过时有害：第 38 题 C 照抄了“按蛇咬伤扎束带”，标了 source_outdated。
+- 常见扣分点有三类：出处标成维基原文编号（[26] 这种）而不是 [1–4]；为求全塞进医院诊断内容；翻译出错（doula 译成双胞胎、calamine 译成金鸡纳霜、radiators 译成热水浴缸）。
+- 第 37 题三个回答都只盯着药物。资料 B、C 里有坐直呼吸、远离诱因等非药物措施，全被漏掉。
+- 第 36 题 A 的 dangerous 我判了 true，理由是前文说可浸冰水、后文又说避免冰浴，属于关键步骤前后矛盾，判得偏严。第 35 题 A 的 answerable 判 true 也是勉强：资料只有危险信号清单，没有接生步骤。

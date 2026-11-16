@@ -1,0 +1,31 @@
+```jsonl
+{"q":9,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","missed_answer"],"reason":"直接加压、止血带、止血粉都对；但没讲垫敷料、持续按压、刺入物不拔，还混入叫急救、内出血等无用内容","ideal":"用布垫直接用力按压伤口，持续至少5–10分钟不松手；四肢按压无效时在伤口近心端扎止血带并记时间；刺入物不拔，在周围垫压；平躺保暖防休克"}
+{"q":9,"label":"B","answerable":false,"score":3,"dangerous":false,"issues":["retrieval_miss","off_topic","bad_citation"],"reason":"资料以鼻出血和产后出血为主；回答大段讲鼻出血和子宫按压，没讲伤口直接加压，止血带还被说成抽血用"}
+{"q":9,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","bad_citation","contradiction"],"reason":"先讲直接加压是对的，但把压迫动脉止血和捏鼻翼混成一条，鼻出血内容掺杂，引用[20]不存在，还有重复句"}
+{"q":10,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["too_long","bad_citation","off_topic"],"reason":"深度、频率、30:2都对，但太长被截断；没讲按压位置；混入除颤心律知识；[31][34][26]等引用不存在"}
+{"q":10,"label":"B","answerable":true,"score":6,"dangerous":false,"issues":["bad_citation","off_topic","hallucination"],"reason":"成人要点正确，但缺按压位置；除颤一句意思被译反；儿童那条引用了只有参考文献的资料[1]"}
+{"q":10,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"有位置、深度、频率、未受训可只按压，简洁可操作；但人工呼吸部分套用了窒息版CPR（手指清异物），没讲30:2和呼救"}
+{"q":11,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["hospital_only","too_long","bad_citation"],"reason":"识别要点较全，平躺、止血、保暖也有；但大量篇幅是静脉输液、升压药、损伤控制复苏，[5][7][8]引用不存在"}
+{"q":11,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["hospital_only","off_topic","too_long","bad_citation"],"reason":"罗列休克分类和病因，处理部分混入输液、升压药等医院手段，诊断那句重复，[4][7]引用错误"}
+{"q":11,"label":"C","answerable":true,"score":6,"dangerous":true,"issues":["source_outdated","bad_citation"],"reason":"现场措施最实用（抬腿、侧卧、保暖、松衣、喂水）；但照资料建议给阿司匹林，出血性休克会加重出血；骨折那条也表述错了"}
+{"q":12,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["too_long","contradiction"],"reason":"镊子贴近皮肤垂直拔、取后消毒都对；但先说可用包裹的手指、后又说不推荐用手指，澳洲冷冻、牙线法使回答冗长","ideal":"用细尖镊子贴近皮肤夹住口器，稳稳垂直拔出，不扭转、不挤压虫体；不用手捏、凡士林、火烫；残留口器尽量夹出，用肥皂水或酒精洗伤口和手；记下日期，几周内出现皮疹或发热就医"}
+{"q":12,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["bad_citation","contradiction"],"reason":"步骤清楚正确；但[90][142][92]等引用不存在，把胶带处理虫体误写成取虫方法，包裹手指与禁用手指前后矛盾"}
+{"q":12,"label":"C","answerable":true,"score":7,"dangerous":false,"issues":["bad_citation","contradiction","hallucination"],"reason":"要点基本对且简洁，有记录日期；但先允许用包裹的手指、后又禁用手指，禁用原因是编的，[143]引用不存在"}
+{"q":13,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"给出了海平面滚沸1分钟，但漏了资料里“任何海拔煮2分钟”；还把化学消毒的冷水延长时间混进来","ideal":"烧到剧烈翻滚沸腾后再煮1分钟；海拔超过约2000米延长到3分钟；浑水先沉淀或用布过滤；煮好后加盖存放，防止再污染"}
+{"q":13,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":["off_topic"],"reason":"1分钟、高海拔3分钟、任意海拔2分钟都对；但肉毒芽孢需高压锅等内容与饮水无关"}
+{"q":13,"label":"C","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"简洁准确：滚沸1分钟，海拔超过2000米煮3分钟，正好回答问题"}
+{"q":14,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","missed_answer","hallucination"],"reason":"把“加盐”错安到烟熏上，盐腌没单列；推荐-18°C冷冻和冷藏与“没冰箱”不符；没有切薄条等操作细节"}
+{"q":14,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"晒干、盐水腌、寒冷地区冷冻和熏制时长都对；但把熏制写成在阳光下进行，漏了围起来熏、别用含松脂木材"}
+{"q":14,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["hallucination","off_topic","missed_answer"],"reason":"列出熏干、晒干、盐腌，方向对；但编出“腌制通常用于短期”，混入短期的油封，缺切条厚度和食用前煮熟"}
+{"q":15,"label":"A","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","bad_citation"],"reason":"只罗列TOM原理，没有可操作步骤；漏了低酸食物要用高压锅、吃前煮沸10分钟；氧气条表述含糊，[45]引用不存在","ideal":"肉、鱼、多数蔬菜等低酸食物必须用高压锅处理，水浴只适合酸性食物；番茄等要加柠檬汁或醋酸化；罐头鼓胀、漏气、有异味一律丢弃，别尝；自制罐头吃前煮沸10分钟"}
+{"q":15,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"有低酸用高压锅、加酸、煮10分钟、密封卫生等要点；但把番茄、无花果归为低酸，没明说鼓胀要丢弃，混入烤土豆"}
+{"q":15,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["too_long","bad_citation","off_topic"],"reason":"内容大体正确，有煮10分钟和丢弃鼓胀罐；但没明确说肉要用高压锅，掺入机理、亚硝酸盐等，[42]–[46]引用错乱"}
+{"q":16,"label":"A","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"四步完整：选透明无划痕、不超过3升的瓶，浑浊先预处理，晒至少6小时，只能杀菌，简洁准确","ideal":"用透明无划痕PET瓶（≤3升）洗净装清水拧紧；浑水先沉淀过滤（能透过瓶子看清报纸字）；放在阳光下晒满至少6小时，可放在铁皮等反光面上；只能杀菌，去不掉化学污染"}
+{"q":16,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["missed_answer"],"reason":"核心步骤和6小时正确，也很简洁；但漏了浑浊水要预处理、瓶子不超过3升、不能有划痕"}
+{"q":16,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["off_topic","too_long","contradiction"],"reason":"瓶子、浊度、6小时等要点齐；但混入UV-C处理后的光复活警告，与SODIS本身就是晒光相矛盾，SODIS站内容多余"}
+```
+- 这 24 条都已逐条核对资料原文和回答。
+- 引用编号常常不对：有的回答直接沿用资料里的维基脚注号（如 [42]、[142]），有的把出处标成了别的资料。
+- 第 11 题：只有 C 拿到《Where There Is No Doctor》（缺医少药地区的乡村急救手册）资料，现场处理最实用，但照搬了“休克时给阿司匹林”，这是过时建议，所以标为 dangerous。
+- 第 9 题：有两份回答检索到的资料以鼻出血为主，回答被带偏。
+- 第 13、16 题：短答案反而更好，长答案大多掺了无关内容。

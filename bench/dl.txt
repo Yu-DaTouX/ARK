@@ -1,0 +1,32 @@
+https://github.com/google-ai-edge/gallery/releases/download/1.0.23/ai_edge_gallery_app.apk
+  dir=F:/ARK/bench/apk
+https://meta.alicdn.com/data/mnn/apks/mnn_chat_0_8_3.apk
+  dir=F:/ARK/bench/apk
+https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm
+  dir=F:/ARK/bench/models/gemma-4-E2B-litertlm
+https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/README.md
+  dir=F:/ARK/bench/models/gemma-4-E2B-litertlm
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/config.json
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/export_args.json
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/llm.mnn
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/llm.mnn.json
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/llm.mnn.weight
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/llm_config.json
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/tokenizer.mtok
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/tokenizer.txt
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/visual.mnn
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/visual.mnn.weight
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/README.md
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN
+https://huggingface.co/taobao-mnn/Qwen3.5-2B-MNN/resolve/main/LICENSE
+  dir=F:/ARK/bench/models/Qwen3.5-2B-MNN

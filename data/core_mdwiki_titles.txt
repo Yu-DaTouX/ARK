@@ -1,0 +1,292 @@
+# 内置核心包里收录的 mdwiki 条目（现代医学共识，用来纠正老军用手册里过时的做法）
+# 选题：急救、灾后常见病、野外伤害、分娩与儿童、常用药。一行一个标题，# 开头为注释。
+# 急救与创伤
+First aid
+Cardiopulmonary resuscitation
+Recovery position
+Choking
+Abdominal thrust
+Drowning
+Bleeding
+Hemorrhage
+Tourniquet
+Shock (circulatory)
+Hypovolemic shock
+Wound
+Laceration
+Abrasion (medical)
+Wound healing
+Bone fracture
+Splint (medicine)
+Joint dislocation
+Shoulder dislocation
+Sprain
+Head injury
+Traumatic brain injury
+Concussion
+Spinal cord injury
+Chest injury
+Pneumothorax
+Abdominal trauma
+Crush syndrome
+Burn
+Electrical injury
+Chemical burn
+Smoke inhalation
+Eye injury
+Corneal abrasion
+Foreign body
+Nosebleed
+Dental trauma
+Amputation
+Blast injury
+Gunshot wound
+Major trauma
+Triage
+# 环境与中毒
+Hypothermia
+Frostbite
+Trench foot
+Heat stroke
+Heat exhaustion
+Heat illness
+Hyperthermia
+Dehydration
+Sunburn
+Lightning injury
+Altitude sickness
+Carbon monoxide poisoning
+Poisoning
+Mushroom poisoning
+Plant poisoning
+Botulism
+Food poisoning
+Foodborne illness
+Snakebite
+Spider bite
+Scorpion sting
+Bee sting
+Insect bites and stings
+Tick
+Tick-borne disease
+Lyme disease
+Dog bite
+Animal bite
+Rabies
+Tetanus
+Jellyfish sting
+Leech
+Anaphylaxis
+Allergy
+# 感染与灾后常见病
+Infection
+Cellulitis
+Abscess
+Sepsis
+Gangrene
+Diarrhea
+Gastroenteritis
+Oral rehydration therapy
+Cholera
+Typhoid fever
+Dysentery
+Shigellosis
+Hepatitis A
+Hepatitis E
+Leptospirosis
+Malaria
+Dengue fever
+Measles
+Tuberculosis
+Pneumonia
+Influenza
+Common cold
+COVID-19
+Meningitis
+Scabies
+Head lice
+Conjunctivitis
+Urinary tract infection
+Skin infection
+Fungal infection
+Athlete's foot
+Worm infection
+Giardiasis
+Waterborne diseases
+Water purification
+Portable water purification
+Boiling
+Solar water disinfection
+Water chlorination
+Sanitation
+Hand washing
+Pit latrine
+Open defecation
+Vector control
+Mosquito net
+# 内科急症
+Stroke
+Heart attack
+Myocardial infarction
+Angina
+Cardiac arrest
+Asthma
+Chronic obstructive pulmonary disease
+Diabetes
+Hypoglycemia
+Diabetic ketoacidosis
+Seizure
+Epilepsy
+Fainting
+Syncope (medicine)
+Headache
+Migraine
+Fever
+Febrile seizure
+Abdominal pain
+Appendicitis
+Vomiting
+Constipation
+Kidney stone disease
+Hypertension
+Chest pain
+Shortness of breath
+Delirium
+Unconsciousness
+# 妇幼
+Childbirth
+Pregnancy
+Prenatal care
+Preterm birth
+Breech birth
+Umbilical cord
+Postpartum bleeding
+Pre-eclampsia
+Eclampsia
+Miscarriage
+Ectopic pregnancy
+Breastfeeding
+Infant formula
+Neonatal jaundice
+Malnutrition
+Severe acute malnutrition
+Kwashiorkor
+Marasmus
+Vitamin A deficiency
+Scurvy
+Rickets
+Iron-deficiency anemia
+Child development
+Contraception
+# 心理
+Psychological first aid
+Posttraumatic stress disorder
+Acute stress reaction
+Grief
+Depression (mood)
+Anxiety
+Suicide
+Panic attack
+# 口腔与五官
+Toothache
+Tooth decay
+Dental abscess
+Periodontal disease
+Ear infection
+Otitis media
+Otitis externa
+Sinusitis
+Sore throat
+Tonsillitis
+# 常用药（WHO 基本药物里最常用的）
+Paracetamol
+Ibuprofen
+Aspirin
+Naproxen
+Codeine
+Morphine
+Amoxicillin
+Amoxicillin/clavulanic acid
+Penicillin
+Cefalexin
+Ceftriaxone
+Doxycycline
+Azithromycin
+Ciprofloxacin
+Metronidazole
+Trimethoprim/sulfamethoxazole
+Nitrofurantoin
+Clindamycin
+Albendazole
+Mebendazole
+Ivermectin
+Permethrin
+Artemether/lumefantrine
+Chloroquine
+Oral rehydration salts
+Zinc sulfate
+Loperamide
+Omeprazole
+Ondansetron
+Diphenhydramine
+Cetirizine
+Loratadine
+Epinephrine
+Salbutamol
+Prednisone
+Prednisolone
+Hydrocortisone
+Insulin
+Metformin
+Glucose
+Hydrogen peroxide
+Povidone-iodine
+Chlorhexidine
+Sodium hypochlorite
+Ethanol
+Potassium iodide
+Activated charcoal
+Silver sulfadiazine
+Clotrimazole
+Nystatin
+Oxytocin
+Misoprostol
+Magnesium sulfate
+Tranexamic acid
+Lidocaine
+Naloxone
+Vitamin A
+Ferrous sulfate
+Folic acid
+Medication
+Expiration date
+Antibiotic
+Antibiotic misuse
+Drug overdose
+# 补充（实际条目名）
+Epileptic seizure
+Syncope
+Activated charcoal (medication)
+Folate
+Post-traumatic stress disorder
+Dislocated shoulder
+Body louse
+Birth control
+Emergency bleeding control
+Intracranial hemorrhage
+Magnesium sulfate (medication)
+Iron supplement
+Zinc deficiency
+Ferrous salt/folic acid
+Emergency birth control
+Management of post-traumatic stress disorder
+Irukandji syndrome
+Pressure immobilization
+Ciguatera fish poisoning
+Melioidosis
+Ross River fever
+Murray Valley encephalitis virus
+Q fever
+Australian bat lyssavirus
+Snake antivenom
+Mammalian meat allergy

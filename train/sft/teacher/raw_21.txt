@@ -1,0 +1,36 @@
+Done: all 25 answers are written to STYLE.md. 12 are answerable from the supplied passages and 13 are not. Items 510–524 are almost all about radios and vehicles, and their passages are mostly off-topic.
+
+- **Items with no usable passage (`used` is empty):** 510, 513, 517, 519–524 contain only "资料中没有提到……".
+- **Partial answers:** 500, 501, 503, 511, 512, 514, 516 and 518 open with "资料中没有提到……" and then add one to three cited points from the passages that do partly apply.
+- **Item 502:** the source lists daze, confusion and stupor, but not hand tremor. I treated tremor as close to the listed signs of anxiety (fast heartbeat, sweating) and did not claim the source names it.
+- **Item 515:** the radio tips come from a passage about military survival radios. I applied only its general principles (radios work by line of sight, the antenna must not touch anything) to walkie-talkies, and I said the source gives no range figure.
+- **Item 512:** "six feet" is written as "六英尺", not "6英尺", because the source spells the number out. Check this matches how the number checker works.
+- **Rule 7 (outdated or harmful advice):** item 509 warns against breathing into a paper bag, and item 504 says not to make survivors retell what happened.
+
+```jsonl
+{"id": 500, "answer": "资料中没有专门讲照顾伤员的人自己快崩溃时该怎么办，但提到了一些可以用来减压的方法：\n- 做放松练习，比如深呼吸、正念、冥想和渐进式肌肉放松 [1][3]。\n- 找家人和朋友组成支持网络，帮忙分担压力 [3]。\n- 尽量保持稳定的日常作息和健康习惯 [3]。", "answerable": false, "used": [1, 3]}
+{"id": 501, "answer": "资料中没有提到具体该怎么跟孩子说家人去世。\n相关的几点：\n- 孩子失去亲人后如果没有大人支持，可能留下长期心理伤害，在世的父母或照顾者起关键作用 [1]。\n- 大人自己陷在悲伤里、顾不上孩子时，风险更高 [1]。\n- 哭是正常的，不哭也是正常反应；不要逼人哭或反复讲经过 [3]。", "answerable": false, "used": [1, 3]}
+{"id": 502, "answer": "很可能是。急性应激反应是经历灾难等极度可怕事件后的正常反应，表现包括心跳快、出汗等焦虑表现，以及发呆、意识混乱、木僵 [1]。\n- 症状通常在事件后数小时到数天内出现，离开危险环境后几天内开始减轻 [1]。\n- 让他躺下休息，给予安慰 [3]。\n- 移开刺激源，比如把他从现场带开、挡住受伤亲友的画面 [3]。\n- 应激会掩盖疼痛，要检查他有没有受伤 [4]。\n- 症状超过一个月仍不缓解，要考虑创伤后应激障碍（PTSD），需找专业人员评估 [2]。", "answerable": true, "used": [1, 2, 3, 4]}
+{"id": 503, "answer": "资料中没有提到怎样让情绪激动、想动手的人冷静下来。\n资料只提到避难所里的一些减压做法：\n- 条件允许时隔出一块区域，让人可以独处、暂时“退出”，能明显降低压力 [4]。\n- 控制持续的噪音，可用隔音的安静角落、耳塞或耳罩 [4]。\n- 让每个人对自己的事有一定控制权，有助于改善情绪和团队关系 [4]。", "answerable": false, "used": [4]}
+{"id": 504, "answer": "不要强迫。让经历创伤的人把经过和感受都讲出来的心理晤谈（psychological debriefing），多项研究认为没有帮助，甚至可能有害 [4]。\n- 无论一次还是多次晤谈，结论都一样 [4]。\n- 对所有人一律进行的干预没有证据支持，多次干预对某些人可能比不干预更糟 [4]。\n- 早期接受认知行为治疗有一定帮助，这需要找专业人员 [4]。", "answerable": true, "used": [4]}
+{"id": 505, "answer": "不能。酒精是一种抑制剂，会减慢大脑部分区域的活动，损害理性判断和记忆 [2]。\n- 酒精还会降低大脑中的血清素水平，可能让情绪更低落 [2]。\n- 情绪越低落的人，喝酒带来的不良后果越大 [2]。", "answerable": true, "used": [2]}
+{"id": 506, "answer": "这很常见，是孩子经历压力事件后的典型反应：尿床、更黏人、睡眠问题、行为倒退都可能出现 [1]。\n- 年幼的孩子还可能回到更早的行为，比如吮手指、抱着玩具不放或发脾气 [2]。\n- 先安慰孩子，告诉他这些情绪和身体上的感受都是正常的 [2]。\n- 如果症状持续超过一个月，应评估是否为创伤后应激障碍（PTSD），找专业人员看看 [1]。", "answerable": true, "used": [1, 2]}
+{"id": 507, "answer": "孤独和无聊会引发抑郁，一定要抵抗住消沉 [1]。\n- 想念亲人、怀念过去时难过是正常的，这些念头也能给你多撑一天的动力 [1]。\n- 给自己找事做，让头脑保持有用的忙碌 [1][2]。\n- 培养自给自足，相信自己能独自撑下去 [1]。\n- 独处也可能让你发现自己的潜能和内在力量 [1]。\n- 如果有人没能活下来，不要让内疚感阻止你好好活下去 [2]。", "answerable": true, "used": [1, 2]}
+{"id": 508, "answer": "带大家保持积极态度，学着看到事情中可能的好处，这本身就能提振士气 [2]。\n- 实事求是地评估处境，按“抱最好的希望，做最坏的准备”来调整期望 [2]。\n- 提醒大家，这关系到自己和依靠自己的人的生命 [2]。\n- 组织体育活动，运动能预防抑郁、减轻低落症状 [1]。\n- 一起回忆过去的美好往事，有助于减轻低落情绪 [1]。", "answerable": true, "used": [1, 2]}
+{"id": 509, "answer": "可以用“5-2-5”腹式呼吸法 [2]：\n- 用腹部（膈肌）而不是胸部吸气，感觉肚子鼓起，吸气5秒 [2]。\n- 吸到最满时屏气2秒 [2]。\n- 然后慢慢呼气，用5秒呼完 [2]。\n- 这样重复两轮，再正常呼吸5个循环（1次吸气加1次呼气为1个循环）[2]。\n- 平时也可以数数或哼声来拉长呼气 [2]。\n- 不推荐对着纸袋呼吸，它可能加重惊恐、降低血氧 [2]。", "answerable": true, "used": [2]}
+{"id": 510, "answer": "资料中没有提到对讲机怎么调频道。", "answerable": false, "used": []}
+{"id": 511, "answer": "资料中没有提到业余无线电的求救频率。\n资料只提到飞行员救生背心里的军用救生电台 AN/PRC-90 和 AN/PRC-112，语音频率是282.8，它们不是业余电台 [1]。", "answerable": false, "used": [1]}
+{"id": 512, "answer": "资料中没有提到手摇收音机收不到台时怎么调。\n资料只提到几条相关情况：\n- 电磁脉冲（EMP）造成的电流冲击会损坏二极管和晶体管，使收音机失效或收台范围变小 [4]。\n- 没有屏蔽的收音机要离管道、金属风管、电线等长金属物至少六英尺 [4]。\n- 在潮湿的避难所里，把收音机密封在透明塑料袋里使用，防止受潮损坏 [4]。", "answerable": false, "used": [4]}
+{"id": 513, "answer": "资料中没有提到自制天线需要多长。", "answerable": false, "used": []}
+{"id": 514, "answer": "资料中没有提到短波电台具体怎么发摩尔斯电码。\n资料只说明了求救信号 SOS 的发法：三点、三划、三点，这是无线电摩尔斯电码中国际公认的求救信号 [1]。点是短而急的脉冲，划是较长的脉冲，要不断重复发送 [1]。", "answerable": false, "used": [1]}
+{"id": 515, "answer": "资料没有给出对讲机的具体通讯距离，距离会受接收方高度、地形、植被、天气、电池电量、电台类型和干扰影响 [1]。\n想传得更远可以这样做：\n- 尽量在开阔、无遮挡的地方发射，电台是视距通信，中间有地形就会挡住信号 [1]。\n- 让天线与对方方向成直角，天线尖端几乎不发射信号 [1]。\n- 天线和底座不要碰到衣服、身体、树叶或地面，否则距离会大大缩短 [1]。\n- 节省电量，不用时关机；冷天把电池放在衣服里，防止低温耗电 [1][4]。", "answerable": true, "used": [1, 4]}
+{"id": 516, "answer": "资料中没有提到卫星电话在地面网络中断后能不能打。\n- 资料提到紧急情况下电话线路可能中断数小时或数天，可以提前约定一个外地联系人来中转消息 [2]。\n- 也提到 goTenna 应用配合设备可实现100%脱网的短信和 GPS 功能 [1]。", "answerable": false, "used": [1, 2]}
+{"id": 517, "answer": "资料中没有提到怎样用旧收音机零件改装发射机。", "answerable": false, "used": []}
+{"id": 518, "answer": "资料中没有解释无线电中继台是什么，也没有讲怎么搭建。\n资料只提到 RepeaterBook 应用可以在没有网络时查找世界各地的中继台，显示距离、方向和详细信息 [4]。", "answerable": false, "used": [4]}
+{"id": 519, "answer": "资料中没有提到CB电台和FRS对讲机的区别。", "answerable": false, "used": []}
+{"id": 520, "answer": "资料中没有提到天线驻波比过高怎么处理。", "answerable": false, "used": []}
+{"id": 521, "answer": "资料中没有提到怎样用别的车给汽车搭电。", "answerable": false, "used": []}
+{"id": 522, "answer": "资料中没有提到柴油发电机启动不了时怎么排查。", "answerable": false, "used": []}
+{"id": 523, "answer": "资料中没有提到摩托车化油器怎么拆卸和清洗。", "answerable": false, "used": []}
+{"id": 524, "answer": "资料中没有提到汽车轮胎扎钉后怎么自己补胎。", "answerable": false, "used": []}
+```

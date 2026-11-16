@@ -1,0 +1,26 @@
+Done: I scored all 16 answers using only `part1.md`. Seven are flagged dangerous: both answers to Q1 (snakebite) and Q2 (bleach), plus Q8-A (burns).
+
+```jsonl
+{"q":1,"label":"A","answerable":true,"score":1,"dangerous":true,"issues":["source_outdated","contradiction","off_topic","missed_answer","hallucination","too_long"],"reason":"照抄资料4的过时做法：束缚带、切口、吸毒。它先说不要深切，后面又教切开；把“不要摸脸”反写成“摸脸”；还混入了虫咬内容；资料2的现代原则没有用上。","ideal":"让伤者静卧，保持被咬肢体不动，摘掉戒指等饰品；不要用止血带，不要切口、吸毒、冰敷；不明蛇种可加压包扎并固定；尽快送医用抗蛇毒血清。"}
+{"q":1,"label":"B","answerable":true,"score":0,"dangerous":true,"issues":["source_outdated","hallucination","contradiction","missed_answer","wrong_number"],"reason":"语句错乱，要人在伤口上下“绑紧”，还说“要给吗啡”（原文是禁止给），教人撕开水泡、吸毒液，且重复多次；资料2的现代原则完全没用。"}
+{"q":2,"label":"A","answerable":true,"score":1,"dangerous":true,"issues":["missed_answer","off_topic","contradiction","hallucination"],"reason":"完全没给剂量，混入表面消毒步骤；把“闻不到氯味就重复加药”反写成“没有氯味说明已消毒”；贾第虫那几句前后矛盾，还反复重复。"}
+{"q":2,"label":"B","answerable":true,"score":3,"dangerous":true,"issues":["off_topic","wrong_number","contradiction","too_long"],"reason":"有每夸脱2滴、浑水加倍、静置30–60分钟这些正确内容，但把表面消毒用的1:100、1:50配比标成“用于水消毒”，数字也抄错了，照做会喝下高浓度漂白水。"}
+{"q":3,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic"],"reason":"经典征象（红肿热痛、异味、化脓）和“疼痛加重”都对，但掺了浸渍、湿疹、疼痛分型等无关内容，“牵涉痛”是误译。","ideal":"征象：红、肿、热、痛加重，有异味，伤口或敷料有脓，体温升高；疼痛加重最有提示意义，不痛不能排除感染；可附处理：热敷、引流、每天冲洗。"}
+{"q":3,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":["off_topic"],"reason":"简洁准确，覆盖经典征象、脓液和疼痛加重；但疼痛分型那条无关，“钝痛”译错，“恶臭”重复了一次。"}
+{"q":4,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer"],"reason":"大量补液、补液盐或稀粥、继续进食这些核心都对，但漏了每隔几分钟小口喝、坚持喂、继续母乳和脱水征象，个别句子也不通。","ideal":"立刻大量补液，首选口服补液盐或自制糖盐水，也可用米汤、汤；每几分钟喝几口，不想喝也要劝；继续进食、继续母乳；尿少、皮肤回弹慢是脱水。"}
+{"q":4,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","missed_answer"],"reason":"补液、补液饮品、母乳优先、继续进食、补锌都有，但掺了预防措施和静脉补液，漏了少量多次喝和脱水征象。"}
+{"q":5,"label":"A","answerable":true,"score":3,"dangerous":false,"issues":["hallucination","off_topic","missed_answer"],"reason":"“抬高腿”在资料里找不到；“沿长度垫衬垫”这一要点被说乱了；混入手腕、手掌内容并重复；漏了“用健侧腿当夹板”。","ideal":"沿夹板全长垫衬垫，骨突处尤其要垫；可用木板、树枝或卷进毯子的长杆，或把伤腿绑在健侧腿上；常识：固定骨折上下两关节，别绑太紧，检查脚趾血运。"}
+{"q":5,"label":"B","answerable":true,"score":2,"dangerous":false,"issues":["hospital_only","off_topic","missed_answer","too_long"],"reason":"几乎都是手术、外固定架、石膏这类医院手段，误译也多；资料3里的野外夹板和衬垫要点基本没用上。"}
+{"q":6,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["hospital_only","hallucination","bad_citation","missed_answer"],"reason":"禁忌（热水澡、按摩、酒）、腋下和腹股沟放热水袋、搬动要轻都对；但掺了ECMO等医院手段，把金属导热说反了，漏了干衣和热甜饮，引用标错。"}
+{"q":6,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["hospital_only","off_topic"],"reason":"干衣和暖环境、热水袋放腋下和腹股沟、热甜饮、禁忌、复温后体温反降（after-drop）都讲到了，但掺了ECMO和静脉补液，漏了轻柔搬动和贴身取暖。"}
+{"q":7,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["wrong_number","too_long","off_topic"],"reason":"降温步骤齐全，冰袋和“不用酒精”也有；但“至少一小口水”应为一整壶，“50%降至50%”应为降至5%，华氏数值也错了，症状列得过长。"}
+{"q":7,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["wrong_number","hallucination","missed_answer","hospital_only"],"reason":"简洁，含移到阴凉处、浇水、扇风；但把目标体温写成382℃，还谎称资料没提冰袋和酒精（资料2、3里都有），语句错乱。"}
+{"q":8,"label":"A","answerable":true,"score":4,"dangerous":true,"issues":["missed_answer","hallucination","contradiction"],"reason":"有停止烧伤、不撕粘连物、温水清洗；但把“冷水降温有益”反写成“尽量不要用冷水”，破伤风那句是乱码，漏了摘饰品和盖干净布单。"}
+{"q":8,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["too_long","hospital_only","off_topic","missed_answer","contradiction"],"reason":"有停止烧伤、摘饰品、不撕粘连物、盖干净布单；但漏了冷水降温，混入插管（误译为支气管镜）、乳酸林格液、催眠等内容，脱衣前后矛盾，过长被截断。"}
+```
+
+这些规律只基于这8道题：
+- 两个模型都容易照抄资料里过时或有害的段落（Q1的切口吸毒，Q2把表面消毒配比当饮水剂量），而且会把否定句写反（“不要摸脸”“不要给吗啡”）。
+- 列表式长答常塞进只有医院能做的内容；短答版更简洁，但常有错乱、重复或数字错误。
+- 资料里明明有的关键内容常被漏掉（Q1资料2的现代蛇咬原则，Q8的冷水降温）。
+- Q5的资料只有夹板图注和“垫衬垫”，我仍标为 answerable=true，判断依据是资料能支撑列出夹板材料和衬垫要点。

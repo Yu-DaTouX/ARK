@@ -1,0 +1,30 @@
+```jsonl
+{"q":1,"label":"A","answerable":true,"score":2,"dangerous":true,"issues":["source_outdated","hallucination","off_topic","bad_citation","too_long"],"reason":"把资料的勒紧带译成止血带，混入出血止血带松解与昆虫处理；“不要捕蛇”与资料不符，整体照做有害","ideal":"保持冷静、少动，患肢制动并放平；肿胀前摘除戒指手表；不扎止血带或勒紧带，不切口、不吸、不冰敷；记住蛇的样子但别去抓，尽快送医"}
+{"q":1,"label":"B","answerable":true,"score":3,"dangerous":true,"issues":["source_outdated","bad_citation","hallucination","off_topic"],"reason":"照搬过时的上下勒带，并建议捕杀蛇；引用[6-3]不是资料编号；响尾蛇、锁骨格等误译，毒液分类无用"}
+{"q":1,"label":"C","answerable":true,"score":2,"dangerous":true,"issues":["source_outdated","off_topic","too_long","bad_citation","hallucination"],"reason":"大段昆虫叮咬处理混入（冰敷、嫩肉粉），加上过时勒带和捕蛇；[4]是CO中毒却被引用，还有误译；很长"}
+{"q":2,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["bad_citation","off_topic"],"reason":"剂量正确（每夸脱2滴、浑水4滴、等30分钟）；但每加仑8滴引自洗涤用水那段，还混入餐具和储水桶消毒","ideal":"用无香型、只含次氯酸钠的5–6%家用漂白剂；清水每升约2滴（每加仑8滴），浑水先过滤并加倍；搅匀后等至少30分钟，有淡淡氯味才算有效"}
+{"q":2,"label":"B","answerable":true,"score":2,"dangerous":true,"issues":["wrong_number","contradiction","bad_citation"],"reason":"把储存保质用的2滴当成消毒剂量，浑水写成每加仑4滴（实为每夸脱），碘酒单位也错；严重少加会致水不安全"}
+{"q":2,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["contradiction","off_topic"],"reason":"给出每加仑16滴、静置60分钟是对的，但同时列出储存用的2滴，容易误用；还混入碘溶液和煮沸步骤，条理乱"}
+{"q":3,"label":"A","answerable":false,"score":8,"dangerous":false,"issues":["retrieval_miss"],"reason":"资料只有狂犬病、破伤风和流感防控，确实没有感染迹象，如实说明没有","ideal":"伤口周围红、肿、热、痛逐渐加重；流脓或有异味；发烧；出现沿肢体蔓延的红线或红肿快速扩大，提示感染扩散，要尽快处理或就医"}
+{"q":3,"label":"B","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"准确列出红、肿、热、痛、脓和体温升高，引用正确、简洁；两条来源内容略有重复"}
+{"q":3,"label":"C","answerable":false,"score":1,"dangerous":false,"issues":["retrieval_miss","off_topic","missed_answer"],"reason":"资料里没有感染迹象却硬答，“感染的伤口”和动物口腔细菌都不是迹象，应说明资料没有"}
+{"q":4,"label":"A","answerable":true,"score":9,"dangerous":false,"issues":[],"reason":"马上补液、少量多次、继续进食和母乳、两种自制补液方法、何时就医都有，忠实简洁"}
+{"q":4,"label":"B","answerable":true,"score":8,"dangerous":false,"issues":["off_topic"],"reason":"补液、自制补液、喂食正确；婴儿代乳细节偏多，漏了需要就医的危险信号"}
+{"q":4,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer"],"reason":"资料3有1升水、半茶匙盐、8茶匙糖的配方和每5分钟小口喂的用法，回答全漏；结尾误译"}
+{"q":5,"label":"A","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer"],"reason":"给出固定骨折上下关节的原则，但漏了资料里的准备步骤：不挪动畸形肢体、松衣物摘饰品、就地取材"}
+{"q":5,"label":"B","answerable":false,"score":1,"dangerous":false,"issues":["retrieval_miss","hospital_only","hallucination","too_long"],"reason":"全是手术室打石膏、髋人字石膏和截肢处理，把石膏误称夹板，Velpeau用于股骨属错配，普通人做不了"}
+{"q":5,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","hallucination","too_long"],"reason":"提到木板、毯卷长杆、健腿当夹板和加衬垫，有用；但大段上肢内容，把前臂的棍子加衣摆错配给腿，缺具体绑法"}
+{"q":6,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["off_topic","too_long","hospital_only"],"reason":"有脱湿衣、隔热、动作轻柔、禁酒；但混入冻伤预防和处理、输液、灌洗、除颤，漏了资料4的睡袋和热包复温","ideal":"移到避风干燥处，脱湿衣换干衣，用睡袋毯子包裹并隔开地面；用布包热水瓶放躯干或贴身人体取暖，不用明火；清醒者喝温甜饮、禁酒；动作轻柔，重者尽快送医"}
+{"q":6,"label":"B","answerable":true,"score":5,"dangerous":false,"issues":["hospital_only","hallucination","too_long","bad_citation"],"reason":"给出睡袋贴身取暖和热甜饮；但把野外可行的躯干温水浸泡归为医院手段，体外循环误写成ECMO，大量医院内容"}
+{"q":6,"label":"C","answerable":true,"score":6,"dangerous":false,"issues":["missed_answer","off_topic"],"reason":"用布包热水瓶、人体取暖、给温饮、轻柔搬运都切题；漏了资料里的脱湿衣、睡袋、禁明火，混入冻伤局部复温且有误译"}
+{"q":7,"label":"A","answerable":true,"score":7,"dangerous":false,"issues":["off_topic","contradiction"],"reason":"热射病的阴凉、脱衣、泼水扇风、补水、持续降温都正确；热衰竭症状混入热射病症状，还引入抗胆碱中毒的酒精擦拭和禁用冰","ideal":"立即移到阴凉处、脱去多余衣物；马上降温：冷水浸泡最好，或全身泼水加扇风，冰袋放颈、腋、腹股沟；清醒才小口喝凉水；持续降温并尽快送医"}
+{"q":7,"label":"B","answerable":true,"score":4,"dangerous":false,"issues":["missed_answer","hallucination"],"reason":"没给任何降温方法（资料表中有泼水扇风），只说移阴凉和求医；化学环境一条误读了资料"}
+{"q":7,"label":"C","answerable":true,"score":4,"dangerous":true,"issues":["contradiction","off_topic","too_long","hospital_only"],"reason":"先建议酒精布擦拭和冰袋，后又说不用冰、不用酒精，关键降温步骤自相矛盾；混入中毒内容和静脉补液"}
+{"q":8,"label":"A","answerable":true,"score":5,"dangerous":false,"issues":["hospital_only","off_topic","too_long","hallucination"],"reason":"初期处理正确；后半是筋膜切开、高钾、肌红蛋白尿等医院内容，葡萄糖酸钙误写成氯化钙；漏了覆盖保暖","ideal":"脱离热源、停止燃烧；用凉的流动清水冲10–20分钟，不用冰；趁肿胀前摘戒指手表，粘连衣物不撕；用干净布松散覆盖，不挑水泡、不涂油；大面积烧伤要保暖并求医"}
+{"q":8,"label":"B","answerable":true,"score":7,"dangerous":false,"issues":["hospital_only","off_topic"],"reason":"停止燃烧、摘饰品、清洁、覆盖保暖、特殊烧伤都正确；插管、静脉通路、乳酸林格液是普通人做不了的"}
+{"q":8,"label":"C","answerable":true,"score":5,"dangerous":false,"issues":["bad_citation","hospital_only","off_topic"],"reason":"内容照搬战地急救，全文没有[n]出处；静脉复苏和80%烧伤放弃救治的分级不适合普通人；称资料没有其他方法也不准确"}
+```
+1. 题1三份回答的资料都来自过时的军用手册（上下勒带、捕杀蛇），三份都照搬或加重了错误，应给这类资料加过时提示或降权。
+2. 共同问题是把医院和战地手术内容（题5的石膏、题6的除颤和灌洗、题8的电击伤）原样搬进回答，又耗电又没法操作。
+3. 题2的剂量单位（夸脱、加仑）和用途（消毒、储存保质、洗涤）容易混，B把剂量写低了好几倍，应专项检查。
+4. 题3和题8都有关键的现代要点不在资料里（如烧伤用凉水冲洗），检索覆盖要补。

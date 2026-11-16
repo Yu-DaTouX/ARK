@@ -58,6 +58,15 @@
 - 当时进度 1598 / 1680 个、439 / 506 GB，剩古登堡几个大分类（lcc-n、lcc-t、lcc-u 等）。
 - 恢复：重新插好 G 盘、确认 `G:/Offline` 能打开 → 双击“离线资料下载”快捷方式 → 点“继续下载”（会从断点接着下）→ 在砚里重挂 `python -u watch.py 30`。建议检查 USB 线 / 供电，并关掉该盘的 USB 选择性暂停。
 
+## 4c. 公开发布（11-16）
+
+- 仓库 https://github.com/Yu-DaTouX/ARK （公开），Release v0.1.0（`ARK-0.1.0.apk`，176 MB，发布密钥签名，内置**公开版**资料包）。
+- 公开版资料包：`python data/build_public.py` 去掉 Foxfire 1–3、Richard Graves（1305 段），剩 23977 段。自用版（`data/packs/zh`，App assets 里那份）保留。编译 release 时临时把 assets 里的包换成公开版，编完换回。
+- 公开仓库没有旧历史：本地 `main` 是完整历史，`public` 分支是快照，`bash tools/publish.sh "说明"` 同步（排除 `docs/public_exclude.txt` 里 36 个含版权原文的评测 / 训练数据文件）。
+- 发布密钥在仓库外 `F:/ARK-keys/`（`ark-release.jks` + `keystore.properties`），编译时设 `ARK_KEYSTORE_PROPS=F:/ARK-keys/keystore.properties`。**丢了就再也发不了能覆盖安装的更新，要另外备份。**
+- 测试手机上装的是调试签名版，和 release 版签名不同，不能互相覆盖（卸载会删掉已下载的模型）。
+- GPU 激活精度默认 FLOAT32（数字抄错 6–11 → 0），调试开关 `--es ark_act DEFAULT`。功耗：12S 默认精度 66 J/问（开风扇）、FLOAT32 95 J/问（没风扇），待同条件重测。
+
 ## 5. 待用户决定
 
 - 中文资料包：替换还是中英并存（第 3 节第 2 条）。

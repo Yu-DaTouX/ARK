@@ -6,6 +6,8 @@
     <!-- 地图上显示自己的位置（GPS 不需要网络）；只在用户点“我的位置”时申请 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- 工具页：CPR 节拍器振动（普通权限）；闪光灯 setTorchMode 不需要 CAMERA 权限 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <application

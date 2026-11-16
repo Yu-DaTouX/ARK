@@ -58,16 +58,50 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** 资料和回答里的 LaTeX 公式（如 $\\frac{492}{f_{MHz}}$）在手机上显示成可读的纯文本：492/f_MHz。只处理常见写法。 */
+private val greek = mapOf("times" to "×", "cdot" to "·", "lambda" to "λ", "approx" to "≈", "le" to "≤", "leq" to "≤", "ge" to "≥", "geq" to "≥",
+    "pm" to "±", "circ" to "°", "degree" to "°", "Omega" to "Ω", "omega" to "ω", "mu" to "μ", "pi" to "π", "Delta" to "Δ", "delta" to "δ",
+    "alpha" to "α", "beta" to "β", "theta" to "θ", "sigma" to "σ", "rho" to "ρ", "eta" to "η", "infty" to "∞", "neq" to "≠", "rightarrow" to "→",
+    "to" to "→", "%" to "%", "," to " ", ";" to " ", "quad" to " ", "qquad" to " ", "left" to "", "right" to "")
+
+fun delatex(src: String): String {
+    if ('\\' !in src && '$' !in src) return src
+    var s = src.replace(Regex("\\\\(begin|end)\\{(equation|align|displaymath)\\*?\\}"), " ").replace("\\[", " ").replace("\\]", " ")
+    fun math(m0: String): String {
+        var m = m0.replace('~', ' ')
+        repeat(6) {
+            m = m.replace(Regex("\\\\(?:mathrm|text|textbf|mathbf|mathit|operatorname|textrm)\\{([^{}]*)\\}"), "$1")
+                .replace(Regex("\\\\[dt]?frac\\{([^{}]*)\\}\\{([^{}]*)\\}")) { r ->
+                    fun w(x: String) = if (Regex("^[\\w.]+$").matches(x.trim())) x.trim() else "(${x.trim()})"
+                    w(r.groupValues[1]) + "/" + w(r.groupValues[2])
+                }
+                .replace(Regex("\\\\sqrt\\{([^{}]*)\\}"), "√($1)")
+                .replace(Regex("([_^])\\{([^{}]*)\\}"), "$1$2")
+        }
+        m = Regex("\\\\([A-Za-z]+|[%,;])").replace(m) { r -> greek[r.groupValues[1]] ?: r.groupValues[1] }
+        return m.replace("{", "").replace("}", "").replace(Regex("\\^\\\\?circ|\\^°"), "°").replace(Regex(" {2,}"), " ")
+    }
+    // $$…$$ 和 $…$：内容像公式时才转换，避免误伤“$5 和 $10”这种金额
+    s = Regex("\\$\\$([^$]+)\\$\\$").replace(s) { math(it.groupValues[1]) }
+    s = Regex("\\$([^$\\n]{1,300}?)\\$").replace(s) { r ->
+        val c = r.groupValues[1]
+        if (Regex("[\\\\_^=/{}]").containsMatchIn(c) || (c.length <= 3 && ' ' !in c)) math(c) else r.value
+    }
+    return if ('\\' in s) math(s) else s
+}
+
 /** 把模型输出里常见的 Markdown（标题、列表、粗体）和出处编号 [n] 渲染出来；点 [n] 打开对应原文。 */
 fun renderAnswer(
     text: String,
     accent: Color,
     flagged: Set<String> = emptySet(), // 原文里找不到的数字：红色加下划线
     onCite: (Int) -> Unit,
-): AnnotatedString = buildAnnotatedString {
+): AnnotatedString = renderAnswer0(delatex(text), accent, flagged, onCite)
+
+private fun renderAnswer0(text: String, accent: Color, flagged: Set<String>, onCite: (Int) -> Unit): AnnotatedString = buildAnnotatedString {
     val warn = SpanStyle(color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)
     fun plain(s: String) {
-        val t = s.replace("**", "")
+        val t = s.replace("**", "").replace("*", "") // 模型的粗体、斜体标记，手机上都不显示
         if (flagged.isEmpty()) { append(t); return }
         var p = 0
         for (m in Regex("\\d+(?:[.,]\\d+)?").findAll(t)) {
@@ -260,7 +294,7 @@ fun PassageRow(p: Passage, prefix: String = "", onClick: () -> Unit) {
             Text(prefix + prettyTitle(p.title), style = MaterialTheme.typography.labelLarge, color = cs.primary,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("${p.packTitle} · 第 ${p.seq} 段", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
-            Text(p.text, style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(delatex(p.text), style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -286,7 +320,7 @@ fun ReaderDialog(p: Passage, onStep: (Int) -> Unit, onClose: () -> Unit, loadOri
                 HorizontalDivider(Modifier.padding(top = 8.dp), color = cs.outlineVariant)
                 SelectionContainer(Modifier.weight(1f)) {
                     Text(
-                        if (showEn) en ?: p.text else p.text,
+                        delatex(if (showEn) en ?: p.text else p.text),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
                     )

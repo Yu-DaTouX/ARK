@@ -69,6 +69,7 @@ fun LibraryScreen(vm: AppViewModel) {
     val results by vm.searchResults.collectAsStateWithLifecycle()
     val downloads by vm.downloads.collectAsStateWithLifecycle()
     val importing by vm.importProgress.collectAsStateWithLifecycle()
+    val maps by vm.maps.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     var confirm by remember { mutableStateOf<Pair<String, () -> Unit>?>(null) }
     val focus = LocalFocusManager.current
@@ -175,6 +176,26 @@ fun LibraryScreen(vm: AppViewModel) {
             }
         }
         items(vm.catalog.filter { it.kind == "pack" && packs.none { p -> p.file.name == it.file } }, key = { "c" + it.file }) { c ->
+            CatalogRow(c, downloads.firstOrNull { it.item.file == c.file }, vm)
+        }
+
+        // ---------------- 地图 ----------------
+        item { Section("地图") }
+        item {
+            Text("内置全球卫星图和概略图。下载区域详图可以看到城镇和道路；下载海图后在地图页点「海图」显示水深和航标。",
+                style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+        }
+        items(maps, key = { it.path }) { f ->
+            val title = vm.catalog.firstOrNull { it.file == f.name }?.title ?: f.nameWithoutExtension
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.bodyLarge)
+                    Text(sizeText(f.length()), style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                }
+                IconButton(onClick = { confirm = "删除地图「$title」？" to { vm.deleteMap(f) } }) { Icon(Icons.Filled.Delete, "删除") }
+            }
+        }
+        items(vm.catalog.filter { it.kind == "map" && maps.none { m -> m.name == it.file } }, key = { "c" + it.file }) { c ->
             CatalogRow(c, downloads.firstOrNull { it.item.file == c.file }, vm)
         }
 

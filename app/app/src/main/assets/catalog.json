@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "items": [
     {
       "kind": "embed",
@@ -32,6 +32,118 @@
       "url": "https://huggingface.co/litert-community/Qwen3.5-4B/resolve/main/Qwen3.5-4B_mixed_int4_gpu_composite_v0190.litertlm",
       "size": 2712846336,
       "note": "Apache-2.0 · 知识题最准，但在这台测试机上很慢、耗电是 E4B 的 2 倍"
+    },
+    {
+      "kind": "map",
+      "title": "全球地图（城镇道路概览）",
+      "file": "world-z8.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/world-z8.pmtiles",
+      "size": 561362308,
+      "note": "全球，缩放到 8 级（约省、市一级） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "澳洲 · 新西兰详图",
+      "file": "australia-nz-z13.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/australia-nz-z13.pmtiles",
+      "size": 717720120,
+      "note": "13 级（街道、小路） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "中国详图",
+      "file": "china-z12.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/china-z12.pmtiles",
+      "size": 1769746987,
+      "note": "12 级（乡镇、主要道路） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "日本 · 韩国",
+      "file": "japan-korea-z11.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/japan-korea-z11.pmtiles",
+      "size": 160504737,
+      "note": "11 级 · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "东南亚",
+      "file": "southeast-asia-z11.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/southeast-asia-z11.pmtiles",
+      "size": 306837580,
+      "note": "11 级 · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "南亚 · 中东",
+      "file": "south-asia-middle-east-z10.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/south-asia-middle-east-z10.pmtiles",
+      "size": 341878778,
+      "note": "10 级（城镇、公路） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "欧洲",
+      "file": "europe-z10.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/europe-z10.pmtiles",
+      "size": 1400789469,
+      "note": "10 级（城镇、公路） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "北美",
+      "file": "north-america-z10.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/north-america-z10.pmtiles",
+      "size": 935151582,
+      "note": "10 级（城镇、公路） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "南美",
+      "file": "south-america-z10.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/south-america-z10.pmtiles",
+      "size": 215083394,
+      "note": "10 级（城镇、公路） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "非洲",
+      "file": "africa-z10.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/africa-z10.pmtiles",
+      "size": 327071392,
+      "note": "10 级（城镇、公路） · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "俄罗斯 · 中亚",
+      "file": "russia-central-asia-z9.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/russia-central-asia-z9.pmtiles",
+      "size": 346272637,
+      "note": "9 级 · OpenStreetMap（ODbL）"
+    },
+    {
+      "kind": "map",
+      "title": "海图 · 水深着色",
+      "file": "chart-depth-world.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/chart-depth-world.pmtiles",
+      "size": 37335054,
+      "note": "全球，GEBCO 2026，到 7 级（约 1 km） · 仅供应急参考，不能代替正规航海图"
+    },
+    {
+      "kind": "map",
+      "title": "海图 · 等深线",
+      "file": "chart-contour-world.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/chart-contour-world.pmtiles",
+      "size": 326149543,
+      "note": "全球 10–6000 m 等深线，到 10 级，带水深数字 · 仅供应急参考，不能代替正规航海图"
+    },
+    {
+      "kind": "map",
+      "title": "海图 · 航标灯塔",
+      "file": "chart-seamarks-world.pmtiles",
+      "url": "https://github.com/Yu-DaTouX/ARK/releases/download/maps-2026-11/chart-seamarks-world.pmtiles",
+      "size": 56840414,
+      "note": "全球 59 万个航标，含灯质（如 Fl(2)W 10s 15M），OpenSeaMap（ODbL） · 仅供应急参考，不能代替正规航海图"
     }
   ]
 }

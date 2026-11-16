@@ -58,3 +58,6 @@ tools/offline/__pycache__/
 tools/offline/*.lnk
 data/zh/in_c/
 data/zh/out_c/
+data/maps/dl/*.pmtiles
+data/maps/dl/*.part
+data/maps/dl/*.log

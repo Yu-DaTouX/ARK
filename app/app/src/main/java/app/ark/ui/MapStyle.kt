@@ -12,10 +12,18 @@ import java.io.RandomAccessFile
  * - 矢量地图：Protomaps（OpenStreetMap，ODbL）。内置全球 z0–5；区域详图（如澳洲 z0–12）是可选下载，放在 maps/ 目录。
  * - 放大到 6 级以后卫星图逐渐淡出、矢量地图淡入（卫星图只到 6 级，再放大会糊）。
  * - 字体：只带拉丁字母的字形；中文地名由 MapLibre 用手机自带字体在本地绘制，不用打包几十 MB 的中文字库。
+ * - 海图（可开关）：GEBCO 水深分层着色（栅格）+ 等深线（矢量，带水深数字）+ OpenSeaMap 航标（矢量，z5–14）。
+ *   内置 z0–5 概略版（chart-depth-z5 / chart-z5）；下载的 chart-*.pmtiles 按瓦片类型区分：栅格是水深着色，矢量是等深线和航标。
+ *   数据由 data/maps/chart/ 下的脚本生成；只供应急参考，不能代替正规航海图。
  */
 object MapStyle {
     const val WORLD_SAT = "pmtiles://asset://maps/world-satellite.pmtiles"
     const val WORLD_VEC = "pmtiles://asset://maps/world-z5.pmtiles"
+    const val CHART_LOW = "pmtiles://asset://maps/chart-z5.pmtiles"
+    const val CHART_DEPTH_LOW = "pmtiles://asset://maps/chart-depth-z5.pmtiles"
+
+    /** 海图文件（水深 + 航标）以 chart 开头，单独作为海图图层，不当作陆地详图。 */
+    fun isChart(f: File) = f.name.startsWith("chart")
 
     /** PMTiles v3 文件头第 99 字节是瓦片类型：1 矢量 / 2 png / 3 jpeg / 4 webp / 5 avif。 */
     fun tileType(f: File): Int = runCatching {
@@ -26,7 +34,7 @@ object MapStyle {
         }
     }.getOrDefault(0)
 
-    fun build(regions: List<File>, satellite: Boolean): String {
+    fun build(regions: List<File>, satellite: Boolean, chart: Boolean = false): String {
         val sources = JSONObject()
             .put("sat", JSONObject().put("type", "raster").put("url", WORLD_SAT).put("tileSize", 256))
             .put("world", JSONObject().put("type", "vector").put("url", WORLD_VEC))
@@ -39,7 +47,18 @@ object MapStyle {
             )
         )
         val vec = mutableListOf("world")
-        regions.forEachIndexed { i, f ->
+        val charts = mutableListOf<String>()      // 矢量：等深线 + 航标
+        val depths = mutableListOf<String>()      // 栅格：水深着色
+        if (chart) {
+            sources.put("chart", JSONObject().put("type", "vector").put("url", CHART_LOW)); charts += "chart"
+            sources.put("chartd", JSONObject().put("type", "raster").put("url", CHART_DEPTH_LOW).put("tileSize", 256)); depths += "chartd"
+            regions.filter(::isChart).forEachIndexed { i, f ->
+                val url = "pmtiles://file://${f.path}"
+                if (tileType(f) == 1) { sources.put("chart$i", JSONObject().put("type", "vector").put("url", url)); charts += "chart$i" }
+                else { sources.put("chartd$i", JSONObject().put("type", "raster").put("url", url).put("tileSize", 256)); depths += "chartd$i" }
+            }
+        }
+        regions.filterNot(::isChart).forEachIndexed { i, f ->
             val id = "r$i"
             when (tileType(f)) {
                 1 -> { sources.put(id, JSONObject().put("type", "vector").put("url", "pmtiles://file://${f.path}")); vec += id }
@@ -75,6 +94,14 @@ object MapStyle {
                     "paint":{"fill-color":"#a7cbe0","fill-opacity":$waterFade}}"""
                 )
             )
+        }
+        // 海图：水深分层盖在海面上（卫星模式也盖住），再画等深线
+        for (d in depths) {
+            layers.put(JSONObject("""{"id":"$d","type":"raster","source":"$d","paint":{"raster-opacity":0.92,"raster-fade-duration":0}}"""))
+        }
+        for (c in charts) {
+            layers.put(JSONObject("""{"id":"$c-contour","type":"line","source":"$c","source-layer":"contour",
+                "paint":{"line-color":"#2f6ea3","line-opacity":0.7,"line-width":["interpolate",["linear"],["zoom"],3,0.3,10,1.0]}}"""))
         }
         for (s in vec) {
             layers.put(
@@ -145,6 +172,21 @@ object MapStyle {
                 )
             )
         }
+        for (c in charts) {
+            layers.put(JSONObject("""{"id":"$c-contour-label","type":"symbol","source":"$c","source-layer":"contour","minzoom":6,
+                "layout":{"symbol-placement":"line","text-field":["to-string",["get","d"]],"text-font":["Noto Sans Regular"],"text-size":10},
+                "paint":{"text-color":"#1d4f7a","text-halo-color":"rgba(255,255,255,0.8)","text-halo-width":1.2}}"""))
+            // 有灯的航标先画一圈黄色光晕
+            layers.put(JSONObject("""{"id":"$c-light","type":"circle","source":"$c","source-layer":"seamark","filter":["has","l"],
+                "paint":{"circle-color":"#ffd600","circle-opacity":0.45,"circle-radius":["interpolate",["linear"],["zoom"],5,4,12,9,16,14]}}"""))
+            layers.put(JSONObject("""{"id":"$c-seamark","type":"circle","source":"$c","source-layer":"seamark",
+                "paint":{"circle-color":$SEAMARK_COLOR,"circle-stroke-color":"#212121","circle-stroke-width":1,
+                  "circle-radius":["interpolate",["linear"],["zoom"],5,2,12,4.5,16,7]}}"""))
+            layers.put(JSONObject("""{"id":"$c-seamark-label","type":"symbol","source":"$c","source-layer":"seamark","minzoom":8,
+                "layout":{"text-field":["case",["all",["has","n"],["has","l"]],["concat",["get","n"],"\n",["get","l"]],["coalesce",["get","n"],["get","l"],""]],
+                  "text-font":["Noto Sans Regular"],"text-size":11,"text-anchor":"top","text-offset":[0,0.8],"text-optional":true,"text-max-width":10},
+                "paint":{"text-color":"#3e2723","text-halo-color":"rgba(255,255,255,0.9)","text-halo-width":1.4}}"""))
+        }
         return JSONObject()
             .put("version", 8)
             .put("name", "ARK offline")
@@ -154,6 +196,11 @@ object MapStyle {
             .put("layers", layers)
             .toString()
     }
+
+    /** 航标颜色：按标记颜色（红绿侧面标、黄色专用标等）；没写颜色的灯用黄色，沉船礁石棕色，港口锚地蓝色。 */
+    private const val SEAMARK_COLOR = """["match",["get","c"],"red","#e53935","green","#2e7d32","yellow","#fbc02d","black","#212121",
+        "white","#fafafa","orange","#fb8c00",["case",["has","l"],"#ffd600",
+        ["match",["get","t"],["wreck","rock","obstruction"],"#6d4c41",["harbour","anchorage","small_craft_facility","mooring"],"#1565c0","#9e9e9e"]]]"""
 
     private fun fill(id: String, src: String, layer: String, color: String, opacity: String) = JSONObject(
         """{"id":"$id","type":"fill","source":"$src","source-layer":"$layer","paint":{"fill-color":"$color","fill-opacity":$opacity}}"""

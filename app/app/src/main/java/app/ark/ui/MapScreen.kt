@@ -51,6 +51,22 @@ import org.maplibre.android.location.modes.RenderMode
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import app.ark.sensors.Baro
+import app.ark.sensors.Resection
+import app.ark.sensors.bearingName
+import app.ark.sensors.rememberBarometer
+import app.ark.sensors.rememberCompass
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.layout.Spacer
+import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Point
 import java.util.Locale
 import kotlin.math.abs
 
@@ -65,11 +81,24 @@ fun MapScreen(vm: AppViewModel) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val regions by vm.maps.collectAsStateWithLifecycle()
     var satellite by rememberSaveable { mutableStateOf(true) }
+    var chart by rememberSaveable { mutableStateOf(false) }
     var center by remember { mutableStateOf<LatLng?>(null) }
     var zoom by remember { mutableStateOf(0.0) }
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var style by remember { mutableStateOf<Style?>(null) }
     var wantLocate by remember { mutableStateOf(false) }
+    val prefs = remember { ctx.getSharedPreferences("ark", android.content.Context.MODE_PRIVATE) }
+    // 指南针（按地图中心修正磁偏角）和气压计；只在地图页显示时监听
+    val compass = rememberCompass(center?.latitude, center?.longitude)
+    val baro = rememberBarometer()
+    var seaLevel by remember { mutableStateOf(prefs.getFloat("baro_sea_level", Baro.STD)) }
+    var followHeading by rememberSaveable { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
+    // 后方交会：landmarks 已测好的地标；pending 已在地图上选中、还没测方位的地标
+    var resecting by rememberSaveable { mutableStateOf(false) }
+    var pending by remember { mutableStateOf<LatLng?>(null) }
+    var landmarks by remember { mutableStateOf(listOf<Resection.Landmark>()) }
+    var fix by remember { mutableStateOf<Resection.Fix?>(null) }
 
     val mapView = remember {
         MapView(ctx).apply {
@@ -106,9 +135,28 @@ fun MapScreen(vm: AppViewModel) {
     }
 
     // 样式随“已有地图文件”和“卫星/地图”开关重建
-    LaunchedEffect(map, regions, satellite) {
+    LaunchedEffect(map, regions, satellite, chart) {
         val m = map ?: return@LaunchedEffect
-        m.setStyle(Style.Builder().fromJson(MapStyle.build(regions, satellite))) { s -> style = s }
+        m.setStyle(Style.Builder().fromJson(MapStyle.build(regions, satellite, chart))) { s -> style = s }
+    }
+
+    // “朝向”模式：地图随手机朝向旋转，正前方朝上
+    LaunchedEffect(followHeading, compass?.heading?.let { Math.round(it / 2f) }) {
+        val m = map ?: return@LaunchedEffect
+        val h = compass?.heading ?: return@LaunchedEffect
+        if (followHeading) m.moveCamera(CameraUpdateFactory.bearingTo(h.toDouble()))
+    }
+
+    // 交会结果画成一个点（样式重建后重新加）
+    LaunchedEffect(style, fix) {
+        val s = style ?: return@LaunchedEffect
+        s.getLayer("fix")?.let { s.removeLayer(it) }
+        s.getSource("fix")?.let { s.removeSource(it) }
+        val f = fix ?: return@LaunchedEffect
+        s.addSource(GeoJsonSource("fix", Point.fromLngLat(f.lon, f.lat)))
+        s.addLayer(CircleLayer("fix", "fix").withProperties(
+            PropertyFactory.circleRadius(9f), PropertyFactory.circleColor("#7c4dff"),
+            PropertyFactory.circleStrokeColor("#ffffff"), PropertyFactory.circleStrokeWidth(3f)))
     }
 
     fun locate() {
@@ -122,6 +170,11 @@ fun MapScreen(vm: AppViewModel) {
         lc.renderMode = RenderMode.COMPASS
         lc.cameraMode = CameraMode.TRACKING
         val last = lc.lastKnownLocation
+        // 有 GPS 海拔时顺便校准气压海拔（海平面气压），没有 GPS 时也能用气压估海拔
+        if (last != null && last.hasAltitude() && baro != null) {
+            seaLevel = Baro.seaLevel(baro.hPa, last.altitude.toFloat())
+            prefs.edit().putFloat("baro_sea_level", seaLevel).apply()
+        }
         if (last != null) {
             m.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(last.latitude, last.longitude), maxOf(m.cameraPosition.zoom, 13.0)))
         } else {
@@ -160,6 +213,19 @@ fun MapScreen(vm: AppViewModel) {
                         String.format(Locale.US, "%.5f, %.5f · 缩放 %.1f", c.latitude, c.longitude, zoom),
                         style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    val extra = listOfNotNull(
+                        compass?.let {
+                            "朝向 ${Math.round(it.heading)}° ${bearingName(it.heading)}" + when {
+                                it.source == app.ark.sensors.Heading.Source.CELESTIAL -> "（天体校准）"
+                                it.source == app.ark.sensors.Heading.Source.HOLD -> "（磁干扰，陀螺保持）"
+                                it.magnetic -> "（磁北）"
+                                else -> ""
+                            }
+                        },
+                        baro?.let { "气压海拔 ≈ ${Math.round(Baro.altitude(it.hPa, seaLevel))} m${if (seaLevel == Baro.STD) "（未校准）" else ""}" },
+                    )
+                    if (extra.isNotEmpty()) Text(extra.joinToString(" · "), style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -177,19 +243,90 @@ fun MapScreen(vm: AppViewModel) {
             SmallFloatingActionButton(onClick = { map?.animateCamera(CameraUpdateFactory.zoomOut(), 300) }) {
                 Text("－", style = MaterialTheme.typography.titleLarge)
             }
-            SmallFloatingActionButton(onClick = { satellite = !satellite }) {
-                Text(if (satellite) "地图" else "卫星", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 10.dp))
+            // 其余功能收进“更多”菜单，右侧只留 4 个按钮
+            Box {
+                SmallFloatingActionButton(onClick = { menuOpen = true }) {
+                    Text("更多", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 10.dp))
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    fun item(label: String, checked: Boolean?, onClick: () -> Unit) = @Composable {
+                        DropdownMenuItem(
+                            text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
+                            leadingIcon = { if (checked == true) Icon(Icons.Filled.Check, null) else Spacer(Modifier.size(24.dp)) },
+                            onClick = { menuOpen = false; onClick() },
+                        )
+                    }
+                    item("卫星底图", satellite) { satellite = !satellite }()
+                    item("海图（水深、航标）", chart) {
+                        chart = !chart
+                        if (chart && regions.none(MapStyle::isChart))
+                            Toast.makeText(ctx, "现在只有概略水深。到「资料」页下载海图，可看近岸等深线和航标", Toast.LENGTH_LONG).show()
+                    }()
+                    if (compass != null) {
+                        item("地图随朝向旋转", followHeading) {
+                            followHeading = !followHeading
+                            if (!followHeading) map?.animateCamera(CameraUpdateFactory.bearingTo(0.0), 300)
+                        }()
+                        item("交会定位（没有 GPS 时）", resecting) { resecting = !resecting; pending = null; landmarks = emptyList() }()
+                    }
+                    item("回到地球全景", null) {
+                        followHeading = false
+                        map?.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder().target(LatLng(-25.0, 134.0)).zoom(1.2).bearing(0.0).tilt(0.0).build()), 1500)
+                    }()
+                }
             }
-            SmallFloatingActionButton(onClick = {
-                map?.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder().target(LatLng(-25.0, 134.0)).zoom(1.2).bearing(0.0).tilt(0.0).build()), 1500)
-            }) { Text("地球", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 10.dp)) }
             SmallFloatingActionButton(onClick = {
                 val fine = ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 if (fine) locate() else permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
             }) { Icon(Icons.Filled.LocationOn, "我的位置") }
         }
 
-        if (regions.isEmpty()) {
+        if (resecting) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                modifier = Modifier.align(Alignment.BottomStart).padding(16.dp).widthIn(max = 260.dp),
+            ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("交会定位（没有 GPS 时）", style = MaterialTheme.typography.titleSmall)
+                    val n = landmarks.size + 1
+                    when {
+                        landmarks.size >= 2 -> {
+                            val f = fix
+                            if (f == null) Text("两条方位线没有交点，请重测。", style = MaterialTheme.typography.bodySmall)
+                            else {
+                                Text(latLonText(LatLng(f.lat, f.lon)), style = MaterialTheme.typography.labelLarge)
+                                Text(
+                                    "两线夹角 ${Math.round(f.angle)}°" + if (f.angle < 30 || f.angle > 150) "：太小或太大，结果不可靠，换个地标" else "：结果可用（误差随距离增大）",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                            Row {
+                                if (f != null) TextButton(onClick = { map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(f.lat, f.lon), maxOf(zoom, 12.0))) }) { Text("移到这里") }
+                                TextButton(onClick = { landmarks = emptyList(); pending = null; fix = null }) { Text("重来") }
+                            }
+                        }
+                        pending == null -> {
+                            Text("第 $n 步：在远处找一个看得见、地图上也有的地标（山顶、塔、岬角），把十字对准地图上的它。", style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = { pending = center }) { Text("十字处是地标 $n") }
+                        }
+                        else -> {
+                            Text("把手机平放，顶部对准真实的地标 $n，读数稳定后点记录。", style = MaterialTheme.typography.bodySmall)
+                            Text("当前方位 ${compass?.let { "${Math.round(it.heading)}°" } ?: "—"}", style = MaterialTheme.typography.labelLarge)
+                            if (compass != null && compass.accuracy <= android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_LOW)
+                                Text("指南针精度低：在空中画 8 字校准，远离铁器", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                            TextButton(onClick = {
+                                val p = pending ?: return@TextButton
+                                val h = compass?.heading ?: return@TextButton
+                                landmarks = landmarks + Resection.Landmark(p.latitude, p.longitude, h)
+                                pending = null
+                                if (landmarks.size >= 2) fix = Resection.solve(landmarks[0], landmarks[1])
+                            }) { Text("记录方位") }
+                        }
+                    }
+                }
+            }
+        } else if (regions.none { !MapStyle.isChart(it) }) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),

@@ -25,6 +25,7 @@ private val tabs = listOf(
     "问答" to ArkIcons.Chat,
     "资料" to ArkIcons.Book,
     "地图" to ArkIcons.Map,
+    "工具" to ArkIcons.Tools,
     "书签" to ArkIcons.Bookmark,
 )
 
@@ -62,6 +63,7 @@ fun ArkRoot(vm: AppViewModel) {
                 0 -> AskScreen(vm, onOpenLibrary = { tab = 1 })
                 1 -> LibraryScreen(vm)
                 2 -> MapScreen(vm)
+                3 -> ToolsScreen()
                 else -> BookmarksScreen(vm)
             }
         }

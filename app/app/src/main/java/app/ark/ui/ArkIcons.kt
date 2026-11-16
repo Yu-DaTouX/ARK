@@ -24,5 +24,6 @@ object ArkIcons {
     val Download = icon("Download", "M19,9h-4V3H9v6H5l7,7 7,-7zM5,18v2h14v-2H5z")
     val Upload = icon("Upload", "M9,16h6v-6h4l-7,-7 -7,7h4zM5,18h14v2H5z")
     val Chevron = icon("Chevron", "M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z")
+    val Tools = icon("Tools", "M22.7,19l-9.1,-9.1c0.9,-2.3 0.4,-5 -1.5,-6.9 -2,-2 -5,-2.4 -7.4,-1.3L9,6 6,9 1.9,4.9C0.8,7.3 1.2,10.3 3.2,12.2c1.9,1.9 4.6,2.4 6.9,1.5l9.1,9.1c0.4,0.4 1,0.4 1.4,0l2.1,-2.1c0.5,-0.4 0.5,-1 0.1,-1.4z")
     val ChevronBack = icon("ChevronBack", "M15.41,7.41L14,6l-6,6 6,6 1.41,-1.41L10.83,12z")
 }

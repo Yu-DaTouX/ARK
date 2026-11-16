@@ -66,7 +66,7 @@ fun AidCardsTool(onBack: () -> Unit, onOpen: (String) -> Unit) {
 }
 
 @Composable
-private fun CallBanner() = Warn("有条件，立即呼叫急救 / 送医。下面的步骤是等待救援时做的。")
+private fun CallBanner() = Warn("有条件，立即拨打 120（多数国家 112）呼叫急救 / 送医。下面的步骤是等待救援时做的。")
 
 @Composable
 private fun StepTimer(totalSec: Int, label: String, key: String) {

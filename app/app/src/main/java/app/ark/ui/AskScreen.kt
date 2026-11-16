@@ -173,8 +173,8 @@ private fun LiveCard(l: Live, vm: AppViewModel) {
         Surface(color = cs.surfaceContainerLow, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.size(8.dp))
+                    // 转圈动画每帧都重绘（高刷屏 90–120 Hz），还和模型抢 GPU；开始出字后文字本身就是进度，不再转
+                    if (l.answer.isEmpty()) { CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp); Spacer(Modifier.size(8.dp)) }
                     Text(l.status, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
                 }
                 if (l.answer.isNotEmpty()) {

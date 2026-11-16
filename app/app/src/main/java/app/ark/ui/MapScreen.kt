@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -123,7 +124,8 @@ fun MapScreen(vm: AppViewModel) {
     val myFix by app.ark.sensors.MyFix.last.collectAsState()
     val known = remember { app.ark.sensors.MyFix.lastKnown(ctx) }
     val here = myFix ?: known
-    val compass = rememberCompass(here?.latitude, here?.longitude)
+    // 取整到 1°：地图页只显示整数度，不必随方位引擎 15 Hz 重组整个地图页（交会记录时另读未取整的值）
+    val compass = rememberCompass(here?.latitude, here?.longitude, stepDeg = 1f)
     val baro = rememberBarometer()
     var seaLevel by remember { mutableStateOf(prefs.getFloat("baro_sea_level", Baro.STD)) }
     var followHeading by rememberSaveable { mutableStateOf(false) }
@@ -135,7 +137,8 @@ fun MapScreen(vm: AppViewModel) {
     var fix by remember { mutableStateOf<Resection.Fix?>(null) }
 
     // ---- 航点 / 轨迹 / 蓝牙信标 ----
-    remember { WaypointStore.init(ctx); TrackStore.init(ctx); Beacon.loadConfig(ctx) }
+    remember { Beacon.loadConfig(ctx) }
+    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { WaypointStore.init(ctx); TrackStore.init(ctx) } } // 读文件放后台，不卡进入地图页
     val scope = rememberCoroutineScope()
     val waypoints by WaypointStore.list.collectAsState()
     val trackPts by TrackStore.points.collectAsState()
@@ -215,7 +218,9 @@ fun MapScreen(vm: AppViewModel) {
     // 样式随“已有地图文件”和“卫星/地图”开关重建
     LaunchedEffect(map, regions, satellite, chart) {
         val m = map ?: return@LaunchedEffect
-        m.setStyle(Style.Builder().fromJson(MapStyle.build(regions, satellite, chart))) { s -> style = s }
+        // 样式 JSON（要读 PMTiles 文件头）在 IO 线程构建，只有 setStyle 回主线程
+        val json = withContext(Dispatchers.IO) { MapStyle.build(regions, satellite, chart) }
+        m.setStyle(Style.Builder().fromJson(json)) { s -> style = s }
     }
 
     // “朝向”模式：地图随手机朝向旋转，正前方朝上
@@ -265,7 +270,11 @@ fun MapScreen(vm: AppViewModel) {
     }
 
     // 当前指向的目标：选中的航点 / 信标，或“沿轨迹返回”的下一个点
-    val ret = if (returning) meLoc?.let { returnTarget(trackPts, it.latitude, it.longitude) } else null
+    // 只在轨迹或位置变化时重算，指南针 / 气压重组不再每次遍历整条轨迹
+    val ret = remember(returning, trackPts, meLoc) { if (returning) meLoc?.let { returnTarget(trackPts, it.latitude, it.longitude) } else null }
+    var ageTick by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(navOn) { while (navOn) { kotlinx.coroutines.delay(5000); ageTick++ } }
+    val fixAge = remember(meLoc, ageTick) { meLoc?.let { app.ark.sensors.MyFix.ageMs(it) } }
     val tgt: Triple<String, String?, LatLng>? = when {
         returning -> ret?.let { Triple(if (it.arrived) "已回到起点附近" else "沿轨迹返回", "剩余约 ${Geo.distText(it.left)}（沿你走过的路）", LatLng(it.lat, it.lon)) }
             ?: Triple("沿轨迹返回", if (trackPts.isEmpty()) "还没有轨迹" else "等待定位…", LatLng(trackPts.lastOrNull()?.lat ?: 0.0, trackPts.lastOrNull()?.lon ?: 0.0))
@@ -294,6 +303,9 @@ fun MapScreen(vm: AppViewModel) {
             lc.activateLocationComponent(LocationComponentActivationOptions.builder(ctx, s).useDefaultLocationEngine(true).build())
         }
         lc.isLocationComponentEnabled = true
+        // 定位点每秒一次、罗盘每 0.5 秒一次都会触发平滑动画，跟随模式下整张地图几乎一直按屏幕刷新率重绘；
+        // 限到 15 fps，步行速度下看不出区别，GPU 重绘量约降到 1/4–1/8
+        lc.setMaxAnimationFps(15)
         lc.renderMode = RenderMode.COMPASS
         lc.cameraMode = CameraMode.TRACKING
         val last = lc.lastKnownLocation
@@ -469,7 +481,7 @@ fun MapScreen(vm: AppViewModel) {
                                 Text("指南针精度低：在空中画 8 字校准，远离铁器", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                             TextButton(onClick = {
                                 val p = pending ?: return@TextButton
-                                val h = compass?.heading ?: return@TextButton
+                                val h = app.ark.sensors.Heading.state.value?.heading?.takeIf { !it.isNaN() } ?: compass?.heading ?: return@TextButton
                                 landmarks = landmarks + Resection.Landmark(p.latitude, p.longitude, h)
                                 pending = null
                                 if (landmarks.size >= 2) fix = Resection.solve(landmarks[0], landmarks[1])
@@ -494,7 +506,7 @@ fun MapScreen(vm: AppViewModel) {
         tgt?.let { (title, sub, to) ->
             NavPanel(
                 title, sub, meLoc?.latitude, meLoc?.longitude, to.latitude, to.longitude, compass?.heading,
-                Modifier.align(Alignment.BottomStart).padding(16.dp),
+                Modifier.align(Alignment.BottomStart).padding(16.dp), fixAgeMs = fixAge,
             ) { selWp = null; selBeacon = null; returning = false }
         }
 
@@ -519,8 +531,7 @@ fun MapScreen(vm: AppViewModel) {
             beaconOn, beaconErr, seen, meLoc?.latitude, meLoc?.longitude,
             onStart = { sos, msg ->
                 Beacon.saveConfig(ctx, sos, msg)
-                val bt = ctx.getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter
-                if (bt == null || !bt.isEnabled) Toast.makeText(ctx, "请先在系统里打开蓝牙（方舟不会自动打开）", Toast.LENGTH_LONG).show()
+                if (!app.ark.comm.CommEngine.bluetoothOn(ctx)) Toast.makeText(ctx, "请先在系统里打开蓝牙（方舟不会自动打开）", Toast.LENGTH_LONG).show()
                 else withPerms(Perms.beacon()) { BeaconService.start(ctx) }
             },
             onStop = { BeaconService.stop(ctx) },

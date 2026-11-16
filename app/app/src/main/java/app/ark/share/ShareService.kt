@@ -23,12 +23,22 @@ class ShareService : Service() {
         if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
         TrackService.channel(this)
         val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
-        ServiceCompat.startForeground(this, ID, notif(), type)
+        try {
+            ServiceCompat.startForeground(this, ID, notif(), type)
+        } catch (e: Exception) { // 如 Android 15 dataSync 额度已用完：不要崩
+            stopSelf(); return START_NOT_STICKY
+        }
         if (server == null) {
             val s = ShareServer(this) { stopSelf() }
             try { s.start(); server = s } catch (e: Exception) { stopSelf() }
         }
         return START_NOT_STICKY
+    }
+
+    /** Android 15+：dataSync 前台服务达到系统时限，必须在几秒内停止，否则进程被异常终止。 */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        server?.stop(); server = null
+        stopSelf()
     }
 
     override fun onDestroy() {

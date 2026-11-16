@@ -29,14 +29,16 @@ class Embedder(private val ctx: Context) {
         try {
             if (engine == null || path != model.path) {
                 close()
-                engine = EmbeddingEngine(
+                val cand = EmbeddingEngine(
                     EmbeddingEngineConfig(
                         modelPath = model.path,
                         backend = Backend.CPU(),
                         maxInputLength = 256,
                         cacheDir = ctx.cacheDir.path,
                     )
-                ).also { it.initialize() }
+                )
+                try { cand.initialize() } catch (t: Throwable) { runCatching { cand.close() }; throw t } // 初始化失败也要释放原生资源
+                engine = cand
                 path = model.path
             }
             engine!!.computeEmbedding(

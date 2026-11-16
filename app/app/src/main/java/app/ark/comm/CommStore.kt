@@ -77,6 +77,11 @@ object CommStore {
     @Synchronized
     fun clear() { _list.value = emptyList(); keys.clear(); save() }
 
+    /** 等已排队的写盘全部完成（最多 2 秒）；回 ACK 前调用，保证“已确认”的消息已落盘。 */
+    fun flush() {
+        runCatching { io.submit {}.get(2, java.util.concurrent.TimeUnit.SECONDS) }
+    }
+
     private fun save() {
         val snapshot = _list.value
         val f = file ?: return
@@ -91,7 +96,8 @@ object CommStore {
                 })
                 val tmp = File(f.parentFile, f.name + ".tmp")
                 tmp.writeText(a.toString())
-                if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+                // 原子覆盖：不先删旧文件，写到一半被杀也不会丢掉旧数据
+                java.nio.file.Files.move(tmp.toPath(), f.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
             }
         }
     }

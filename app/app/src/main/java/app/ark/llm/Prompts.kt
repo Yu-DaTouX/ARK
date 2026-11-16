@@ -21,6 +21,11 @@ object Prompts {
     fun ragUser(passages: List<String>, question: String): String =
         "资料：\n" + passages.mapIndexed { i, t -> "[${i + 1}] $t" }.joinToString("\n\n") + "\n\n问题：$question"
 
+    private val LOST = Regex("^\\s*(请提供您?的问题|请问您有什么问题|请告诉我您的问题|您想问什么)")
+
+    /** 模型没看到问题时的典型短回答（实测出现在资料很长时）。 */
+    fun lostQuestion(answer: String) = answer.length < 80 && LOST.containsMatchIn(answer)
+
     private val STOP = setOf(
         "the", "and", "or", "of", "for", "to", "in", "on", "a", "an", "how", "what", "with", "is", "are", "do",
         "does", "can", "why", "when", "which", "from", "by", "at", "as", "be", "it", "use", "using", "keywords",

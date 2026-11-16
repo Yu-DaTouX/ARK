@@ -75,6 +75,23 @@ fun BtChatTab() {
     LaunchedEffect(Unit) { CommStore.load(ctx) }
     // 离开本页：界面这一路不再需要引擎（后台服务若在跑则继续）
     DisposableEffect(Unit) { onDispose { CommEngine.release(false) } }
+    // 退到后台 / 锁屏 30 秒后也放掉“界面”这一路：原来界面模式（每 12 秒满功率扫 5 秒 + 均衡档广播）在后台一直跑。
+    // 开了“保持在线”则退回后台低占空比（每 30 秒扫 5 秒），没开就停（与开关说明“锁屏也收得到”只属于保持在线一致）。回到前台自动恢复。
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        val h = android.os.Handler(android.os.Looper.getMainLooper())
+        var released = false
+        val rel = Runnable { if (CommEngine.uiActive) { released = true; CommEngine.release(false) } }
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_STOP) h.postDelayed(rel, 30_000L) // 宽限：让正在发的消息发完，短暂切出去不断线
+            else if (e == androidx.lifecycle.Lifecycle.Event.ON_START) {
+                h.removeCallbacks(rel)
+                if (released) { released = false; if (CommEngine.missingPermissions(ctx).isEmpty()) CommEngine.start(ctx, false) }
+            }
+        }
+        owner.lifecycle.addObserver(obs)
+        onDispose { h.removeCallbacks(rel); owner.lifecycle.removeObserver(obs) }
+    }
     LaunchedEffect(running, error) { btOn = CommEngine.bluetoothOn(ctx) }
 
     fun begin(keep: Boolean) {

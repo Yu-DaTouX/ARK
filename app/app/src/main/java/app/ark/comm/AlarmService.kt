@@ -39,7 +39,9 @@ class AlarmService : Service() {
         val pat = AlarmPattern.entries.getOrNull(intent?.getIntExtra(EXTRA_PATTERN, 0) ?: 0) ?: AlarmPattern.SOS
         CommService.channel(this)
         val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0
-        ServiceCompat.startForeground(this, ID, notif(pat), type)
+        try {
+            ServiceCompat.startForeground(this, ID, notif(pat), type)
+        } catch (e: Exception) { error.value = "无法启动警报：${e.message}"; stopSelf(); return START_NOT_STICKY }
         // 已在播放：换样式
         stop = true; thread?.interrupt(); thread?.join(500)
         stop = false
@@ -51,7 +53,13 @@ class AlarmService : Service() {
         }
         if (active.value == null) { startedAt = System.currentTimeMillis(); startLevel = batteryPct(this) }
         active.value = pat
-        thread = Thread({ play(pat) }, "ark-alarm").apply { start() }
+        val t = Thread({
+            val me = Thread.currentThread()
+            try { play(pat) } catch (e: Exception) { error.value = "播放出错：${e.message}" }
+            // 非用户停止而播放线程结束（初始化/写入失败）：停掉服务、释放唤醒锁，不要“没声音却耗电”。旧线程（已被新播放取代）不得停新的
+            if (!stop && thread === me) android.os.Handler(android.os.Looper.getMainLooper()).post { if (thread === me) stopSelf() }
+        }, "ark-alarm")
+        thread = t; t.start()
         getSystemService(NotificationManager::class.java).notify(ID, notif(pat))
         return START_NOT_STICKY
     }
@@ -68,6 +76,7 @@ class AlarmService : Service() {
         val gen = AlarmGen(pat, sr)
         val buf = ShortArray(2048)
         try {
+            if (pat == AlarmPattern.TRIPLE) { playTriple(track, sr, buf); return }
             track.play()
             while (!stop && !Thread.currentThread().isInterrupted) {
                 gen.fill(buf, buf.size)
@@ -75,6 +84,29 @@ class AlarmService : Service() {
             }
         } finally {
             runCatching { track.stop() }; track.release()
+        }
+    }
+
+    /**
+     * 三短声：每 60 秒只响前 3 秒。原来剩下 57 秒也在持续写静音，音频通路和功放一直开着；
+     * 现在响完就 stop()（已写入的部分会播完），睡到下个周期再 play()。声音和节奏不变。唤醒锁仍持有，关屏也准时。
+     */
+    private fun playTriple(track: AudioTrack, sr: Int, buf: ShortArray) {
+        val burst = sr * 3 // 3 声在 2.5 秒内响完，多写 0.5 秒静音让包络自然收尾
+        while (!stop && !Thread.currentThread().isInterrupted) {
+            val t0 = android.os.SystemClock.elapsedRealtime()
+            val gen = AlarmGen(AlarmPattern.TRIPLE, sr) // 从周期起点生成
+            track.play()
+            var left = burst
+            while (left > 0 && !stop) {
+                val n = minOf(buf.size, left)
+                gen.fill(buf, n)
+                if (track.write(buf, 0, n) < 0) return
+                left -= n
+            }
+            track.stop() // 流模式：缓冲里剩下的播完再停
+            val wait = 60_000L - (android.os.SystemClock.elapsedRealtime() - t0)
+            if (wait > 0) try { Thread.sleep(wait) } catch (_: InterruptedException) { return }
         }
     }
 

@@ -75,14 +75,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val searchResults = MutableStateFlow<List<Passage>?>(null)
     val reading = MutableStateFlow<Passage?>(null)
 
-    private var idleJob: Job? = null
+    private var idleJob: Job?
+        get() = ark.idleJob
+        set(v) { ark.idleJob = v }
     private var pollJob: Job? = null
+    @Volatile private var stopReq = false
+    private class StopAsk : RuntimeException()
+    private fun checkStop() { if (stopReq) throw StopAsk() }
+
+    /** 仓库操作（数据库 / 存储）出错不能让根协程崩掉整个应用 */
+    private fun safeLaunch(block: suspend () -> Unit) = viewModelScope.launch {
+        try { block() } catch (c: CancellationException) { throw c } catch (t: Throwable) {
+            Log.w("ark", "op failed", t)
+            message.value = "操作失败：${t.message ?: t.javaClass.simpleName}"
+        }
+    }
 
     init {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { runCatching { storage.installBundledPacks() } }
             refreshFiles()
-            qa.reload()
+            runCatching { qa.reload() }.onFailure { if (it is CancellationException) throw it; Log.w("ark", "qa reload failed", it) }
         }
         restoreDownloads()
     }
@@ -109,6 +122,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val q = question.trim()
         if (q.isEmpty() || live.value != null) return
         idleJob?.cancel()
+        stopReq = false
         viewModelScope.launch {
             val t0 = SystemClock.elapsedRealtime()
             val s = settings.value
@@ -118,6 +132,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 var terms = Prompts.parseKeywords(q) // 问题里本来就有的英文词（药名、型号等）
                 val qvec = embedder.query(storage.embedModel(), q) // 语义向量：中文问题直接找英文段落
+                checkStop()
                 if (model == null || s.searchOnly) {
                     status("正在检索资料…")
                     val ps = packs.search(terms, q, 6, qvec)
@@ -131,23 +146,33 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 status(if (llm.state.value is LlmManager.State.Ready) "正在理解问题…" else "正在加载模型（首次约 10–30 秒）…")
                 llm.ensure(model, s.gpu)
+                checkStop()
                 if (packs.packs.value.any { it.enabled && !it.lang.startsWith("zh") }) {
                     status("正在理解问题…")
                     terms = (Prompts.parseKeywords(llm.generate(Prompts.KEYWORDS, q, 48)) + terms).distinct()
                 }
+                checkStop()
                 status("正在检索资料…")
                 val ps = packs.search(terms, q, 4, qvec)
+                checkStop()
                 Log.i("ark", "q=$q terms=$terms vec=${qvec != null} hits=${ps.map { it.title + "#" + it.seq }}")
                 live.update { it?.copy(sources = ps) }
                 status(if (ps.isEmpty()) "资料里没找到，正在用模型自身知识回答…" else "正在根据 ${ps.size} 段资料回答…")
                 val (sys, user) = if (ps.isEmpty()) Prompts.CLOSED to q else Prompts.RAG to Prompts.ragUser(ps.map { it.text }, q)
-                val answer = llm.generate(sys, user, s.maxTokens) { txt -> live.update { it?.copy(answer = txt) } }
+                var answer = llm.generate(sys, user, s.maxTokens) { txt -> live.update { it?.copy(answer = txt) } }
+                // 小模型偶尔在长资料后忘了问题，回“请提供您的问题”。把问题挪到资料前面再问一次
+                if (ps.isNotEmpty() && !stopReq && Prompts.lostQuestion(answer)) {
+                    Log.i("ark", "lost question, retry with question first")
+                    answer = llm.generate(sys, "问题：$q\n\n$user", s.maxTokens) { txt -> live.update { it?.copy(answer = txt) } }
+                }
                 val name = (llm.state.value as? LlmManager.State.Ready)?.let { "${it.model} · ${it.backend}" } ?: ""
                 Log.i("ark", "done model=$name sec=${(SystemClock.elapsedRealtime() - t0) / 1000.0} chars=${answer.length} answer=${answer.replace("\n", "⏎")}")
                 save(Qa(question = q, answer = answer.ifBlank { "（没有生成内容）" }, sources = ps, model = name,
                     mode = if (ps.isEmpty()) "closed" else "rag"), t0)
             } catch (c: CancellationException) {
                 throw c
+            } catch (_: StopAsk) {
+                message.value = "已停止"
             } catch (t: Throwable) {
                 message.value = "出错了：${t.message ?: t.javaClass.simpleName}"
             } finally {
@@ -202,23 +227,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         qa.add(q.copy(seconds = (SystemClock.elapsedRealtime() - t0) / 1000.0))
     }
 
-    fun stop() = llm.stop()
+    fun stop() { stopReq = true; llm.stop() }
 
     /** 10 分钟没提问就释放模型，把内存（约 2–3 GB）还给系统和地图。 */
     private fun scheduleIdleUnload() {
         idleJob?.cancel()
-        idleJob = viewModelScope.launch {
+        idleJob = ark.appScope.launch {
             delay(10 * 60 * 1000L)
             llm.unload()
             embedder.unload()
         }
     }
 
-    fun unloadModel() = viewModelScope.launch { llm.unload() }
+    fun unloadModel() = safeLaunch { llm.unload() }
 
-    fun bookmark(item: Qa, on: Boolean) = viewModelScope.launch { qa.setBookmark(item.id, on) }
-    fun deleteQa(item: Qa) = viewModelScope.launch { qa.delete(item.id) }
-    fun clearHistory() = viewModelScope.launch { qa.clearHistory() }
+    fun bookmark(item: Qa, on: Boolean) = safeLaunch { qa.setBookmark(item.id, on) }
+    fun deleteQa(item: Qa) = safeLaunch { qa.delete(item.id) }
+    fun clearHistory() = safeLaunch { qa.clearHistory() }
 
     // ---------------- 资料：直接搜索和阅读（不用模型，几乎不耗电） ----------------
 
@@ -236,23 +261,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun open(p: Passage) { reading.value = p }
     fun closeReader() { reading.value = null }
-    fun step(delta: Int) = viewModelScope.launch {
-        val cur = reading.value ?: return@launch
+    fun step(delta: Int) = safeLaunch {
+        val cur = reading.value ?: return@safeLaunch
         packs.chunkAt(cur.packId, cur.docId, cur.seq + delta)?.let { reading.value = it }
             ?: run { message.value = if (delta > 0) "已经是最后一段" else "已经是第一段" }
     }
 
-    fun setPackEnabled(p: PackInfo, on: Boolean) = viewModelScope.launch { packs.setEnabled(p, on) }
-    fun deletePack(p: PackInfo) = viewModelScope.launch { packs.delete(p) }
+    fun setPackEnabled(p: PackInfo, on: Boolean) = safeLaunch { packs.setEnabled(p, on) }
+    fun deletePack(p: PackInfo) = safeLaunch { packs.delete(p) }
 
-    fun deleteModel(f: File) = viewModelScope.launch {
+    fun deleteModel(f: File) = safeLaunch {
         if (currentModel() == f) llm.unload()
         if (f == embedModel.value) embedder.unload()
         withContext(Dispatchers.IO) { f.delete() }
         refreshFiles()
     }
 
-    fun deleteMap(f: File) = viewModelScope.launch {
+    fun deleteMap(f: File) = safeLaunch {
         withContext(Dispatchers.IO) { f.delete() }
         refreshFiles()
     }
@@ -306,24 +331,42 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (pollJob?.isActive == true) return
         pollJob = viewModelScope.launch {
             while (downloads.value.isNotEmpty()) {
-                val next = ArrayList<Download>()
-                for (d in downloads.value) {
-                    val st = withContext(Dispatchers.IO) { storage.queryDownload(d.id) }
-                    when (st?.status) {
-                        DownloadManager.STATUS_SUCCESSFUL -> {
-                            withContext(Dispatchers.IO) { storage.finishDownload(d.item.file) }
-                            message.value = "下载完成：${d.item.title}"
-                            refreshFiles()
+                val snapshot = downloads.value
+                val progress = HashMap<Long, Download>()
+                val gone = HashSet<Long>()
+                for (d in snapshot) {
+                    try {
+                        val st = withContext(Dispatchers.IO) { storage.queryDownload(d.id) }
+                        when (st?.status) {
+                            DownloadManager.STATUS_SUCCESSFUL -> {
+                                withContext(Dispatchers.IO) { storage.finishDownload(d.item.file) }
+                                gone += d.id
+                                message.value = "下载完成：${d.item.title}"
+                                refreshFiles()
+                            }
+                            DownloadManager.STATUS_FAILED, null -> {
+                                withContext(Dispatchers.IO) { storage.cancelDownload(d.id, d.item.file) }
+                                gone += d.id
+                                message.value = "下载失败：${d.item.title}（代码 ${st?.reason ?: "-"}）"
+                            }
+                            else -> progress[d.id] = d.copy(done = st.done, total = if (st.total > 0) st.total else d.item.size)
                         }
-                        DownloadManager.STATUS_FAILED, null -> {
-                            storage.cancelDownload(d.id, d.item.file)
-                            message.value = "下载失败：${d.item.title}（代码 ${st?.reason ?: "-"}）"
-                        }
-                        else -> next += d.copy(done = st.done, total = if (st.total > 0) st.total else d.item.size)
+                    } catch (c: CancellationException) {
+                        throw c
+                    } catch (t: Throwable) {
+                        Log.w("ark", "download poll failed", t)
+                        gone += d.id
+                        message.value = "下载出错：${d.item.title}（${t.message ?: t.javaClass.simpleName}）"
                     }
                 }
-                downloads.value = next
-                persistDownloads()
+                // 按 id 合并，不用旧快照覆盖：轮询期间新增 / 取消的下载保持原样
+                var changed = false
+                downloads.update { cur ->
+                    val n = cur.filterNot { it.id in gone }.map { progress[it.id] ?: it }
+                    changed = n.map { it.id } != cur.map { it.id } || gone.isNotEmpty()
+                    n
+                }
+                if (changed) persistDownloads() // 只在任务列表变化时写盘，不再每秒写一次 SharedPreferences
                 delay(1000)
             }
         }

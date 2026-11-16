@@ -2,6 +2,7 @@ package app.ark.ui.tools
 
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -68,23 +69,43 @@ fun AidCardsTool(onBack: () -> Unit, onOpen: (String) -> Unit) {
 @Composable
 private fun CallBanner() = Warn("有条件，立即拨打 120（多数国家 112）呼叫急救 / 送医。下面的步骤是等待救援时做的。")
 
+/** 计时器状态放在进程级：切步骤 / 离开页面不丢；用 elapsedRealtime 的截止时刻算剩余，后台挂起也照常走。 */
+private class TimerState(val totalMs: Long) { var endAt = 0L; var leftMs = totalMs }
+private val timers = HashMap<String, TimerState>()
+
 @Composable
 private fun StepTimer(totalSec: Int, label: String, key: String) {
-    var remaining by remember(key) { mutableIntStateOf(totalSec) }
-    var running by remember(key) { mutableStateOf(false) }
+    val st = remember(key) {
+        timers.getOrPut(key) { TimerState(totalSec * 1000L) }.also { if (it.endAt == 0L && it.leftMs <= 0L) it.leftMs = it.totalMs }
+    }
+    var now by remember(key) { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    var running by remember(key) { mutableStateOf(st.endAt != 0L) }
     val tone = remember { try { ToneGenerator(AudioManager.STREAM_MUSIC, 100) } catch (_: Exception) { null } }
     DisposableEffect(Unit) { onDispose { tone?.release() } }
     LaunchedEffect(running, key) {
-        while (running && remaining > 0) { delay(1000); remaining-- }
-        if (running && remaining <= 0) { running = false; repeat(3) { tone?.startTone(ToneGenerator.TONE_PROP_BEEP2, 300); delay(500) } }
+        while (st.endAt != 0L) {
+            now = SystemClock.elapsedRealtime()
+            if (st.endAt - now <= 0L) {
+                st.endAt = 0L; st.leftMs = 0L; running = false
+                repeat(3) { tone?.startTone(ToneGenerator.TONE_PROP_BEEP2, 300); delay(500) }
+                break
+            }
+            delay(250)
+        }
+    }
+    val leftMs = if (st.endAt != 0L) (st.endAt - now).coerceAtLeast(0L) else st.leftMs
+    val remaining = ((leftMs + 999) / 1000).toInt()
+    fun toggle() {
+        if (st.endAt != 0L) { st.leftMs = (st.endAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L); st.endAt = 0L; running = false }
+        else if (st.leftMs > 0L) { now = SystemClock.elapsedRealtime(); st.endAt = now + st.leftMs; running = true }
     }
     Card2 {
         Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Text(fmtDuration(remaining * 1000L), fontSize = 48.sp, fontWeight = FontWeight.Bold,
             color = if (remaining == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            BigButton(if (running) "暂停" else if (remaining == 0) "时间到" else "开始", { if (remaining > 0) running = !running }, Modifier.weight(1f), outlined = running)
-            BigButton("重置", { running = false; remaining = totalSec }, Modifier.weight(1f), outlined = true)
+            BigButton(if (running) "暂停" else if (remaining == 0) "时间到" else "开始", { toggle() }, Modifier.weight(1f), outlined = running)
+            BigButton("重置", { st.endAt = 0L; st.leftMs = st.totalMs; running = false }, Modifier.weight(1f), outlined = true)
         }
     }
 }

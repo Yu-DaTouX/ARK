@@ -65,7 +65,16 @@
 - 公开仓库没有旧历史：本地 `main` 是完整历史，`public` 分支是快照，`bash tools/publish.sh "说明"` 同步（排除 `docs/public_exclude.txt` 里 36 个含版权原文的评测 / 训练数据文件）。
 - 发布密钥在仓库外 `F:/ARK-keys/`（`ark-release.jks` + `keystore.properties`），编译时设 `ARK_KEYSTORE_PROPS=F:/ARK-keys/keystore.properties`。**丢了就再也发不了能覆盖安装的更新，要另外备份。**
 - 测试手机上装的是调试签名版，和 release 版签名不同，不能互相覆盖（卸载会删掉已下载的模型）。
-- GPU 激活精度默认 FLOAT32（数字抄错 6–11 → 0），调试开关 `--es ark_act DEFAULT`。功耗：12S 默认精度 66 J/问（开风扇）、FLOAT32 95 J/问（没风扇），待同条件重测。
+- GPU 激活精度默认 FLOAT32（数字抄错 6–11 → 0），调试开关 `--es ark_act DEFAULT`。功耗同条件复测（12S，扣基线）：DEFAULT 66 J/问、18.3 s；FLOAT32 75 J/问、24.2 s；按 token 算都约 0.2 J，继续用 FLOAT32。
+
+## 4d. 11-16 晚：通讯、安全、急救卡、计算器
+
+- **通讯**（工具页「通讯」卡，`comm/`、`ui/comm/`）：蓝牙消息（BLE 广播，不配对，3 跳接力）、超声传信（17–19.7 kHz 16-MFSK + RS，只留不可闻模式）、警报声、地图页「更多」里的 BLE 求救信标。12S ↔ Fold6 双机实测都通过：蓝牙消息“已送达 1 台”；超声 52 字节 0 纠错；信标两边互相看到“求救 / 平安”。警报声（满音量）还没测。
+- 超声同步修过：门限 0.5、追到峰值后 8 步再锁定、假同步后用环形缓冲补扫。复盘工具 `ark-embed rxfile <pcm> ultra`（先把 app 的 comm 三个文件拷到 `tools/embed/src/main/kotlin/modem/`，不入库）；debug 包停止监听时写 `acoustic_rx.pcm`。
+- 安全弹窗 `ui/SafetyNotice.kt`（5 秒倒计时，首次和升级后弹）；公开仓库 README 顶部大字免责 + `DISCLAIMER.md`。
+- 急救卡按 GPT-6.1 Sol 和 DeepSeek 两份审查重写为 25 张（`eval/medreview/`），勘误 65 条 87 个 id。
+- 计算器：`llm/ArkTools.kt`（与 `tools/embed/.../ArkTools.kt` 同一份，认单位），`LlmManager.generate(calc=true)` 才挂上，**App 里不开**：108 题 Opus 盲评（计算器真正可用的那轮）总体 38 胜 33 负 37 平，计算类题 6 胜 8 负，危险回答 4 比 1（换提示词后回答变长、混用资料）。评测 `eval/calc_set.py`、`prompt_ab.py judge 2 g_tool g_plain`，结果 `eval/ab/jres2_*.txt`、key `key_gtool2.json`。
+- 答非所问保护：回答像“请提供您的问题”（`Prompts.lostQuestion`）时，把问题挪到资料前再问一次。
 
 ## 5. 待用户决定
 

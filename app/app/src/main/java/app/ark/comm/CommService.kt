@@ -28,9 +28,12 @@ class CommService : Service() {
 
     override fun onBind(i: Intent?): IBinder? = null
 
+    private var shown = -1L // 上次通知里的（邻居数, 新消息数），没变就不重发通知（每次 notify 都要跨进程唤醒 system_server / SystemUI）
+
     private val tick = object : Runnable {
         override fun run() {
-            getSystemService(NotificationManager::class.java).notify(ID, notif())
+            val k = (CommEngine.neighbors.value.size.toLong() shl 32) or CommEngine.incoming.value.toLong()
+            if (k != shown) { shown = k; getSystemService(NotificationManager::class.java).notify(ID, notif()) }
             h.postDelayed(this, 15_000L)
         }
     }
@@ -39,7 +42,12 @@ class CommService : Service() {
         if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
         channel(this)
         val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE else 0
-        ServiceCompat.startForeground(this, ID, notif(), type)
+        try {
+            ServiceCompat.startForeground(this, ID, notif(), type)
+        } catch (e: Exception) { // 缺蓝牙权限 / 系统拒绝后台启动前台服务：不要崩，直接退出
+            CommEngine.error.value = "无法在后台保持在线：${e.message}"
+            stopSelf(); return START_NOT_STICKY
+        }
         if (!started) {
             started = true
             kept.value = true

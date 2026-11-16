@@ -253,6 +253,7 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
     }
 
     companion object {
+        private const val MAX_INFLATE = 4L shl 20 // 单段解压上限 4 MB
         private const val CANDIDATES = 50
         private const val RRF_K = 60
         private const val BY_IDS = """
@@ -269,12 +270,26 @@ class PackRepository(private val storage: Storage, private val prefs: SharedPref
 
         fun inflate(b: ByteArray): String {
             val inf = java.util.zip.Inflater()
-            inf.setInput(b)
-            val out = ByteArrayOutputStream(b.size * 3)
-            val buf = ByteArray(8192)
-            while (!inf.finished()) { val n = inf.inflate(buf); if (n == 0 && inf.needsInput()) break; out.write(buf, 0, n) }
-            inf.end()
-            return out.toString("UTF-8")
+            try {
+                inf.setInput(b)
+                val out = ByteArrayOutputStream(b.size * 3)
+                val buf = ByteArray(8192)
+                var total = 0L
+                while (!inf.finished()) {
+                    val n = inf.inflate(buf)
+                    if (n == 0) {
+                        // 需要字典 / 数据截断 / 无进展：直接报错，不能空转
+                        if (inf.needsInput() || inf.needsDictionary()) break
+                        throw java.util.zip.DataFormatException("inflate 无进展")
+                    }
+                    total += n
+                    if (total > MAX_INFLATE) throw java.util.zip.DataFormatException("解压结果过大")
+                    out.write(buf, 0, n)
+                }
+                return out.toString("UTF-8")
+            } finally {
+                inf.end()
+            }
         }
 
         private const val AT = """

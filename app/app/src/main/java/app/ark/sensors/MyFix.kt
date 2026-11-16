@@ -23,6 +23,13 @@ object MyFix {
         if (c == null || l.time >= c.time - 5_000) last.value = l
     }
 
+    /** 定位已经过去多久（毫秒，按开机后单调时钟）；时间戳无效时返回 Long.MAX_VALUE */
+    fun ageMs(l: Location): Long {
+        val ns = l.elapsedRealtimeNanos
+        if (ns <= 0L) return Long.MAX_VALUE
+        return ((android.os.SystemClock.elapsedRealtimeNanos() - ns) / 1_000_000L).coerceAtLeast(0L)
+    }
+
     @SuppressLint("MissingPermission")
     fun lastKnown(ctx: Context): Location? = runCatching {
         val lm = ctx.getSystemService(LocationManager::class.java)
@@ -43,17 +50,32 @@ open class SimpleLocationListener(private val onLoc: (Location) -> Unit) : Locat
 @Composable
 fun rememberMyLocation(enabled: Boolean): State<Location?> {
     val ctx = LocalContext.current
-    DisposableEffect(enabled) {
+    // 跟随生命周期：退到后台 / 锁屏（ON_STOP）就停 GPS，回到前台再开。
+    // 原来只在离开页面时停；轨迹 / 信标前台服务在跑时应用不受后台定位限流，锁屏后 GPS 会一直按 3 秒一次跑。
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    // 权限在页面打开后才授予：把授权状态作为 key，授权后重新注册（MapScreen 在授权回调里会重组）
+    val granted = Perms.granted(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)
+    DisposableEffect(enabled, owner, granted) {
         val lm = ctx.getSystemService(LocationManager::class.java)
         val l = SimpleLocationListener { MyFix.offer(it) }
-        if (enabled && Perms.granted(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+        var on = false
+        fun up() {
+            if (on || !enabled || !Perms.granted(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)) return
+            on = true
             MyFix.lastKnown(ctx)?.let { MyFix.offer(it) }
             runCatching {
-                if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000L, 0f, l, Looper.getMainLooper())
-                if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000L, 0f, l, Looper.getMainLooper())
+                // 不判断 isProviderEnabled：提供者当前关着也先注册，用户之后打开定位开关就会自动开始出点
+                runCatching { lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000L, 0f, l, Looper.getMainLooper()) }
+                runCatching { lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000L, 0f, l, Looper.getMainLooper()) }
             }
         }
-        onDispose { runCatching { lm.removeUpdates(l) } }
+        fun down() { if (on) { on = false; runCatching { lm.removeUpdates(l) } } }
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_START) up() else if (e == androidx.lifecycle.Lifecycle.Event.ON_STOP) down()
+        }
+        if (owner.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) up()
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs); down() }
     }
     return MyFix.last.collectAsState()
 }

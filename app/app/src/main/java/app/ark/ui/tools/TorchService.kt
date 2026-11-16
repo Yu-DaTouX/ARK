@@ -53,6 +53,12 @@ class TorchService : Service() {
         try { m.registerTorchCallback(cb, null) } catch (_: Exception) {}
         _failed.value = false; _active.value = true
         job?.cancel()
+        // 关屏深睡时协程 delay 会被拖慢：信号运行期间持有带超时的部分唤醒锁，所有退出路径释放
+        runCatching {
+            wake?.takeIf { it.isHeld }?.release()
+            wake = (getSystemService(Context.POWER_SERVICE) as android.os.PowerManager)
+                .newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "ark:torch").also { it.acquire(2 * 60 * 60 * 1000L) }
+        }
         job = scope.launch {
             try {
                 while (true) for (s in steps) {
@@ -61,7 +67,7 @@ class TorchService : Service() {
                     if (!ok) { _failed.value = true; stopSelf(); return@launch }
                     delay(s.units * Morse.UNIT_MS)
                 }
-            } finally { setTorch(false); _lit.value = false }
+            } finally { setTorch(false); _lit.value = false; runCatching { wake?.takeIf { it.isHeld }?.release() } }
         }
         return START_NOT_STICKY
     }
@@ -73,8 +79,11 @@ class TorchService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) { stopSelf() }
 
+    private var wake: android.os.PowerManager.WakeLock? = null
+
     override fun onDestroy() {
         job?.cancel()
+        runCatching { wake?.takeIf { it.isHeld }?.release() }
         setTorch(false)
         try { cm?.unregisterTorchCallback(cb) } catch (_: Exception) {}
         scope.cancel()

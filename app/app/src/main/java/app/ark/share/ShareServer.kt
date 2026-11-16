@@ -27,7 +27,10 @@ data class ShareInfo(val running: Boolean = false, val urls: List<String> = empt
  */
 class ShareServer(private val ctx: Context, private val onIdle: () -> Unit) {
     private var server: ServerSocket? = null
-    private val pool = Executors.newCachedThreadPool()
+    // 有界线程池：最多 8 个并发连接 + 16 个排队，再多直接关掉，避免恶意/异常客户端耗尽线程和文件描述符
+    private val pool = java.util.concurrent.ThreadPoolExecutor(8, 8, 30, java.util.concurrent.TimeUnit.SECONDS, java.util.concurrent.LinkedBlockingQueue<Runnable>(16)).apply { allowCoreThreadTimeOut(true) }
+    /** 已接入连接 → 最近一次有进展的时间（看门狗用）；stop() 时全部关闭。 */
+    private val conns = java.util.concurrent.ConcurrentHashMap<Socket, Long>()
     private val active = AtomicInteger(0)
     @Volatile private var last = System.currentTimeMillis()
     @Volatile private var stopped = false
@@ -57,12 +60,15 @@ class ShareServer(private val ctx: Context, private val onIdle: () -> Unit) {
         Thread({
             while (!stopped) {
                 val c = try { ss.accept() } catch (_: Exception) { break }
-                pool.execute { handle(c) }
+                try { pool.execute { handle(c) } } catch (_: java.util.concurrent.RejectedExecutionException) { runCatching { c.close() } }
             }
         }, "ark-share-accept").apply { isDaemon = true }.start()
         Thread({
             while (!stopped) {
                 try { Thread.sleep(15_000) } catch (_: InterruptedException) { break }
+                // 看门狗：超过 60 秒没有任何读写进展的连接直接关掉（soTimeout 管不了写阻塞）
+                val nowW = System.currentTimeMillis()
+                conns.entries.forEach { (s, t) -> if (nowW - t > 60_000L) runCatching { s.close() } }
                 if (active.get() > 0) last = System.currentTimeMillis()
                 else if (System.currentTimeMillis() - last > IDLE_MS) { onIdle(); break }
                 publish()
@@ -83,19 +89,29 @@ class ShareServer(private val ctx: Context, private val onIdle: () -> Unit) {
     fun stop() {
         stopped = true
         runCatching { server?.close() }
+        conns.keys.forEach { runCatching { it.close() } }
+        conns.clear()
         pool.shutdownNow()
         state.value = ShareInfo()
     }
 
     private fun handle(sock: Socket) {
+        conns[sock] = System.currentTimeMillis()
+        if (stopped) { conns.remove(sock); runCatching { sock.close() }; return }
         sock.use {
             try {
                 sock.soTimeout = 30_000
                 last = System.currentTimeMillis()
                 val inp = sock.getInputStream().buffered()
-                val line = readLine(inp) ?: return
+                // 请求头整体 10 秒死线、最多 64 行：防慢速发送占线程
+                val deadline = android.os.SystemClock.elapsedRealtime() + 10_000L
+                val line = readLine(inp, deadline) ?: return
                 var range: String? = null
-                while (true) { val h = readLine(inp) ?: break; if (h.isEmpty()) break; if (h.startsWith("Range:", true)) range = h.substring(6).trim() }
+                var lines = 0
+                while (true) {
+                    if (++lines > 64) return
+                    val h = readLine(inp, deadline) ?: break; if (h.isEmpty()) break; if (h.startsWith("Range:", true)) range = h.substring(6).trim()
+                }
                 val parts = line.split(' ')
                 val out = sock.getOutputStream().buffered()
                 if (parts.size < 2 || (parts[0] != "GET" && parts[0] != "HEAD")) { simple(out, 405, "不支持的请求"); return }
@@ -105,14 +121,16 @@ class ShareServer(private val ctx: Context, private val onIdle: () -> Unit) {
                 val all = entries()
                 val e = all.firstOrNull { URLDecoder.decode(it.path.replace("+", "%2B"), "UTF-8") == path && it.file.isFile }
                 if (e == null) { simple(out, 404, "没有这个文件"); return }
-                sendFile(out, e, range, head)
+                sendFile(out, e, range, head, sock)
             } catch (_: Exception) { }
+            finally { conns.remove(sock) }
         }
     }
 
-    private fun readLine(i: InputStream): String? {
+    private fun readLine(i: InputStream, deadline: Long): String? {
         val sb = StringBuilder()
         while (sb.length < 8192) {
+            if (android.os.SystemClock.elapsedRealtime() > deadline) throw java.io.IOException("header timeout")
             val b = i.read()
             if (b < 0) return if (sb.isEmpty()) null else sb.toString()
             if (b == '\n'.code) return sb.toString().trimEnd('\r')
@@ -150,7 +168,7 @@ $items
 
     private fun esc(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-    private fun sendFile(out: OutputStream, e: Entry, range: String?, head: Boolean) {
+    private fun sendFile(out: OutputStream, e: Entry, range: String?, head: Boolean, sock: Socket) {
         val len = e.file.length()
         var from = 0L; var to = len - 1
         var partial = false
@@ -183,6 +201,7 @@ $items
                     out.write(buf, 0, n)
                     left -= n
                     last = System.currentTimeMillis()
+                    conns[sock] = last
                 }
                 out.flush()
                 ok = left == 0L

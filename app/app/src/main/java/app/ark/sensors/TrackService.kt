@@ -32,7 +32,12 @@ class TrackService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
         TrackStore.init(this)
-        startFg(TrackStore.points.value.size)
+        try {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) { stopSelf(); return START_NOT_STICKY }
+            startFg(TrackStore.points.value.size)
+        } catch (e: Exception) { // 后台启动受限 / 类型前提不满足
+            stopSelf(); return START_NOT_STICKY
+        }
         if (listener == null) {
             val l = SimpleLocationListener { loc ->
                 MyFix.offer(loc)

@@ -3,6 +3,7 @@ package app.ark.data
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import android.util.AtomicFile
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -53,9 +54,23 @@ object WaypointStore {
     @Synchronized fun delete(id: String) = save(_list.value.filter { it.id != id })
 
     private fun save(l: List<Waypoint>) {
-        _list.value = l
         val a = JSONArray()
         l.forEach { a.put(JSONObject().put("id", it.id).put("name", it.name).put("type", it.type.name).put("lat", it.lat).put("lon", it.lon).put("time", it.time)) }
-        file?.let { f -> runCatching { File(f.path + ".tmp").also { t -> t.writeText(a.toString()); f.delete(); t.renameTo(f) } } }
+        // AtomicFile：写失败保留旧文件；成功落盘后才发布新状态
+        val ok = file?.let { f ->
+            val af = AtomicFile(f)
+            var os: java.io.FileOutputStream? = null
+            try {
+                os = af.startWrite()
+                os.write(a.toString().toByteArray(Charsets.UTF_8))
+                af.finishWrite(os)
+                true
+            } catch (t: Throwable) {
+                os?.let { af.failWrite(it) }
+                false
+            }
+        } ?: true
+        if (ok) _list.value = l
+        else android.util.Log.w("ark", "waypoints save failed")
     }
 }

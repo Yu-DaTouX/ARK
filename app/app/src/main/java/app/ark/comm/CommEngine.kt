@@ -78,6 +78,8 @@ object CommEngine {
     private var wanted = false
     private var background = false   // 后台保持在线（前台服务）在跑
     private var uiOn = false          // 界面开着在用
+    /** 界面这一路是否在用（BtChatTab 退到后台时据此决定要不要放掉、回前台时要不要恢复）。 */
+    val uiActive: Boolean get() = uiOn
     private var lastNewNeighbor = 0L
     private var scanOn = false
     private var receiverOn = false
@@ -86,6 +88,7 @@ object CommEngine {
     private val delivered = ConcurrentHashMap.newKeySet<String>()
     private val queued = ConcurrentHashMap.newKeySet<String>()
     private val failedAt = ConcurrentHashMap<String, Long>()
+    private val unconfirmed = ConcurrentHashMap<String, Int>()
 
     private class Job(val neighborId: Int, val msg: CommProto.Msg, val key: String, val mine: Boolean)
     private val queue = LinkedBlockingQueue<Job>()
@@ -119,7 +122,9 @@ object CommEngine {
 
     fun missingPermissions(ctx: Context) = requiredPermissions().filter { ContextCompat.checkSelfPermission(ctx, it) != PackageManager.PERMISSION_GRANTED }
 
-    fun bluetoothOn(ctx: Context): Boolean = ctx.getSystemService(BluetoothManager::class.java)?.adapter?.isEnabled == true
+    fun bluetoothOn(ctx: Context): Boolean = try {
+        ctx.getSystemService(BluetoothManager::class.java)?.adapter?.isEnabled == true
+    } catch (_: SecurityException) { false }
 
     fun hasBle(ctx: Context) = ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 
@@ -172,13 +177,16 @@ object CommEngine {
 
     private fun bringUp() {
         if (running.value) return
+        if (missingPermissions(app).isNotEmpty()) { error.value = "缺少蓝牙权限"; return }
         val mgr = app.getSystemService(BluetoothManager::class.java)
         val ad = mgr?.adapter
-        if (ad == null || !ad.isEnabled) { error.value = "蓝牙没有打开"; return }
-        adapter = ad
-        adv = ad.bluetoothLeAdvertiser
-        scanner = ad.bluetoothLeScanner
-        openServer(mgr)
+        if (ad == null || !bluetoothOn(app)) { error.value = "蓝牙没有打开"; return }
+        try {
+            adapter = ad
+            adv = ad.bluetoothLeAdvertiser
+            scanner = ad.bluetoothLeScanner
+            openServer(mgr)
+        } catch (e: SecurityException) { error.value = "缺少蓝牙权限"; return }
         if (adv == null) error.value = "这台手机不支持蓝牙广播：别人发现不了你，但你仍能发现并发消息给对方"
         running.value = true
         startWorker()
@@ -328,21 +336,37 @@ object CommEngine {
                     val job = queue.take()
                     runJob(job)
                 }
-            } catch (_: InterruptedException) {}
+            } catch (_: InterruptedException) {
+            } catch (_: Throwable) {
+                // 保险：发送线程不能带着未捕获异常把整个进程拖垮；退出后下次 bringUp 会重建
+            }
         }, "comm-sender").apply { isDaemon = true; start() }
     }
 
     private fun runJob(job: Job) {
         val n = synchronized(neighborMap) { neighborMap[job.neighborId] }
         var ok = false
+        var fresh = false // 对方第一次收到才计入“已送达 N 台”；重复（如重启后补发）只算送达不再加数
         if (n != null) {
             val st = runCatching { Gatt.send(app, n.device, CommProto.encode(job.msg), job.msg.id, nextXfer()) }.getOrDefault(-1)
-            ok = st >= 0
+            // 只有对方明确回“新消息/重复”才算送达；ST_BAD 与 99（写入完成但没等到确认）不算
+            ok = st == CommProto.ST_NEW || st == CommProto.ST_DUP
+            fresh = st == CommProto.ST_NEW
+            if (st == 99) {
+                // 写入都成功但没收到确认：最多再试 2 次，仍无确认就当已送达，避免永远重发
+                val c = (unconfirmed[job.key] ?: 0) + 1
+                unconfirmed[job.key] = c
+                if (c >= 3) ok = true
+            }
         }
         queued.remove(job.key)
         if (ok) {
             delivered.add(job.key)
-            if (job.mine) CommStore.update(job.msg.key, CommStore.ST_SENT, 1)
+            if (job.mine) {
+                val cur = CommStore.list.value.firstOrNull { it.msg.key == job.msg.key }
+                // 确认丢失后重试得到“重复”时，当前计数还是 0，也要记 1 台
+                CommStore.update(job.msg.key, CommStore.ST_SENT, if (fresh || (cur?.delivered ?: 0) == 0) 1 else 0)
+            }
         } else {
             failedAt[job.key] = System.currentTimeMillis()
             if (job.mine) { val cur = CommStore.list.value.firstOrNull { it.msg.key == job.msg.key }; if (cur != null && cur.delivered == 0) CommStore.update(job.msg.key, CommStore.ST_FAILED) }
@@ -361,13 +385,15 @@ object CommEngine {
             for (attempt in 0..1) {
                 val r = once(ctx, dev, data, id, xfer, requestMtu = attempt == 0)
                 if (r >= 0) return r
-                try { Thread.sleep(400) } catch (_: InterruptedException) { return -1 }
+                if (Thread.currentThread().isInterrupted) return -1
+                try { Thread.sleep(400) } catch (_: InterruptedException) { Thread.currentThread().interrupt(); return -1 }
             }
             return -1
         }
 
         private fun once(ctx: Context, dev: BluetoothDevice, data: ByteArray, id: Int, xfer: Int, requestMtu: Boolean): Int {
             val q = LinkedBlockingQueue<Ev>()
+            val stash = ArrayList<Ev>() // 等别的事件时提前到的 ACK 通知先存着，别丢
             val cb = object : BluetoothGattCallback() {
                 override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) { q.put(Ev(CONN, if (status == 0) newState else -1)) }
                 override fun onMtuChanged(g: BluetoothGatt, mtu: Int, status: Int) { q.put(Ev(MTU, if (status == 0) mtu else 23)) }
@@ -401,18 +427,23 @@ object CommEngine {
                     val started = if (Build.VERSION.SDK_INT >= 33) gatt.writeCharacteristic(rx, frag, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) == 0
                     else { rx.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT; rx.value = frag; gatt.writeCharacteristic(rx) }
                     if (!started) return -1
-                    if ((await(q, WRITE, 6_000)?.status ?: -1) != 0) return -1
+                    if ((await(q, WRITE, 6_000, stash)?.status ?: -1) != 0) return -1
                 }
                 if (!canAck) return 99
                 val deadline = System.currentTimeMillis() + 4_000
                 while (true) {
-                    val left = deadline - System.currentTimeMillis()
-                    if (left <= 0) return 99
-                    val e = await(q, NOTI, left) ?: return 99
+                    val e = if (stash.isNotEmpty()) stash.removeAt(0) else {
+                        val left = deadline - System.currentTimeMillis()
+                        if (left <= 0) return 99
+                        await(q, NOTI, left) ?: return 99
+                    }
                     val v = e.value ?: continue
                     if (v.size >= 5 && ((v[0].toInt() and 255) shl 24 or ((v[1].toInt() and 255) shl 16) or ((v[2].toInt() and 255) shl 8) or (v[3].toInt() and 255)) == id) return v[4].toInt()
                 }
             } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt() // 恢复中断标志，让外层 worker 真正退出
+                return -1
+            } catch (_: SecurityException) {
                 return -1
             } finally {
                 runCatching { gatt?.disconnect() }
@@ -421,13 +452,14 @@ object CommEngine {
         }
 
         /** 等指定类型的事件；中途收到断开事件就当失败。 */
-        private fun await(q: LinkedBlockingQueue<Ev>, type: Int, ms: Long): Ev? {
+        private fun await(q: LinkedBlockingQueue<Ev>, type: Int, ms: Long, stash: MutableList<Ev>? = null): Ev? {
             val end = System.currentTimeMillis() + ms
             while (true) {
                 val left = end - System.currentTimeMillis()
                 if (left <= 0) return null
                 val e = q.poll(left, TimeUnit.MILLISECONDS) ?: return null
                 if (e.t == type) return e
+                if (e.t == NOTI && stash != null) stash.add(e)
                 if (e.t == CONN && e.status != BluetoothProfile.STATE_CONNECTED && type != CONN) return null
             }
         }
@@ -486,6 +518,7 @@ object CommEngine {
         val rssi = synchronized(neighborMap) { neighborMap[m.src]?.rssi ?: 0 }
         val isNew = CommStore.add(CommStore.Stored(m, mine = false, visible = visible, status = CommStore.ST_SENT, delivered = 0, recvTime = System.currentTimeMillis(), rssi = rssi))
         if (!isNew) return CommProto.ST_DUP
+        CommStore.flush() // 落盘后再回 ACK：否则进程此刻被杀，发送方以为送达、不再重试，消息就丢了
         if (visible) incoming.value = incoming.value + 1
         // 接力：群发消息，或发给别人的单发消息，TTL>1 就转发给其他邻居
         if (m.ttl > 1 && (m.broadcast || m.dst != me)) {

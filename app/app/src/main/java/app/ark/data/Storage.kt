@@ -54,10 +54,13 @@ class Storage(private val ctx: Context) {
         for (n in bundled) {
             val dst = File(packs, n)
             if (dst.exists() && dst.lastModified() >= updated) continue
-            val tmp = File(packs, "$n.part")
-            ctx.assets.open("packs/$n").use { inp -> tmp.outputStream().use { inp.copyTo(it, 1 shl 16) } }
-            dst.delete()
-            tmp.renameTo(dst)
+            val tmp = File(packs, "$n.inst.part") // 专用临时名，不和导入 / 下载的 .part 冲突
+            try {
+                ctx.assets.open("packs/$n").use { inp -> tmp.outputStream().use { o -> inp.copyTo(o, 1 shl 16); o.fd.sync() } }
+                tmp.renameTo(dst) // rename 直接原子覆盖，不先删旧文件
+            } finally {
+                tmp.delete()
+            }
         }
     }
 
@@ -74,7 +77,7 @@ class Storage(private val ctx: Context) {
         }
         name = File(name).name
         val dir = dirFor(name) ?: error("不支持的文件：$name\n支持 .litertlm 模型、.arkpack 资料包、.pmtiles 地图")
-        val tmp = File(dir, "$name.part")
+        val tmp = File(dir, "$name.${java.util.UUID.randomUUID().toString().take(8)}.imp.part") // 每次导入独立临时名，不碰下载的 .part
         val dst = File(dir, name)
         try {
             (cr.openInputStream(uri) ?: error("打不开文件")).use { inp ->
@@ -88,10 +91,10 @@ class Storage(private val ctx: Context) {
                         done += r
                         if (size > 0) progress(done.toFloat() / size)
                     }
+                    out.fd.sync()
                 }
             }
-            dst.delete()
-            if (!tmp.renameTo(dst)) error("保存失败")
+            if (!tmp.renameTo(dst)) error("保存失败") // 不先删旧文件：rename 原子覆盖，失败时旧文件仍在
         } finally {
             tmp.delete()
         }
@@ -129,8 +132,7 @@ class Storage(private val ctx: Context) {
     fun finishDownload(fileName: String): Boolean {
         val dir = dirFor(fileName) ?: return false
         val dst = File(dir, fileName)
-        dst.delete()
-        return File(dir, "$fileName.part").renameTo(dst)
+        return File(dir, "$fileName.part").renameTo(dst) // 原子覆盖，不先删旧文件
     }
 
     fun cancelDownload(id: Long, fileName: String) {

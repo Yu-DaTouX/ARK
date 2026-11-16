@@ -7,6 +7,10 @@ import app.ark.data.QaStore
 import app.ark.data.Storage
 import app.ark.llm.Embedder
 import app.ark.llm.LlmManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import org.maplibre.android.MapLibre
 import java.io.File
 
@@ -18,6 +22,9 @@ class ArkApp : Application() {
     lateinit var qa: QaStore
     lateinit var llm: LlmManager
     lateinit var embedder: Embedder
+    /** 应用级作用域：模型空闲释放计时不能跟着 Activity / ViewModel 一起被取消 */
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    @Volatile var idleJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()

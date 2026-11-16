@@ -128,13 +128,15 @@ fun WaypointListDialog(
 @Composable
 fun NavPanel(
     title: String, subtitle: String?, myLat: Double?, myLon: Double?, toLat: Double, toLon: Double,
-    heading: Float?, modifier: Modifier = Modifier, onClose: () -> Unit,
+    heading: Float?, modifier: Modifier = Modifier, fixAgeMs: Long? = null, onClose: () -> Unit,
 ) {
     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f), modifier = modifier.widthIn(max = 280.dp)) {
         Row(Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             val hasMe = myLat != null && myLon != null
             val bearing = if (hasMe) Geo.bearing(myLat!!, myLon!!, toLat, toLon) else null
-            val rel = if (bearing != null && heading != null) Heading.wrapSigned(bearing - heading) else null
+            // 定位超过 60 秒没更新：不再给转向指令，只标明是最后位置
+            val stale = fixAgeMs != null && fixAgeMs > 60_000L
+            val rel = if (!stale && bearing != null && heading != null) Heading.wrapSigned(bearing - heading) else null
             val tint = MaterialTheme.colorScheme.primary
             ComposeCanvas(Modifier.size(56.dp)) {
                 val c = center; val r = size.minDimension / 2
@@ -153,7 +155,8 @@ fun NavPanel(
                     !hasMe -> Text("等待 GPS 定位…（到室外开阔处）", style = MaterialTheme.typography.bodySmall)
                     else -> {
                         Text("${Geo.distText(Geo.distance(myLat!!, myLon!!, toLat, toLon))} · 方位 ${Math.round(bearing!!)}° ${bearingName(bearing)}", style = MaterialTheme.typography.labelLarge)
-                        Text(if (rel != null) Geo.turnText(rel) else "指南针还没有读数", style = MaterialTheme.typography.bodyMedium, color = tint)
+                        if (stale) Text("定位已过期：最后位置是 ${if (fixAgeMs == Long.MAX_VALUE) "很久" else Geo.agoText(fixAgeMs!!)}前，距离仅供参考", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                        else Text(if (rel != null) Geo.turnText(rel) else "指南针还没有读数", style = MaterialTheme.typography.bodyMedium, color = tint)
                     }
                 }
                 subtitle?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

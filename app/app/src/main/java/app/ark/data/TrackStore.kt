@@ -33,11 +33,39 @@ object TrackStore {
         }
     }
 
-    @Synchronized fun add(p: TrackPoint) {
-        val l = _points.value
-        if (l.size >= MAX) return
+    /** 写盘失败时的提示（null = 正常）；失败的点不进内存，界面不会显示盘上并不存在的轨迹。 */
+    val error = MutableStateFlow<String?>(null)
+
+    /** 返回 false = 这个点没存下来（写盘失败）。 */
+    @Synchronized fun add(p: TrackPoint): Boolean {
+        var l = _points.value
+        if (l.size >= MAX) {
+            // 满了不再静默丢点：每隔一个点抽稀一半（覆盖范围不变、密度减半），原子重写文件后继续记
+            val thin = l.filterIndexed { i, _ -> i % 2 == 0 || i == l.size - 1 }
+            if (!rewrite(thin)) { error.value = "轨迹已满且无法整理"; return false }
+            l = thin
+        }
+        val ok = runCatching { file?.appendText("${p.time},${p.lat},${p.lon},${p.alt ?: ""}\n") }.isSuccess
+        if (!ok) { error.value = "轨迹写入失败（存储空间不足？）"; return false }
+        error.value = null
         _points.value = l + p
-        runCatching { file?.appendText("${p.time},${p.lat},${p.lon},${p.alt ?: ""}\n") }
+        return true
+    }
+
+    private fun rewrite(l: List<TrackPoint>): Boolean {
+        val f = file ?: return true
+        val af = android.util.AtomicFile(f)
+        var os: java.io.FileOutputStream? = null
+        return try {
+            os = af.startWrite()
+            os.write(l.joinToString("") { "${it.time},${it.lat},${it.lon},${it.alt ?: ""}\n" }.toByteArray())
+            af.finishWrite(os)
+            _points.value = l
+            true
+        } catch (t: Throwable) {
+            os?.let { af.failWrite(it) }
+            false
+        }
     }
 
     @Synchronized fun clear() {

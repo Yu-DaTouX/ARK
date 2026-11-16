@@ -37,7 +37,9 @@ fun BaroTool(onBack: () -> Unit) {
         var input by remember { mutableStateOf("") }
         fun calibrate(alt: Float) {
             val cur = p ?: return
+            if (!alt.isFinite() || alt < -500f || alt > 10000f) return
             val s = Baro.seaLevel(cur.hPa, alt)
+            if (!s.isFinite() || s < 800f || s > 1200f) return
             sea = s; prefs.edit().putFloat(KEY, s).apply()
             // 记下校准时的海拔，用来把之后的气压换算成海平面气压（Zambretti 要用）；地图页改了校准值则这里失效
             ctx.toolPrefs().edit().putFloat("baro_cal_alt", alt).putFloat("baro_cal_sea", s).putLong("baro_cal_at", System.currentTimeMillis()).apply()
@@ -46,7 +48,7 @@ fun BaroTool(onBack: () -> Unit) {
         if (p == null) Note("正在读取气压计……") else {
             Text("%.1f hPa".format(p.hPa), fontSize = 44.sp, fontWeight = FontWeight.Bold)
             val alt = Baro.altitude(p.hPa, sea ?: Baro.STD)
-            Text("估算海拔 ${alt.roundToInt()} m", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+            Text(if (alt.isFinite()) "估算海拔 ${alt.roundToInt()} m" else "估算海拔 --", fontSize = 30.sp, fontWeight = FontWeight.Bold)
             Note(if (sea == null) "未校准（按标准大气压 1013.25 hPa 估算，天气不同可能差上百米）" else "已校准：海平面气压 %.1f hPa。天气变化后需重新校准（约 1 hPa ≈ 8 m）".format(sea))
         }
 
@@ -58,9 +60,9 @@ fun BaroTool(onBack: () -> Unit) {
                 textStyle = LocalTextStyle.current.copy(fontSize = 20.sp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             )
-            BigButton("用输入的海拔校准", { input.toFloatOrNull()?.let { calibrate(it) } }, enabled = p != null && input.toFloatOrNull() != null)
+            BigButton("用输入的海拔校准", { input.toFloatOrNull()?.let { calibrate(it) } }, enabled = p != null && input.toFloatOrNull()?.let { it.isFinite() && it >= -500f && it <= 10000f } == true)
             val l = place.location
-            if (l != null && l.hasAltitude()) BigButton("用 GPS 最后位置的海拔（${l.altitude.roundToInt()} m）", { calibrate(l.altitude.toFloat()) }, outlined = true, enabled = p != null)
+            if (l != null && l.hasAltitude() && l.altitude.isFinite() && l.altitude in -500.0..10000.0) BigButton("用 GPS 最后位置的海拔（${l.altitude.roundToInt()} m）", { calibrate(l.altitude.toFloat()) }, outlined = true, enabled = p != null)
             else if (!place.permitted) BigButton("允许位置以使用 GPS 海拔", place.request, outlined = true)
             if (sea != null) BigButton("清除校准", { sea = null; prefs.edit().remove(KEY).apply() }, outlined = true)
         }

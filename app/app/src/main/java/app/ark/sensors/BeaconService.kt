@@ -67,16 +67,21 @@ class BeaconService : Service() {
         if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
         Beacon.loadConfig(this)
         TrackService.channel(this)
-        val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
-        ServiceCompat.startForeground(this, ID, notif(), type)
-        val bt = getSystemService(BluetoothManager::class.java)?.adapter
-        if (bt == null || !bt.isEnabled) { Beacon.error.value = "蓝牙没有打开"; stopSelf(); return START_NOT_STICKY }
-        adv = bt.bluetoothLeAdvertiser
-        scanner = bt.bluetoothLeScanner
-        if (adv == null) Beacon.error.value = "这台手机不支持蓝牙广播，只能接收别人的信标"
-        else Beacon.error.value = null
+        // 没有定位权限时不声明 location 类型（Android 14 起会检查前提条件），信标仍可广播（位置标“未知”）
+        val hasLoc = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or (if (hasLoc) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0) else 0
+        try {
+            ServiceCompat.startForeground(this, ID, notif(), type)
+        } catch (e: Exception) {
+            Beacon.error.value = "信标无法在后台启动：${e.message}"; stopSelf(); return START_NOT_STICKY
+        }
+        if (app.ark.comm.CommEngine.missingPermissions(this).isNotEmpty()) { Beacon.error.value = "缺少蓝牙权限"; stopSelf(); return START_NOT_STICKY }
+        if (!acquireBt()) { stopSelf(); return START_NOT_STICKY }
         if (!started) {
             started = true
+            ContextCompat.registerReceiver(this, btReceiver, android.content.IntentFilter(android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
+            receiverOn = true
             Beacon.running.value = true
             startLocation()
             h.post(cycle)
@@ -84,6 +89,35 @@ class BeaconService : Service() {
             advertise() // 用户改了状态 / 消息：马上重发
         }
         return START_STICKY
+    }
+
+    private var receiverOn = false
+
+    /** 取得适配器广播/扫描句柄；蓝牙没开返回 false。 */
+    private fun acquireBt(): Boolean {
+        val bt = try { getSystemService(BluetoothManager::class.java)?.adapter } catch (_: SecurityException) { null }
+        val on = try { bt?.isEnabled == true } catch (_: SecurityException) { false }
+        if (bt == null || !on) { Beacon.error.value = "蓝牙没有打开"; return false }
+        return try {
+            adv = bt.bluetoothLeAdvertiser
+            scanner = bt.bluetoothLeScanner
+            if (adv == null) Beacon.error.value = "这台手机不支持蓝牙广播，只能接收别人的信标"
+            else Beacon.error.value = null
+            true
+        } catch (e: SecurityException) { Beacon.error.value = "缺少蓝牙权限"; false }
+    }
+
+    private val btReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) {
+            when (i.getIntExtra(android.bluetooth.BluetoothAdapter.EXTRA_STATE, -1)) {
+                android.bluetooth.BluetoothAdapter.STATE_OFF -> {
+                    stopScan(); runCatching { adv?.stopAdvertising(advCb) }
+                    adv = null; scanner = null
+                    Beacon.error.value = "蓝牙被关闭了：打开后会自动恢复信标"
+                }
+                android.bluetooth.BluetoothAdapter.STATE_ON -> if (app.ark.comm.CommEngine.missingPermissions(this@BeaconService).isEmpty() && acquireBt()) advertise()
+            }
+        }
     }
 
     private fun startLocation() {
@@ -110,6 +144,15 @@ class BeaconService : Service() {
         val data = AdvertiseData.Builder().setIncludeDeviceName(false).setIncludeTxPowerLevel(false)
             .addManufacturerData(Beacon.COMPANY, Beacon.encode(pkt)).build()
         runCatching { a.startAdvertising(settings, data, advCb) }.onFailure { Beacon.error.value = "广播失败：${it.message}" }
+        refreshNotif()
+    }
+
+    private var shown = ""
+    /** 通知内容（状态、发现数）变了才重发：原来每分钟无条件 notify 两次。 */
+    private fun refreshNotif() {
+        val k = "${Beacon.sos}|${Beacon.seen.value.size}"
+        if (k == shown || destroyed) return // onDestroy 里的 stopScan 不要再发通知，以免留下关不掉的残留通知
+        shown = k
         getSystemService(NotificationManager::class.java).notify(ID, notif())
     }
 
@@ -118,17 +161,21 @@ class BeaconService : Service() {
         if (scanning) return
         val filter = ScanFilter.Builder().setManufacturerData(Beacon.COMPANY, byteArrayOf(Beacon.MAGIC0.toByte(), Beacon.MAGIC1.toByte()), byteArrayOf(-1, -1)).build()
         val st = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-        runCatching { s.startScan(listOf(filter), st, scanCb); scanning = true }
+        runCatching { s.startScan(listOf(filter), st, scanCb); scanning = true }.onFailure { Beacon.error.value = "扫描失败：${it.message}" }
     }
 
     private fun stopScan() {
         if (!scanning) return
         runCatching { scanner?.stopScan(scanCb) }
         scanning = false
-        getSystemService(NotificationManager::class.java).notify(ID, notif())
+        refreshNotif()
     }
 
+    private var destroyed = false
+
     override fun onDestroy() {
+        destroyed = true
+        if (receiverOn) { runCatching { unregisterReceiver(btReceiver) }; receiverOn = false }
         h.removeCallbacksAndMessages(null)
         stopScan()
         runCatching { adv?.stopAdvertising(advCb) }

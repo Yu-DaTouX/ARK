@@ -10,10 +10,13 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
 import com.google.ai.edge.litertlm.ThinkingConfig
+import com.google.ai.edge.litertlm.tool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.Executors
@@ -43,6 +46,8 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
     private var key: String? = null
     @Volatile private var running: Conversation? = null
     @Volatile private var stopped = false
+    /** 初始化 / 生成 / 卸载互斥：生成挂起时线程会让出，不加锁 unload 会和活跃对话交错 */
+    private val lock = Mutex()
 
     init {
         // 上次 GPU 初始化到一半进程没了 → 这台机器的 GPU 驱动不可靠，以后默认走 CPU
@@ -54,7 +59,7 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
     val gpuBroken get() = prefs.getBoolean(GPU_BROKEN, false)
     fun resetGpu() = prefs.edit().putBoolean(GPU_BROKEN, false).apply()
 
-    suspend fun ensure(model: File, preferGpu: Boolean) = withContext(thread) {
+    suspend fun ensure(model: File, preferGpu: Boolean) = lock.withLock { withContext(thread) {
         val spec = prefs.getString("debug_spec", "") // 调试：""=默认，"0"/"1"=关/开推测解码（MTP）
         // GPU 激活精度：默认 FLOAT32。运行时默认的低精度会把数字抄错（146→1466、492→499），CPU 和 GPU+FLOAT32 都不会。
         // 调试：ark_act=DEFAULT 用运行时默认精度做对比
@@ -68,6 +73,7 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
         var last: Throwable? = null
         for (gpu in order) {
             if (gpu) prefs.edit().putBoolean(GPU_PENDING, true).commit()
+            var cand: Engine? = null
             try {
                 // 调试版打开测速，生成后在 logcat 里输出 prefill / decode 速度
                 if (ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
@@ -84,43 +90,54 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
                         activationDataType = if (gpu && act != "DEFAULT") com.google.ai.edge.litertlm.ActivationDataType.valueOf(act) else null,
                     )
                 )
+                cand = e
                 e.initialize()
+                cand = null
                 engine = e
                 key = k
                 _state.value = State.Ready(name, if (gpu) "GPU" else "CPU")
                 android.util.Log.i("ark", "engine ${if (gpu) "gpu" else "cpu"} act=$act")
                 return@withContext
+            } catch (c: CancellationException) {
+                runCatching { cand?.close() }
+                _state.value = State.Unloaded
+                throw c
             } catch (t: Throwable) {
                 last = t
+                runCatching { cand?.close() }
             } finally {
                 if (gpu) prefs.edit().putBoolean(GPU_PENDING, false).commit()
             }
         }
         _state.value = State.Failed(name, last?.message ?: "加载失败")
         throw IllegalStateException("模型加载失败：${last?.message}", last)
-    }
+    } }
 
     /** 生成一段回答；onText 收到的是到目前为止的完整文本。stop() 之后返回已生成的部分。 */
     @OptIn(com.google.ai.edge.litertlm.ExperimentalApi::class)
-    suspend fun generate(system: String, user: String, maxTokens: Int, onText: (String) -> Unit = {}): String =
-        withContext(thread) {
+    suspend fun generate(system: String, user: String, maxTokens: Int, calc: Boolean = false, onText: (String) -> Unit = {}): String =
+        lock.withLock { withContext(thread) {
             val e = engine ?: error("模型未加载")
             stopped = false
             val conv = try {
-                e.createConversation(config(system, maxTokens, thinkingOff = true))
+                e.createConversation(config(system, maxTokens, thinkingOff = true, calc))
             } catch (t: Throwable) {
-                e.createConversation(config(system, maxTokens, thinkingOff = false)) // 不支持思考开关的模型
+                e.createConversation(config(system, maxTokens, thinkingOff = false, calc)) // 不支持思考开关的模型
             }
             running = conv
             val sb = StringBuilder()
+            var lastEmit = 0L
             try {
                 conv.sendMessageAsync(user).collect { m ->
                     val piece = m.toString()
                     sb.append(piece)
                     // 小模型贪心解码偶尔会把同一行重复很多次：刚写完的一行和前面某行一样就截掉并停止，省时间也省电
                     if ('\n' in piece) repeatCut(sb)?.let { sb.setLength(it); onText(clean(sb)); logBench(conv); throw RepeatStop() }
-                    onText(clean(sb))
+                    // 界面刷新限流：每个 token 都 clean()+重组+排版太费 CPU（CPU 后端时还和解码抢核），约 8 次/秒足够跟上阅读
+                    val now = android.os.SystemClock.uptimeMillis()
+                    if (now - lastEmit >= UI_EMIT_MS) { lastEmit = now; onText(clean(sb)) }
                 }
+                onText(clean(sb)) // 最后一段一定刷出去
                 logBench(conv)
             } catch (r: RepeatStop) {
                 runCatching { conv.cancelProcess() }
@@ -135,7 +152,7 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
                 runCatching { conv.close() }
             }
             clean(sb)
-        }
+        } }
 
     /** 最近一次生成的测速结果（调试版），批量测试写进输出文件 */
     @Volatile var lastBench: String? = null
@@ -155,7 +172,10 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
         running?.let { runCatching { it.cancelProcess() } }
     }
 
-    suspend fun unload() = withContext(thread) { closeEngine() }
+    suspend fun unload() {
+        stop() // 先让活跃的生成结束，再拿锁关引擎
+        lock.withLock { withContext(thread) { closeEngine() } }
+    }
 
     private fun closeEngine() {
         runCatching { engine?.close() }
@@ -164,8 +184,11 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
         _state.value = State.Unloaded
     }
 
-    private fun config(system: String, maxTokens: Int, thinkingOff: Boolean) = ConversationConfig(
+    /** calc=true 时给模型认单位的计算器（ArkTools），由引擎自动执行工具调用。 */
+    private fun config(system: String, maxTokens: Int, thinkingOff: Boolean, calc: Boolean = false) = ConversationConfig(
         systemInstruction = Contents.of(system),
+        tools = if (calc) listOf(tool(ArkTools())) else emptyList(),
+        automaticToolCalling = true,
         samplerConfig = SamplerConfig(topK = 1, topP = 1.0, temperature = 0.1),
         maxOutputToken = maxTokens,
         thinkingConfig = if (thinkingOff) ThinkingConfig(enableThinking = false) else null,
@@ -174,6 +197,7 @@ class LlmManager(private val ctx: Context, private val prefs: SharedPreferences)
     companion object {
         private const val GPU_PENDING = "gpu_init_pending"
         private const val GPU_BROKEN = "gpu_broken"
+        private const val UI_EMIT_MS = 120L
         private val THINK = Regex("(?s)<think>.*?(</think>|$)")
 
         fun clean(sb: CharSequence) = THINK.replace(sb, "").trimStart()

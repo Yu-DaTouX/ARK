@@ -46,7 +46,18 @@ class QaStore(private val file: File) {
         c = it
     }
 
-    private suspend fun <T> io(block: SQLiteConnection.() -> T): T = withContext(Dispatchers.IO) { lock.withLock { db().block() } }
+    private suspend fun <T> io(block: SQLiteConnection.() -> T): T = withContext(Dispatchers.IO) {
+        lock.withLock {
+            try {
+                db().block()
+            } catch (t: Throwable) {
+                // 连接可能已坏：丢掉，下次重新打开；库文件本身不动
+                runCatching { c?.close() }
+                c = null
+                throw t
+            }
+        }
+    }
 
     suspend fun reload() = io {
         _history.value = query("SELECT * FROM qa ORDER BY id DESC LIMIT 100")

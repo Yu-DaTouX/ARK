@@ -61,6 +61,18 @@ fun AcousticTab() {
 
     // 离开本页就关麦克风
     DisposableEffect(Unit) { onDispose { AcousticLink.stopListening() } }
+    // 退到后台 / 锁屏也关：Android 9 起后台应用录到的只是静音，解调线程却还在以音频优先级空转；回到前台自动恢复
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(owner) {
+        var resume = false
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (android.os.Build.VERSION.SDK_INT < 28) return@LifecycleEventObserver // Android 8 后台仍能录音，保持原行为
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_STOP && AcousticLink.listening.value) { resume = true; AcousticLink.stopListening() }
+            else if (e == androidx.lifecycle.Lifecycle.Event.ON_START && resume) { resume = false; if (hasMic()) AcousticLink.startListening() }
+        }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs) }
+    }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) { if (pendingTest) AcousticLink.runSelfTest() else AcousticLink.startListening() }

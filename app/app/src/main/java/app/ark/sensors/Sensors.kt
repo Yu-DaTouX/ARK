@@ -100,9 +100,12 @@ object PressureLog {
     }
 }
 
-/** 指南针：订阅 Heading 引擎（陀螺 + 磁力计融合、抗干扰、可天体校准）。lat/lon 已知时修正磁偏角。heading 为 NaN 时还没有方位。 */
+/**
+ * 指南针：订阅 Heading 引擎（陀螺 + 磁力计融合、抗干扰、可天体校准）。lat/lon 已知时修正磁偏角。heading 为 NaN 时还没有方位。
+ * stepDeg > 0：方位按这个步长取整、不带实时磁场强度，只在取整后的值变了才让调用处重组（地图页用，省掉 15 Hz 的整页重组）。
+ */
 @Composable
-fun rememberCompass(lat: Double? = null, lon: Double? = null): Compass? {
+fun rememberCompass(lat: Double? = null, lon: Double? = null, stepDeg: Float = 0f): Compass? {
     val ctx = LocalContext.current
     LaunchedEffect(lat?.let { Math.round(it) }, lon?.let { Math.round(it) }) { Heading.setLocation(lat, lon) }
     // 跟随生命周期：退到后台（ON_STOP）就停传感器，省电；Heading.stop 5 秒后才真正注销，短暂切换不丢校准
@@ -118,7 +121,16 @@ fun rememberCompass(lat: Double? = null, lon: Double? = null): Compass? {
         owner.lifecycle.addObserver(obs)
         onDispose { owner.lifecycle.removeObserver(obs); down() }
     }
-    val c by Heading.state.collectAsState()
+    val raw = Heading.state.collectAsState()
+    if (stepDeg > 0f) {
+        val q by remember(stepDeg) {
+            androidx.compose.runtime.derivedStateOf(androidx.compose.runtime.structuralEqualityPolicy()) {
+                raw.value?.takeIf { !it.heading.isNaN() }?.let { it.copy(heading = Heading.wrap(Math.round(it.heading / stepDeg) * stepDeg), fieldUT = 0f) }
+            }
+        }
+        return q
+    }
+    val c by raw
     return c?.takeIf { !it.heading.isNaN() }
 }
 
@@ -136,7 +148,9 @@ fun rememberBarometer(): Pressure? {
             override fun onSensorChanged(e: SensorEvent) {
                 avg = if (avg.isNaN()) e.values[0] else avg * 0.9f + e.values[0] * 0.1f
                 val p = Pressure(avg, System.currentTimeMillis())
-                value = p
+                // 界面只显示 0.1 hPa / 1 m：变化不到 0.02 hPa（约 0.17 m）就不更新状态，免得整页（含地图页）5 Hz 重组
+                val v = value
+                if (v == null || kotlin.math.abs(v.hPa - avg) >= 0.02f) value = p
                 PressureLog.add(p)
             }
             override fun onAccuracyChanged(s: Sensor, a: Int) {}

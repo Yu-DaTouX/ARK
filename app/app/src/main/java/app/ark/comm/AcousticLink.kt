@@ -94,6 +94,8 @@ object AcousticLink {
                     score.value = dec.lastScore
                 }
             }
+        } catch (e: Exception) { // startRecording/read 可能抛 IllegalStateException（麦克风被抢、路由变化），不能逃出裸线程
+            message.value = "麦克风出错：${e.message}"
         } finally {
             if (keep != null) runCatching {
                 val len = minOf(kpos, keep.size.toLong()).toInt()
@@ -132,8 +134,10 @@ object AcousticLink {
             return true
         } catch (_: InterruptedException) {
             return false
+        } catch (e: Exception) {
+            message.value = "播放出错：${e.message}"; return false
         } finally {
-            runCatching { track.stop() }; track.release()
+            runCatching { track.stop() }; runCatching { track.release() }
         }
     }
 
@@ -162,20 +166,25 @@ object AcousticLink {
         Thread({
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
             val wasListening = listening.value
-            if (!wasListening) startListening()
-            var waited = 0
-            while (!listening.value && waited < 2000) { Thread.sleep(50); waited += 50 }
-            if (!listening.value) { selfTest.value = "失败：麦克风没打开（检查录音权限）"; return@Thread }
-            selfResult = null; selfPayload = payload
-            sending.value = true
-            val ok = try { play(payload, c) } finally { sending.value = false }
-            var w = 0
-            while (selfResult == null && w < 2500 && ok) { Thread.sleep(50); w += 50 }
-            val r = selfResult
-            selfPayload = null
-            selfTest.value = if (r != null) "通：本机扬声器→麦克风解码成功（RS 纠正 ${r.corrected} 字节，信号质量 ${(r.quality * 100).toInt()}%）"
-            else "不通：没解出来。把媒体音量调大、换到安静处再试；有些手机扬声器发不出 17 kHz 以上的声音，这种手机只能接收，不能发送"
-            if (!wasListening) stopListening()
+            try {
+                if (!wasListening) startListening()
+                var waited = 0
+                while (!listening.value && waited < 2000) { Thread.sleep(50); waited += 50 }
+                if (!listening.value) { selfTest.value = "失败：麦克风没打开（检查录音权限）"; return@Thread }
+                selfResult = null; selfPayload = payload
+                sending.value = true
+                val ok = try { play(payload, c) } finally { sending.value = false }
+                var w = 0
+                while (selfResult == null && w < 2500 && ok) { Thread.sleep(50); w += 50 }
+                val r = selfResult
+                selfTest.value = if (r != null) "通：本机扬声器→麦克风解码成功（RS 纠正 ${r.corrected} 字节，信号质量 ${(r.quality * 100).toInt()}%）"
+                else "不通：没解出来。把媒体音量调大、换到安静处再试；有些手机扬声器发不出 17 kHz 以上的声音，这种手机只能接收，不能发送"
+            } catch (e: Exception) {
+                selfTest.value = "自测出错：${e.message}"
+            } finally {
+                selfPayload = null; sending.value = false
+                if (!wasListening) stopListening()
+            }
         }, "ark-acoustic-selftest").start()
         return true
     }

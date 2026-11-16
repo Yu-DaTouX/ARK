@@ -88,8 +88,8 @@ RULES = """你是评审。离线求生 App 里，小模型根据检索到的资�
 """
 
 
-def judge(n=2, b="new"):
-    old, new = load("old"), load(b)
+def judge(n=2, b="new", a="old"):
+    old, new = load(a), load(b)
     ins = [json.loads(l) for l in open(os.path.join(D, "in_old.jsonl"), encoding="utf-8")]
     rnd = random.Random(7)
     key, items = {}, []
@@ -128,4 +128,4 @@ def score(files):
 
 if __name__ == "__main__":
     {"prep": lambda: prep(), "gen": lambda: gen(sys.argv[2]), "stats": lambda: stats(),
-     "judge": lambda: judge(int(sys.argv[2]) if len(sys.argv) > 2 else 2, sys.argv[3] if len(sys.argv) > 3 else "new"), "score": lambda: score(sys.argv[2:])}[sys.argv[1]]()
+     "judge": lambda: judge(int(sys.argv[2]) if len(sys.argv) > 2 else 2, sys.argv[3] if len(sys.argv) > 3 else "new", sys.argv[4] if len(sys.argv) > 4 else "old"), "score": lambda: score(sys.argv[2:])}[sys.argv[1]]()

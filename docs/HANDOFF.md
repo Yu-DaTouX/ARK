@@ -90,6 +90,16 @@
 - 和 Lastbook 的互通：`tools/compat/lastbook_bridge.py` 双向转换地名/求助点（往返 30,439/29,179 全对上，中文名不丢）；底图格式不同（PMTiles vs 自家 feat 表），不互通。
 - 给对方提了 PR：Immortal-Protocols/lastbook#63（`tools/build_places_region.py` + 测试 + MAPS.md 小节），用 Yu-DaTouX 账号；澳洲数据未提交（对方的 derived/ 不入库）。
 
+## 4g. 地形图叠加层（11-17 晚）
+
+- 需求：离线便携导入的前提下做到最高精度。结论：**官方 1:250 000 图幅更准**（GA 数据、有等高线/水系/土路），矢量图只在城市街道和 POI 上更全。
+- 管线 `data/maps/topo/`：GeoPDF → 裁主图框 → 赋 MGA 坐标 → gdalwarp 到墨卡托 → gdal2tiles(z9–12) → WebP q80 → mbtiles → pmtiles。单幅约 3–6 MB（PNG 要 34 MB）。
+- **配准**：图框是 MGA 分带格网矩形，直接把栅格赋 `EPSG:283xx` 再整体重投影，零近似。若只用四角经纬度做一次多项式，幅面中部偏 386 m（算过），已废弃。
+- 校验：Adelaide 幅的海岸线落在 138.508°E，真实 Glenelg 海滩 138.509°E，差约 70 m（1:250k 图面 0.3 mm 的水平）。
+- App：文件名 `topo*` 的 pmtiles 当叠加层，图层顺序在矢量线之上、地名文字之下，透明度 0.82；地图页「更多 → 地形图叠加」，状态存 `prefs: map_topo`；资料页新增「地形图叠加（1:25 万）」分区。
+- 打包：按**州**（不用 MGA 分带——图幅虽按带命名但覆盖跨带，按带打包会在带界出现整条空白）。`build_state.sh <state>` 复用 `build/zone*/mb/*.mbtiles` 的缓存，边界图幅在相邻州重复。
+- 缺口：509 幅只覆盖大陆，塔斯马尼亚那 7 幅在 GA 免费系列里没有（点下载跳 Tasmap 商店，付费）。
+
 ## 5. 待用户决定
 
 - 中文资料包：替换还是中英并存（第 3 节第 2 条）。

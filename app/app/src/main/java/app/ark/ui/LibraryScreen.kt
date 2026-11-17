@@ -208,6 +208,19 @@ fun LibraryScreen(vm: AppViewModel) {
             CatalogRow(c, downloads.firstOrNull { it.item.file == c.file }, vm)
         }
 
+        // ---------------- 地形图（1:25 万官方图幅） ----------------
+        item { Section("地形图叠加（1:25 万）") }
+        item {
+            Text(
+                "澳洲官方 1:250 000 地形图，按 MGA 分带整幅配准后切成瓦片：等高线、水系、水潭、土路、管线都在里面。" +
+                    "下载后在地图页「更多 → 地形图叠加」打开；它压在道路之上、地名之下，认野外地形比矢量图准。",
+                style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant,
+            )
+        }
+        items(vm.catalog.filter { it.kind == "topo" && maps.none { m -> m.name == it.file } }, key = { "c" + it.file }) { c ->
+            CatalogRow(c, downloads.firstOrNull { it.item.file == c.file }, vm)
+        }
+
         // ---------------- 地名与求助点 ----------------
         item { Section("地名与求助点") }
         item {

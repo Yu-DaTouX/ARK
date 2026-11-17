@@ -30,6 +30,9 @@ object MapStyle {
     /** 海图文件（水深 + 航标）以 chart 开头，单独作为海图图层，不当作陆地详图。 */
     fun isChart(f: File) = f.name.startsWith("chart")
 
+    /** 地形图（1:250 000 官方图幅，配准后切成的栅格瓦片）以 topo 开头：当叠加层，画在最上面。 */
+    fun isTopo(f: File) = f.name.startsWith("topo")
+
     /** PMTiles v3 文件头第 99 字节是瓦片类型：1 矢量 / 2 png / 3 jpeg / 4 webp / 5 avif。 */
     fun tileType(f: File): Int = runCatching {
         RandomAccessFile(f, "r").use { r ->
@@ -46,7 +49,7 @@ object MapStyle {
      * @param chart 是否叠加海图（水深着色、等深线、航标）
      * 会读每个 PMTiles 文件头（tileType），有磁盘 IO，别在主线程调。
      */
-    fun build(regions: List<File>, satellite: Boolean, chart: Boolean = false): String {
+    fun build(regions: List<File>, satellite: Boolean, chart: Boolean = false, topo: Boolean = false): String {
         val sources = JSONObject()
             .put("sat", JSONObject().put("type", "raster").put("url", WORLD_SAT).put("tileSize", 256))
             .put("world", JSONObject().put("type", "vector").put("url", WORLD_VEC))
@@ -70,7 +73,8 @@ object MapStyle {
                 else { sources.put("chartd$i", JSONObject().put("type", "raster").put("url", url).put("tileSize", 256)); depths += "chartd$i" }
             }
         }
-        regions.filterNot(::isChart).forEachIndexed { i, f ->
+        val topoFiles = if (topo) regions.filter(::isTopo) else emptyList()
+        regions.filterNot { isChart(it) || isTopo(it) }.forEachIndexed { i, f ->
             val id = "r$i"
             when (tileType(f)) {
                 1 -> { sources.put(id, JSONObject().put("type", "vector").put("url", "pmtiles://file://${f.path}")); vec += id }
@@ -155,6 +159,14 @@ object MapStyle {
                     "paint":{"line-color":["interpolate",["linear"],["zoom"],5,"#f5f1e6",8,"#8a7fa6"],"line-width":1.2}}"""
                 )
             )
+        }
+        // 地形图叠加层：压在道路/水系之上、地名文字之下——看得清等高线和土路，又不盖住地图自己的地名
+        topoFiles.forEachIndexed { i, f ->
+            val id = "topo$i"
+            sources.put(id, JSONObject().put("type", "raster").put("url", "pmtiles://file://${f.path}").put("tileSize", 256)
+                .put("minzoom", 8))
+            layers.put(JSONObject().put("id", id).put("type", "raster").put("source", id)
+                .put("paint", JSONObject().put("raster-opacity", 0.82).put("raster-fade-duration", 0)))
         }
         // 文字：低缩放（压在卫星图上）白字黑边，高缩放深字白边
         val dark = """["match",["get","kind"],"region","#7a6f60","#2b2b2b"]"""

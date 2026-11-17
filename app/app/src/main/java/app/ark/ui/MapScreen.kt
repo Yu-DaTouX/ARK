@@ -125,6 +125,7 @@ fun MapScreen(vm: AppViewModel) {
     val regions by vm.maps.collectAsStateWithLifecycle()
     var satellite by rememberSaveable { mutableStateOf(true) }
     var chart by rememberSaveable { mutableStateOf(false) }
+    var topo by rememberSaveable { mutableStateOf(vm.prefs.getBoolean("map_topo", false)) }
     var center by remember { mutableStateOf<LatLng?>(null) }
     var zoom by remember { mutableStateOf(0.0) }
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
@@ -238,10 +239,10 @@ fun MapScreen(vm: AppViewModel) {
     }
 
     // 样式随“已有地图文件”和“卫星/地图”开关重建
-    LaunchedEffect(map, regions, satellite, chart) {
+    LaunchedEffect(map, regions, satellite, chart, topo) {
         val m = map ?: return@LaunchedEffect
         // 样式 JSON（要读 PMTiles 文件头）在 IO 线程构建，只有 setStyle 回主线程
-        val json = withContext(Dispatchers.IO) { MapStyle.build(regions, satellite, chart) }
+        val json = withContext(Dispatchers.IO) { MapStyle.build(regions, satellite, chart, topo) }
         m.setStyle(Style.Builder().fromJson(json)) { s -> style = s }
     }
 
@@ -388,6 +389,8 @@ fun MapScreen(vm: AppViewModel) {
                             }
                         },
                         baro?.let { "气压海拔 ≈ ${Math.round(Baro.altitude(it.hPa, seaLevel))} m${if (seaLevel == Baro.STD) "（未校准）" else ""}" },
+                        // 定位精度：地图和地形图叠加都对得上时，误差主要就来自这里（开阔地一般 ±3~8 m）
+                        meLoc?.accuracy?.let { "定位 ±${Math.round(it)} m" },
                     )
                     if (extra.isNotEmpty()) Text(extra.joinToString(" · "), style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -422,6 +425,12 @@ fun MapScreen(vm: AppViewModel) {
                         )
                     }
                     item("卫星底图", satellite) { satellite = !satellite }()
+                    item("地形图叠加（1:25 万官方图幅）", topo) {
+                        topo = !topo
+                        vm.prefs.edit().putBoolean("map_topo", topo).apply()
+                        if (topo && regions.none(MapStyle::isTopo))
+                            Toast.makeText(ctx, "还没有地形图。到「资料」页下载地形图包（按州，几百 MB）", Toast.LENGTH_LONG).show()
+                    }()
                     item("海图（水深、航标）", chart) {
                         chart = !chart
                         if (chart && regions.none(MapStyle::isChart))

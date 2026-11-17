@@ -79,7 +79,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val qa = ark.qa
     val llm = ark.llm
     private val embedder = ark.embedder
-    private val prefs = ark.prefs
+    val prefs = ark.prefs
 
     val settings = MutableStateFlow(Settings.load(prefs))
     val models = MutableStateFlow<List<File>>(emptyList())

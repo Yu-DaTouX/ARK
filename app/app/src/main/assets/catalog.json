@@ -152,6 +152,54 @@
    "url": "https://github.com/Yu-DaTouX/ARK/releases/download/places-2026-11/australia.db",
    "size": 8421376,
    "note": "3 万居民点（含郊区、小村、农场）+ 2.9 万医院/药店/警局/消防/取水点/营地 · OpenStreetMap（ODbL）"
+  },
+  {
+   "kind": "topo",
+   "title": "地形图 · 西澳（含珀斯、皮尔巴拉、金矿田）",
+   "file": "topo-wa.pmtiles",
+   "url": "https://github.com/Yu-DaTouX/ARK/releases/download/topo-2026-11/topo-wa.pmtiles",
+   "size": 512095745,
+   "note": "AUSTopo 1:250 000 · 等高线/水系/水潭/土路 · 与相邻州有重叠图幅；地图页「更多 → 地形图叠加」打开"
+  },
+  {
+   "kind": "topo",
+   "title": "地形图 · 北领地（达尔文、爱丽斯泉、乌鲁鲁）",
+   "file": "topo-nt.pmtiles",
+   "url": "https://github.com/Yu-DaTouX/ARK/releases/download/topo-2026-11/topo-nt.pmtiles",
+   "size": 297531089,
+   "note": "AUSTopo 1:250 000 · 等高线/水系/水潭/土路 · 与相邻州有重叠图幅；地图页「更多 → 地形图叠加」打开"
+  },
+  {
+   "kind": "topo",
+   "title": "地形图 · 南澳（阿德莱德、弗林德斯、袋鼠岛）",
+   "file": "topo-sa.pmtiles",
+   "url": "https://github.com/Yu-DaTouX/ARK/releases/download/topo-2026-11/topo-sa.pmtiles",
+   "size": 337012990,
+   "note": "AUSTopo 1:250 000 · 等高线/水系/水潭/土路 · 与相邻州有重叠图幅；地图页「更多 → 地形图叠加」打开"
+  },
+  {
+   "kind": "topo",
+   "title": "地形图 · 昆士兰（布里斯班、凯恩斯、内陆）",
+   "file": "topo-qld.pmtiles",
+   "url": "https://github.com/Yu-DaTouX/ARK/releases/download/topo-2026-11/topo-qld.pmtiles",
+   "size": 505137399,
+   "note": "AUSTopo 1:250 000 · 等高线/水系/水潭/土路 · 与相邻州有重叠图幅；地图页「更多 → 地形图叠加」打开"
+  },
+  {
+   "kind": "topo",
+   "title": "地形图 · 新南威尔士 · 首都领地（悉尼、蓝山、内陆）",
+   "file": "topo-nsw.pmtiles",
+   "url": "https://github.com/Yu-DaTouX/ARK/releases/download/topo-2026-11/topo-nsw.pmtiles",
+   "size": 465684643,
+   "note": "AUSTopo 1:250 000 · 等高线/水系/水潭/土路 · 与相邻州有重叠图幅；地图页「更多 → 地形图叠加」打开"
+  },
+  {
+   "kind": "topo",
+   "title": "地形图 · 维多利亚（墨尔本、大洋路、高山）",
+   "file": "topo-vic.pmtiles",
+   "url": "https://github.com/Yu-DaTouX/ARK/releases/download/topo-2026-11/topo-vic.pmtiles",
+   "size": 227858962,
+   "note": "AUSTopo 1:250 000 · 等高线/水系/水潭/土路 · 与相邻州有重叠图幅；地图页「更多 → 地形图叠加」打开"
   }
  ]
 }

@@ -5,7 +5,17 @@ data/zim/
 data/chunks/
 data/packs/
 data/maps/src/
+data/maps/places/*.zip
+data/maps/places/*.txt
+data/maps/places/*.log
+data/maps/places/*.db
+data/maps/places/pbf/
+data/maps/places/lastbook/
 data/maps/*.pmtiles
+.tmp_*
+data/maps/topo/*.pmtiles
+data/maps/topo/build/
+data/maps/topo/dbg/
 app/app/src/main/assets/packs/*.arkpack
 app/app/src/main/assets/maps/*.pmtiles
 tools/*

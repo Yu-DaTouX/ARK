@@ -164,6 +164,15 @@ fun MapScreen(vm: AppViewModel) {
     var returning by remember { mutableStateOf(false) }
     var showWpList by remember { mutableStateOf(false) }
     var showBeacon by remember { mutableStateOf(false) }
+    // 地名搜索 / 附近求助点（数据见 data/Places.kt）
+    var showSearch by remember { mutableStateOf(false) }
+    var showNearby by remember { mutableStateOf(false) }
+    var picked by remember { mutableStateOf<app.ark.data.Places.Hit?>(null) }
+    var navRegions by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) { app.ark.data.Places.init(ctx) }
+        navRegions = app.ark.data.Places.regions()
+    }
     var confirmDel by remember { mutableStateOf<Pair<String, () -> Unit>?>(null) }
     var afterPerm by remember { mutableStateOf<(() -> Unit)?>(null) }
     var afterPerms by remember { mutableStateOf<Array<String>>(emptyArray()) }
@@ -445,6 +454,8 @@ fun MapScreen(vm: AppViewModel) {
                     if (trackPts.isNotEmpty() && !recording) item("清除轨迹", null) {
                         confirmDel = "清除已记录的 ${trackPts.size} 个轨迹点？" to { returning = false; TrackStore.clear() }
                     }()
+                    item("搜地名（城镇、村庄、岛屿）", null) { showSearch = true }()
+                    item("附近求助点（医院、药店、取水）", null) { showNearby = true }()
                     item("蓝牙求救信标…", beaconOn) { showBeacon = true }()
                     item("回到地球全景", null) {
                         followHeading = false
@@ -523,6 +534,53 @@ fun MapScreen(vm: AppViewModel) {
             ) { selWp = null; selBeacon = null; returning = false }
         }
 
+        if (showSearch) PlaceSearchDialog(
+            installedRegions = navRegions,
+            onPick = { h ->
+                showSearch = false; picked = h
+                map?.animateCamera(CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.Builder().target(LatLng(h.lat, h.lon)).zoom(11.0).build()), 1200)
+            },
+            onDismiss = { showSearch = false },
+        )
+        if (showNearby) {
+            val la = meLoc?.latitude ?: center?.latitude
+            val lo = meLoc?.longitude ?: center?.longitude
+            if (la == null || lo == null) showNearby = false else NearbyPoiDialog(
+                lat = la, lon = lo, fromMe = meLoc != null,
+                installedRegions = navRegions,
+                onPick = { p ->
+                    showNearby = false
+                    map?.animateCamera(CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.Builder().target(LatLng(p.lat, p.lon)).zoom(14.0).build()), 1200)
+                    Toast.makeText(ctx, "${p.label} · ${app.ark.data.Places.distText(p.distM)}", Toast.LENGTH_LONG).show()
+                },
+                onDismiss = { showNearby = false },
+            )
+        }
+        picked?.let { h ->
+            // 搜到的地点不建成航点，只在顶部显示一条信息（带方位和距离）
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                modifier = Modifier.align(Alignment.TopStart).padding(16.dp).padding(top = 96.dp).widthIn(max = 280.dp),
+            ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(h.label, style = MaterialTheme.typography.titleSmall, maxLines = 2)
+                    val me = meLoc
+                    if (me != null) {
+                        val d = app.ark.data.Places.distanceM(me.latitude, me.longitude, h.lat, h.lon)
+                        val b = app.ark.data.Places.bearing(me.latitude, me.longitude, h.lat, h.lon)
+                        Text("距你 ${app.ark.data.Places.distText(d)} · ${app.ark.data.Places.dirName(b)}（直线）",
+                            style = MaterialTheme.typography.labelSmall)
+                    } else {
+                        Text("${"%.3f".format(h.lat)}, ${"%.3f".format(h.lon)}",
+                            style = MaterialTheme.typography.labelSmall)
+                    }
+                    TextButton(onClick = { picked = null }) { Text("关闭") }
+                }
+            }
+        }
         addAt?.let { at ->
             WaypointDialog("添加航点", "", WpType.CAMP, latLonText(at), { n, t ->
                 val w = WaypointStore.add(n, t, at.latitude, at.longitude)

@@ -82,6 +82,14 @@
 - 构建：versionCode 3 / 0.3.0；`python data/build_public.py` 后的公开包换进 `assets/packs`，`ARK_KEYSTORE_PROPS=F:/ARK-keys/keystore.properties gradle assembleRelease`，编完拷回自用包并 `cmp` 核对（已做）。APK 约 200 MB，签名 `CN=ARK Offline`。
 - 公开仓库历史：作者统一改成 `Yu-DaTouX <174885674+Yu-DaTouX@users.noreply.github.com>`（commit-tree 重写，内容和时间不变，force push；旧分支备份 `public-bak`，本地 main 未动）。`publish.sh` 已不再写死 ARK 身份。
 
+## 4f. 地图：离线地名搜索与求助点（11-17）
+
+- 数据：`data/maps/places/`。内置 `assets/places.db`（GeoNames 全球 23.7 万居民点，4.2 万有中文名，30 MB）；区域包 `australia.db`（OSM 提取：30,439 地名 + 29,179 求助点，8 MB，Release `places-2026-11`）。
+- App：`data/Places.kt`（搜索 + 附近求助点，含距离/方位）、`ui/MapSearchDialogs.kt`、地图页「更多 → 搜地名 / 附近求助点」、资料页「地名与求助点」管理。
+- 12S 实测：搜 Sydney 命中全球库和区域库两类结果，点选飞到悉尼；附近求助点列出 1.7 km 的医院并标「有急诊」。
+- 和 Lastbook 的互通：`tools/compat/lastbook_bridge.py` 双向转换地名/求助点（往返 30,439/29,179 全对上，中文名不丢）；底图格式不同（PMTiles vs 自家 feat 表），不互通。
+- 给对方提了 PR：Immortal-Protocols/lastbook#63（`tools/build_places_region.py` + 测试 + MAPS.md 小节），用 Yu-DaTouX 账号；澳洲数据未提交（对方的 derived/ 不入库）。
+
 ## 5. 待用户决定
 
 - 中文资料包：替换还是中英并存（第 3 节第 2 条）。

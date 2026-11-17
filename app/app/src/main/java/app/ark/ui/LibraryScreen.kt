@@ -50,6 +50,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -205,6 +206,40 @@ fun LibraryScreen(vm: AppViewModel) {
         }
         items(vm.catalog.filter { it.kind == "map" && maps.none { m -> m.name == it.file } }, key = { "c" + it.file }) { c ->
             CatalogRow(c, downloads.firstOrNull { it.item.file == c.file }, vm)
+        }
+
+        // ---------------- 地名与求助点 ----------------
+        item { Section("地名与求助点") }
+        item {
+            val pctx = LocalContext.current
+            var placesVer by remember { mutableStateOf(0) }
+            val placeFiles = remember(placesVer) {
+                app.ark.data.Storage(pctx).places.listFiles { f -> f.isFile && f.name.endsWith(".db") && f.name != "global.db" }
+                    .orEmpty().sortedBy { it.name }
+            }
+            val missing = vm.catalog.filter { it.kind == "places" && placeFiles.none { f -> f.name == it.file } }
+            Column {
+                Text(
+                    "内置全球 23.7 万个城镇（含 4.2 万个中文名），任何地方都能搜到城镇。" +
+                        "区域包更细：小村、农场、郊区，以及医院、药店、警局、消防、取水点、营地——地图页「更多 → 附近求助点」用的就是它。",
+                    style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant,
+                )
+                placeFiles.forEach { f ->
+                    val title = vm.catalog.firstOrNull { it.file == f.name }?.title ?: f.nameWithoutExtension
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(title, style = MaterialTheme.typography.bodyLarge)
+                            Text(sizeText(f.length()), style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                        }
+                        IconButton(onClick = {
+                            confirm = "删除「$title」？" to { if (f.delete()) placesVer++ }
+                        }) { Icon(Icons.Filled.Delete, "删除") }
+                    }
+                }
+                missing.forEach { c ->
+                    CatalogRow(c, downloads.firstOrNull { it.item.file == c.file }, vm)
+                }
+            }
         }
 
         // ---------------- 离线分享 ----------------

@@ -22,6 +22,7 @@
 - **数字核对**：回答里的数字在出处原文中找不到就标红。
 - **书签**：重要的回答连同出处原文一起保存。
 - **离线地图**：地球仪视图 + NASA 卫星底图 + OpenStreetMap 矢量地图；GPS 定位不需要网络；屏幕中心坐标可复制。
+- **离线地名搜索与求助点**：内置全球 23.7 万个城镇（含 4.2 万个中文名），区域包再补小村、郊区，以及最近的医院、药店、警局、消防、取水点、营地（带距离和方位）。
 - **求生工具**：指南针（真北/磁北）、天体定向（相机对准太阳月亮星星）、气压海拔与天气趋势、日出日落、单位换算、物资计算、饮水消毒、闪光灯 SOS。
 - **急救步骤卡**：25 张一步一屏的抢救卡（心肺复苏、出血、窒息、烧伤、蛇咬、一氧化碳中毒等），零耗电；另有 CPR 节拍器和止血带计时。
 - **不联网也能互通消息**：蓝牙低功耗短消息（不配对，三台以上自动接力）、近超声传信（17–19.5 kHz，听不见）、蓝牙求救信标（地图上显示附近的人和距离）、警报声。
@@ -77,6 +78,7 @@ cd app && ./gradlew assembleRelease
 - 代码：Apache-2.0（见 [LICENSE](LICENSE)）。
 - 内置资料包：各书许可不同，App 资料页和包内 `meta.license` 有说明。美军、美国海军、FEMA、和平队手册及古登堡书籍为公有领域；MDWiki、维基百科、Stack Exchange、WikiCiv、energypedia、Restarters、Scoutwiki 为 CC BY-SA（中文译文同样按 CC BY-SA 分发）；Hesperian 的书仅限非营利免费分发；Kiwix zimgit 合集内各书版权归原作者。仍在版权期、不允许再分发的书（Foxfire、Richard Graves 等）不在公开版里。权利人如要求下架，请提 Issue。
 - 地图：OpenStreetMap 数据 © OpenStreetMap contributors，ODbL；NASA Blue Marble 为公有领域。
+- 地名与求助点：GeoNames（CC BY 4.0）与 OpenStreetMap 提取，见 `data/maps/places/README.md`。
 - 模型：Gemma 4、EmbeddingGemma 2 为 Apache-2.0，在 App 内由用户自行下载，不随 APK 分发。
 
 **免责声明**：本软件仅为个人爱好项目，请勿相信其中内容。AI 回答和资料都可能出错或过时，作者不对任何使用后果负责。完整声明见 [DISCLAIMER.md](DISCLAIMER.md)。

@@ -19,6 +19,7 @@ import java.io.File
  *   models/  *.litertlm   模型
  *   packs/   *.arkpack    资料包（SQLite + FTS5）
  *   maps/    *.pmtiles    离线地图
+ *   places/  *.db         区域地名与求助点（global.db 是内置全球地名库）
  * 不需要存储权限；用户也可以用数据线直接把文件拷进这些目录。
  */
 class Storage(private val ctx: Context) {
@@ -26,6 +27,7 @@ class Storage(private val ctx: Context) {
     val models = File(root, "models").apply { mkdirs() }
     val packs = File(root, "packs").apply { mkdirs() }
     val maps = File(root, "maps").apply { mkdirs() }
+    val places = File(root, "places").apply { mkdirs() }
     private val dm = ctx.getSystemService(DownloadManager::class.java)
 
     /** 按扩展名决定放哪个目录；不认识的扩展名返回 null */
@@ -35,6 +37,7 @@ class Storage(private val ctx: Context) {
             n.endsWith(".litertlm") -> models
             n.endsWith(".arkpack") -> packs
             n.endsWith(".pmtiles") -> maps
+            n.endsWith(".db") -> places
             else -> null
         }
     }

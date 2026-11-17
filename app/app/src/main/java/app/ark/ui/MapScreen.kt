@@ -428,8 +428,17 @@ fun MapScreen(vm: AppViewModel) {
                     item("地形图叠加（1:25 万官方图幅）", topo) {
                         topo = !topo
                         vm.prefs.edit().putBoolean("map_topo", topo).apply()
-                        if (topo && regions.none(MapStyle::isTopo))
-                            Toast.makeText(ctx, "还没有地形图。到「资料」页下载地形图包（按州，几百 MB）", Toast.LENGTH_LONG).show()
+                        if (topo) {
+                            if (regions.none(MapStyle::isTopo)) {
+                                Toast.makeText(ctx, "还没有地形图。到「资料 → 地形图叠加」下载（按州，200–500 MB）", Toast.LENGTH_LONG).show()
+                            } else {
+                                // 装了包但不在覆盖范围内：直接说清楚该下哪个州，别让人以为功能坏了
+                                val c = map?.cameraPosition?.target
+                                val st = c?.let { MapStyle.topoStateAt(it.latitude, it.longitude) }
+                                if (st != null && regions.none { it.name == "topo-${st.first}.pmtiles" })
+                                    Toast.makeText(ctx, "这里还没有地形图：需要「地形图 · ${st.second}」包（资料 → 地形图叠加）", Toast.LENGTH_LONG).show()
+                            }
+                        }
                     }()
                     item("海图（水深、航标）", chart) {
                         chart = !chart

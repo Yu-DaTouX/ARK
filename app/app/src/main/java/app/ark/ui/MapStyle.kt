@@ -33,6 +33,22 @@ object MapStyle {
     /** 地形图（1:250 000 官方图幅，配准后切成的栅格瓦片）以 topo 开头：当叠加层，画在最上面。 */
     fun isTopo(f: File) = f.name.startsWith("topo")
 
+    /**
+     * 某个坐标属于哪个州的地形图包：返回 (文件名前缀, 中文名)，不在澳洲境内返回 null。
+     * 只用来提示"这里还没装地形图，该下哪个包"，包的范围比州界略宽，判断错了也无害。
+     */
+    fun topoStateAt(lat: Double, lon: Double): Pair<String, String>? = when {
+        lat > -9.9 || lat < -44.5 || lon < 112.0 || lon > 154.6 -> null
+        lon < 129.0 -> "wa" to "西澳"
+        lon > 143.5 && lat < -39.1 -> "tas" to "塔斯马尼亚"
+        lat > -26.5 && lon < 138.2 -> "nt" to "北领地"
+        lat > -29.5 && lon > 137.8 -> "qld" to "昆士兰"
+        lat > -37.6 && lon > 140.8 -> "nsw" to "新南威尔士"
+        lat > -39.6 && lon > 140.8 -> "vic" to "维多利亚"
+        lon > 137.8 -> "sa" to "南澳"
+        else -> "wa" to "西澳"
+    }
+
     /** PMTiles v3 文件头第 99 字节是瓦片类型：1 矢量 / 2 png / 3 jpeg / 4 webp / 5 avif。 */
     fun tileType(f: File): Int = runCatching {
         RandomAccessFile(f, "r").use { r ->
